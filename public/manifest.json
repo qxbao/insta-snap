@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "InstaSnap",
+  "description": "Advanced Instagram follower tracking & analytics. Effortlessly take snapshots of your (or others) followers and following lists, detect unfollowers, and visualize growth trends with local differential storage for maximum performance.",
+  "version": "1.0",
+  "icons": {
+    "16": "images/icon.png",
+    "32": "images/icon.png",
+    "48": "images/icon.png",
+    "128": "images/icon.png"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html"
+  },
+  "options_page": "src/dashboard/dashboard.html",
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "host_permissions": [
+    "https://*.instagram.com/*",
+    "https://*.cdninstagram.com/*"
+  ],
+  "content_scripts": [
+    {
+      "js": ["src/content.ts"],
+      "matches": ["https://www.instagram.com/*"]
+    }
+  ],
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "storage",
+    "tabs",
+    "unlimitedStorage",
+    "activeTab"
+  ]
+}
