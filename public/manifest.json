@@ -10,20 +10,21 @@
     "128": "images/icon.png"
   },
   "action": {
-    "default_popup": "src/popup/popup.html"
+    "default_popup": "popup.html"
   },
-  "options_page": "src/dashboard/dashboard.html",
+  "options_page": "dashboard.html",
   "background": {
     "service_worker": "src/background.ts",
     "type": "module"
   },
   "host_permissions": [
     "https://*.instagram.com/*",
-    "https://*.cdninstagram.com/*"
+    "https://*.cdninstagram.com/*",
+    "https://*.fbcdn.net/*"
   ],
   "content_scripts": [
     {
-      "js": ["src/content.ts"],
+      "js": ["src/content/content.ts"],
       "matches": ["https://www.instagram.com/*"]
     }
   ],

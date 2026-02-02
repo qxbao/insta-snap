@@ -6,13 +6,18 @@ import {
   getUserLastSnapshotTime,
   getUserSnapshotCount,
 } from "../utils/storage";
+import { useSharedStore } from "../stores/shared.store";
+import { ExtensionMessageResponse, Status } from "../constants/status";
 
 const igUsername = ref<string | null>(null);
 const snapshotCount = ref<number>(0);
 const lastSnapshotTime = ref<number | null>(null);
 const igProfilePattern = /^(https:\/\/www\.instagram\.com\/)[\w.]+[\/]?$/g;
+const sharedStore = useSharedStore();
+const userId = ref<string | null>(null);
 
 onMounted(async () => {
+  await sharedStore.loadLocks();
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const activeTab = tabs[0];
@@ -31,11 +36,11 @@ onMounted(async () => {
           } satisfies ExtensionMessage,
           async (response: { userId: string }) => {
             console.log("User info response:", response);
-            if (response?.userId) {
-              snapshotCount.value = await getUserSnapshotCount(response.userId);
-              lastSnapshotTime.value = await getUserLastSnapshotTime(
-                response.userId,
-              );
+            const uid = response?.userId;
+            userId.value = uid || null;
+            if (uid) {
+              snapshotCount.value = await getUserSnapshotCount(uid);
+              lastSnapshotTime.value = await getUserLastSnapshotTime(uid);
             }
           },
         );
@@ -47,15 +52,23 @@ onMounted(async () => {
 });
 
 const sendSnapshotSignal = async () => {
+  await sharedStore.tryLockUser(userId.value || "");
   sendMessageToActiveTab(
     {
       type: ActionType.TAKE_SNAPSHOT,
       payload: { username: igUsername.value },
     } satisfies ExtensionMessage,
-    (response: string) => {
-      console.log("Snapshot response:", response);
-    },
+    (response: ExtensionMessageResponse) => {
+      if (response.status === Status.SyncDone) {
+        sharedStore.unlockUser(response.payload);
+      }
+    }
   );
+};
+
+const openDashboard = () => {
+  const dashboardUrl = chrome.runtime.getURL("dashboard.html");
+  chrome.tabs.create({ url: dashboardUrl });
 };
 </script>
 
@@ -77,16 +90,17 @@ const sendSnapshotSignal = async () => {
       </div>
       <div id="snapshotBtnContainer" :class="{ 'mb-3': igUsername }">
         <div v-if="!igUsername">
-          <p class="text-xs text-gray-500 mt-2">
+          <p class="text-xs text-gray-500 mt-2 mb-3">
             Navigate to an Instagram profile page to use this feature.
           </p>
         </div>
         <div v-else>
           <button
-            class="mt-3 px-8 py-2 bg-emerald-500 text-black cursor-pointer font-semibold text-lg rounded hover:bg-emerald-500 hover:text-black active:scale-[0.95] transition-all duration-300"
+            class="mt-3 px-8 py-2 bg-emerald-500 text-black cursor-pointer font-semibold text-lg rounded hover:bg-emerald-500 hover:text-black active:scale-[0.95] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
             @click="sendSnapshotSignal"
+            :disabled="userId ? userId in sharedStore.activeLocks : false"
           >
-            Take Snapshot
+            {{ userId && userId in sharedStore.activeLocks ? "Processing..." : "Take Snapshot" }}
           </button>
         </div>
       </div>
@@ -114,6 +128,14 @@ const sendSnapshotSignal = async () => {
             }}
           </span>
         </p>
+      </div>
+      <div>
+        <button
+          @click="openDashboard"
+          class="mt-2 px-4 py-2 bg-gray-200 text-gray-800 cursor-pointer font-semibold text-sm rounded-xl hover:bg-gray-300 active:scale-[0.95] transition-all duration-300"
+        >
+          Go to Dashboard
+        </button>
       </div>
     </div>
     <hr class="mb-3" />

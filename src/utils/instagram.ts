@@ -1,20 +1,24 @@
+import { ExtensionMessageResponse, Status } from "../constants/status";
+import { useUIStore } from "../stores/ui.store";
 import {
   InstagramAPIHeader,
   InstagramFollowersResponse,
   User,
 } from "../types/instapi";
 import { Logger } from "./logger";
-import { saveFollowersSnapshot, saveFollowingSnapshot, saveCompleteSnapshot } from "./storage";
+import {
+  saveFollowersSnapshot,
+  saveFollowingSnapshot,
+  saveCompleteSnapshot,
+  getGlobalUserMap,
+} from "./storage";
 
 const IGGraphQLBase = "https://www.instagram.com/graphql/query";
 const MAX_USERS_PER_REQUEST = 50;
 const FOLLOWERS_QUERY_HASH = "c76146de99bb02f6415203be841dd25a";
 const FOLLOWING_QUERY_HASH = "d04b0a864b4b54837c0d870b0e77e076";
 
-function buildFollowersEndpoint(
-  uid: string,
-  after?: string | null,
-): string {
+function buildFollowersEndpoint(uid: string, after?: string | null): string {
   const variables = {
     id: uid,
     include_reel: true,
@@ -25,10 +29,7 @@ function buildFollowersEndpoint(
   return `${IGGraphQLBase}/?query_hash=${FOLLOWERS_QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`;
 }
 
-function buildFollowingEndpoint(
-  uid: string,
-  after?: string | null,
-): string {
+function buildFollowingEndpoint(uid: string, after?: string | null): string {
   const variables = {
     id: uid,
     include_reel: true,
@@ -107,19 +108,22 @@ async function fetchUsers(
   appId: string,
   csrfToken: string,
   logger: Logger,
+  store: ReturnType<typeof useUIStore>,
 ): Promise<User[] | false> {
-  const buildEndpoint = type === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
+  const buildEndpoint =
+    type === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
   const edgeKey = type === "followers" ? "edge_followed_by" : "edge_follow";
-  
+
   logger.info(`Fetching ${type} using GraphQL API...`);
 
   const users: User[] = [];
   let after: string | null = null;
   let hasMore = true;
-
+  store.setLoading(true);
+  store.setLoadingProgress(0, type);
   while (hasMore) {
     const apiEndpoint = buildEndpoint(userId, after);
-    
+
     const response = await IGFetch(apiEndpoint, appId, csrfToken);
     if (!response.ok) {
       logger.error(
@@ -129,7 +133,7 @@ async function fetchUsers(
     }
 
     const data = await response.json();
-    
+
     if (!data.data || !data.data.user || !data.data.user[edgeKey]) {
       logger.error(`Invalid GraphQL response structure for ${type}`);
       return false;
@@ -137,43 +141,59 @@ async function fetchUsers(
 
     const edgeData = data.data.user[edgeKey];
     const edges = edgeData.edges || [];
-    
+
     const batchUsers: User[] = edges.map((edge: any) => ({
       pk: edge.node.id || edge.node.pk || "",
       username: edge.node.username || "",
       full_name: edge.node.full_name || "",
       profile_pic_url: edge.node.profile_pic_url || "",
     }));
-    
+
     users.push(...batchUsers);
-    
+
     hasMore = edgeData.page_info?.has_next_page || false;
     after = edgeData.page_info?.end_cursor || null;
-    
+
+    store.setLoadingProgress(users.length, type);
     logger.info(
       `Fetched ${batchUsers.length} ${type}, total so far: ${users.length}`,
     );
   }
 
-  logger.info(`Total ${type} retrieved: ${users.length}`);
   return users;
 }
 
-async function retrieveUserFollowers(logger: Logger) {
-  return retrieveUserFollowersAndFollowing(logger, { followersOnly: true });
+async function retrieveUserFollowers(
+  logger: Logger,
+  store: ReturnType<typeof useUIStore> | void,
+) {
+  return retrieveUserFollowersAndFollowing(logger, store, {
+    followersOnly: true,
+  });
 }
 
-async function retrieveUserFollowing(logger: Logger) {
-  return retrieveUserFollowersAndFollowing(logger, { followingOnly: true });
+async function retrieveUserFollowing(
+  logger: Logger,
+  store: ReturnType<typeof useUIStore> | void,
+) {
+  return retrieveUserFollowersAndFollowing(logger, store, {
+    followingOnly: true,
+  });
 }
 
 async function retrieveUserFollowersAndFollowing(
   logger: Logger,
+  store: ReturnType<typeof useUIStore> | void,
   options?: { followersOnly?: boolean; followingOnly?: boolean },
 ) {
   const appId = findAppId();
   if (!appId) {
     logger.error("Failed to retrieve Instagram App ID.");
+    store!.showNotification(
+      "Failed to retrieve Instagram App ID. Please make sure you are on a valid profile page.",
+      "error",
+      5000,
+    );
     return false;
   }
   logger.info("Instagram App ID:", appId);
@@ -181,6 +201,11 @@ async function retrieveUserFollowersAndFollowing(
   const csrfToken = exportCSRFToken();
   if (!csrfToken) {
     logger.error("Failed to retrieve CSRF Token.");
+    store!.showNotification(
+      "Failed to retrieve Instagram CSRF Token. Please make sure you are on a valid profile page.",
+      "error",
+      5000,
+    );
     return false;
   }
   logger.info("CSRF Token:", csrfToken);
@@ -188,6 +213,11 @@ async function retrieveUserFollowersAndFollowing(
   const userId = findUserId();
   if (!userId) {
     logger.error("Failed to retrieve Instagram User ID.");
+    store!.showNotification(
+      "Failed to retrieve Instagram User ID. Please make sure you are on a valid profile page.",
+      "error",
+      5000,
+    );
     return false;
   }
   logger.info("Instagram User ID:", userId);
@@ -197,7 +227,14 @@ async function retrieveUserFollowersAndFollowing(
   let followers: User[] = [];
   if (fetchBoth || options?.followersOnly) {
     logger.info("Fetching followers...");
-    const result = await fetchUsers(userId, "followers", appId, csrfToken, logger);
+    const result = await fetchUsers(
+      userId,
+      "followers",
+      appId,
+      csrfToken,
+      logger,
+      store!,
+    );
     if (result === false) {
       return false;
     }
@@ -207,7 +244,14 @@ async function retrieveUserFollowersAndFollowing(
   let following: User[] = [];
   if (fetchBoth || options?.followingOnly) {
     logger.info("Fetching following...");
-    const result = await fetchUsers(userId, "following", appId, csrfToken, logger);
+    const result = await fetchUsers(
+      userId,
+      "following",
+      appId,
+      csrfToken,
+      logger,
+      store!,
+    );
     if (result === false) {
       return false;
     }
@@ -230,10 +274,75 @@ async function retrieveUserFollowersAndFollowing(
     return false;
   }
 
+  chrome.runtime.sendMessage({
+    type: Status.SnapshotComplete,
+    payload: userId,
+  });
+  
+  store!.setLoading(false);
+  store!.showNotification(`Snapshot saved for user @${userId}`, "success", 3000);
+
   return true;
 }
 
+async function saveUserInfo(
+  logger: Logger = new Logger("InstaSnap:Instagram"),
+) {
+  const userId = findUserId();
+  const globalUserMap = await getGlobalUserMap();
+  let retry = 0;
+  if (!(userId in globalUserMap) && userId) {
+    logger.info("Saving user info with UID =", userId);
+    const username = window.location.pathname.split("/").filter(Boolean)[0];
+    let full_name_elems = document.getElementsByClassName(
+      "x1lliihq x1plvlek xryxfnj x1n2onr6 xyejjpt x15dsfln x193iq5w xeuugli x1fj9vlw x13faqbe x1vvkbs x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1i0vuye xvs91rp xo1l8bm x5n08af x10wh9bi xpm28yp x8viiok x1o7cslx",
+    ) as HTMLCollectionOf<HTMLElement>;
+    let full_name_elem;
+    while (retry < 5 && full_name_elems.length === 0) {
+      logger.info("Retrying to get full name element, attempt", retry + 1);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      full_name_elems = document.getElementsByClassName(
+        "x1lliihq x1plvlek xryxfnj x1n2onr6 xyejjpt x15dsfln x193iq5w xeuugli x1fj9vlw x13faqbe x1vvkbs x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1i0vuye xvs91rp xo1l8bm x5n08af x10wh9bi xpm28yp x8viiok x1o7cslx",
+      ) as HTMLCollectionOf<HTMLElement>;
+      retry++;
+    }
+    if (full_name_elems.length > 0) {
+      full_name_elem = full_name_elems[0];
+    } else {
+      logger.error("Failed to retrieve full name element.");
+      return;
+    }
+    const img_elem = document.querySelectorAll(
+      "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
+    ) as NodeListOf<HTMLImageElement>;
+    if (img_elem.length <= 1) {
+      logger.error("Failed to retrieve profile picture URL.");
+      return;
+    }
+
+    if (!full_name_elem) {
+      logger.error("Failed to retrieve full name.");
+      return;
+    }
+
+    const profile_pic_url = img_elem[1].src;
+    const userData = {
+      username,
+      profile_pic_url,
+      full_name: full_name_elem.textContent,
+      last_updated: Date.now(),
+    };
+
+    logger.info("Retrieved user data:", userData);
+    globalUserMap[userId] = userData;
+
+    await chrome.storage.local.set({ users_metadata: globalUserMap });
+    logger.info("Saved user info to storage:", globalUserMap[userId]);
+  }
+}
+
 export {
+  saveUserInfo,
   buildFollowersEndpoint,
   buildFollowingEndpoint,
   buildHeaders,
