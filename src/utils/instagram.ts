@@ -48,7 +48,7 @@ function findAppId(): string {
 
 function findUserId(): string {
   const bodyContent = document.querySelector("body")?.innerHTML;
-  const userId = bodyContent?.match(/"user_id":"(\d+)"/);
+  const userId = bodyContent?.match(/"profile_id":"(\d+)"/);
   return userId ? userId[1] : "";
 }
 
@@ -294,24 +294,37 @@ async function saveUserInfo(
   if (!(userId in globalUserMap) && userId) {
     logger.info("Saving user info with UID =", userId);
     const username = window.location.pathname.split("/").filter(Boolean)[0];
-    let full_name_elems = document.getElementsByClassName(
-      "x1lliihq x1plvlek xryxfnj x1n2onr6 xyejjpt x15dsfln x193iq5w xeuugli x1fj9vlw x13faqbe x1vvkbs x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1i0vuye xvs91rp xo1l8bm x5n08af x10wh9bi xpm28yp x8viiok x1o7cslx",
-    ) as HTMLCollectionOf<HTMLElement>;
-    let full_name_elem;
-    while (retry < 5 && full_name_elems.length === 0) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    let username_xpath = document.evaluate(
+      `//*[text()='${username}']`,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null,
+    );
+    while (retry < 5 && username_xpath.singleNodeValue === null) {
       logger.info("Retrying to get full name element, attempt", retry + 1);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      full_name_elems = document.getElementsByClassName(
-        "x1lliihq x1plvlek xryxfnj x1n2onr6 xyejjpt x15dsfln x193iq5w xeuugli x1fj9vlw x13faqbe x1vvkbs x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1i0vuye xvs91rp xo1l8bm x5n08af x10wh9bi xpm28yp x8viiok x1o7cslx",
-      ) as HTMLCollectionOf<HTMLElement>;
+      username_xpath = document.evaluate(
+        `//*[text()='${username}']`,
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null,
+      );
       retry++;
     }
-    if (full_name_elems.length > 0) {
-      full_name_elem = full_name_elems[0];
-    } else {
-      logger.error("Failed to retrieve full name element.");
+    
+    if (!username_xpath.singleNodeValue) {
+      logger.error("Failed to retrieve username element.");
       return;
     }
+
+    const usernameEl = username_xpath.singleNodeValue as HTMLElement;
+    const firstDiv = usernameEl.closest('div');
+    const secondDiv = firstDiv?.parentElement?.closest('div');
+    const fullname_elem = secondDiv?.nextElementSibling?.querySelector('span');
+    
     const img_elem = document.querySelectorAll(
       "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
     ) as NodeListOf<HTMLImageElement>;
@@ -320,16 +333,18 @@ async function saveUserInfo(
       return;
     }
 
-    if (!full_name_elem) {
-      logger.error("Failed to retrieve full name.");
-      return;
+    let fullname = "Failed to retrieve";
+    if (!fullname_elem) {
+      logger.error("Failed to retrieve full name element.");
+    } else {
+      fullname = fullname_elem.textContent;
     }
 
     const profile_pic_url = img_elem[1].src;
     const userData = {
       username,
       profile_pic_url,
-      full_name: full_name_elem.textContent,
+      full_name: fullname,
       last_updated: Date.now(),
     };
 
