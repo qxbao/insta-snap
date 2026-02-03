@@ -7,7 +7,11 @@ import vue from "@vitejs/plugin-vue";
 export default defineConfig({
   plugins: [
     vue(),
-    tailwindcss(),
+    tailwindcss({
+      optimize: {
+        minify: true,
+      }
+    }),    
     crx({ manifest: manifest satisfies ManifestV3Export }),
   ],
   server: {

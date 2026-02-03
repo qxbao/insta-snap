@@ -4,7 +4,7 @@ export const useUIStore = defineStore('ui', {
   state: () => ({
     isNotifyVisible: false,
     notifyMessage: '',
-    notifyType: 'info',
+    notifyType: '',
     loading: false,
     progress: {
       target: "",

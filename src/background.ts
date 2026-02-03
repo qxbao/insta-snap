@@ -1,5 +1,5 @@
 import { ActionType } from "./constants/actions";
-import { Status } from "./constants/status";
+import { ExtensionMessageResponse, Status } from "./constants/status";
 
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({
@@ -99,12 +99,32 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session" && changes["locks"]) {
     const newLocks = changes["locks"].newValue;
+    if (newLocks === undefined) {
+      chrome.runtime.sendMessage({
+        type: ActionType.SYNC_LOCKS,
+        payload: {
+          
+        },
+      }).catch(() => {
+        // Ignore if no listener in background
+      });
+    } else {
+      chrome.runtime.sendMessage({
+        type: ActionType.SYNC_LOCKS,
+        payload: newLocks,
+      }).catch(() => {
+        // Ignore if no listener in background
+      });
+    }
+
     chrome.tabs.query({}).then((tabs) => {
       for (const tab of tabs) {
         if (tab.id) {
           chrome.tabs.sendMessage(tab.id, {
             type: ActionType.SYNC_LOCKS,
             payload: newLocks,
+          }).catch(() => {
+            // Ignore if content script not loaded
           });
         }
       }
@@ -121,6 +141,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         delete locks[userId];
         chrome.storage.session.set({ locks });
       }
+    }).catch((error) => {
+      console.error("Failed to update locks:", error);
     });
   }
 });

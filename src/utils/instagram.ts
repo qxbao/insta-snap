@@ -1,3 +1,4 @@
+import { ActionType, ExtensionMessage } from "../constants/actions";
 import { ExtensionMessageResponse, Status } from "../constants/status";
 import { useUIStore } from "../stores/ui.store";
 import {
@@ -275,12 +276,16 @@ async function retrieveUserFollowersAndFollowing(
   }
 
   chrome.runtime.sendMessage({
-    type: Status.SnapshotComplete,
+    type: ActionType.NOTIFY_SNAPSHOT_COMPLETE,
     payload: userId,
-  });
-  
+  } satisfies ExtensionMessage);
+
   store!.setLoading(false);
-  store!.showNotification(`Snapshot saved for user @${userId}`, "success", 3000);
+  store!.showNotification(
+    `Snapshot saved for user @${userId}`,
+    "success",
+    3000,
+  );
 
   return true;
 }
@@ -314,17 +319,17 @@ async function saveUserInfo(
       );
       retry++;
     }
-    
+
     if (!username_xpath.singleNodeValue) {
       logger.error("Failed to retrieve username element.");
       return;
     }
 
     const usernameEl = username_xpath.singleNodeValue as HTMLElement;
-    const firstDiv = usernameEl.closest('div');
-    const secondDiv = firstDiv?.parentElement?.closest('div');
-    const fullname_elem = secondDiv?.nextElementSibling?.querySelector('span');
-    
+    const firstDiv = usernameEl.closest("div");
+    const secondDiv = firstDiv?.parentElement?.closest("div");
+    const fullname_elem = secondDiv?.nextElementSibling?.querySelector("span");
+
     const img_elem = document.querySelectorAll(
       "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
     ) as NodeListOf<HTMLImageElement>;
