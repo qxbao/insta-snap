@@ -94,7 +94,6 @@ const formatRelativeTime = (timestamp: number) => {
 
 const totalSnapshots = computed(() => meta.value?.logTimeline.length || 0);
 const checkpointCount = computed(() => meta.value?.checkpoints.length || 0);
-const deltaCount = computed(() => totalSnapshots.value - checkpointCount.value);
 
 const combinedTimeline = computed(() => {
   const timelineMap = new Map<

@@ -63,7 +63,7 @@ function exportCSRFToken(): string {
  * @param appId Instagram App ID
  * @return InstagramAPIHeader Headers object
  * */
-function buildHeaders(appId: string, csrfToken: string): InstagramAPIHeader {
+function buildHeaders(appId: string, csrfToken: string, wwwClaim: string): InstagramAPIHeader {
   const headers: InstagramAPIHeader = {} as InstagramAPIHeader;
 
   // Fixed values
@@ -72,8 +72,8 @@ function buildHeaders(appId: string, csrfToken: string): InstagramAPIHeader {
   headers["sec-fetch-dest"] = "empty";
   headers["sec-fetch-mode"] = "cors";
   headers["sec-fetch-site"] = "same-origin";
+
   // Dynamic values
-  const wwwClaim = sessionStorage.getItem("www-claim-v2") || "";
   headers["x-ig-www-claim"] = wwwClaim;
   headers["x-ig-app-id"] = appId;
   headers["x-csrftoken"] = csrfToken;
@@ -91,11 +91,12 @@ function IGFetch(
   input: URL | RequestInfo,
   appId: string = findAppId(),
   csrfToken: string = exportCSRFToken(),
+  wwwClaim: string,
   init?: RequestInit,
 ): Promise<Response> {
   return fetch(input, {
     headers: {
-      ...buildHeaders(appId, csrfToken),
+      ...buildHeaders(appId, csrfToken, wwwClaim),
     },
     credentials: "include",
     mode: "cors",
@@ -108,26 +109,28 @@ async function fetchUsers(
   type: "followers" | "following",
   appId: string,
   csrfToken: string,
-  logger: Logger,
-  store: ReturnType<typeof useUIStore>,
+  wwwClaim: string,
+  logger?: Logger,
+  store?: ReturnType<typeof useUIStore>,
 ): Promise<User[] | false> {
   const buildEndpoint =
     type === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
   const edgeKey = type === "followers" ? "edge_followed_by" : "edge_follow";
 
-  logger.info(`Fetching ${type} using GraphQL API...`);
+  logger?.info(`Fetching ${type} using GraphQL API...`);
 
   const users: User[] = [];
   let after: string | null = null;
   let hasMore = true;
-  store.setLoading(true);
-  store.setLoadingProgress(0, type);
+  
+  store?.setLoading(true);
+  store?.setLoadingProgress(0, type);
   while (hasMore) {
     const apiEndpoint = buildEndpoint(userId, after);
 
-    const response = await IGFetch(apiEndpoint, appId, csrfToken);
+    const response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim);
     if (!response.ok) {
-      logger.error(
+      logger?.error(
         `Failed to fetch ${type}: ${response.status} ${response.statusText}`,
       );
       return false;
@@ -136,7 +139,7 @@ async function fetchUsers(
     const data = await response.json();
 
     if (!data.data || !data.data.user || !data.data.user[edgeKey]) {
-      logger.error(`Invalid GraphQL response structure for ${type}`);
+      logger?.error(`Invalid GraphQL response structure for ${type}`);
       return false;
     }
 
@@ -155,8 +158,8 @@ async function fetchUsers(
     hasMore = edgeData.page_info?.has_next_page || false;
     after = edgeData.page_info?.end_cursor || null;
 
-    store.setLoadingProgress(users.length, type);
-    logger.info(
+    store?.setLoadingProgress(users.length, type);
+    logger?.info(
       `Fetched ${batchUsers.length} ${type}, total so far: ${users.length}`,
     );
   }
@@ -165,8 +168,8 @@ async function fetchUsers(
 }
 
 async function retrieveUserFollowers(
-  logger: Logger,
-  store: ReturnType<typeof useUIStore> | void,
+  logger?: Logger,
+  store?: ReturnType<typeof useUIStore>,
 ) {
   return retrieveUserFollowersAndFollowing(logger, store, {
     followersOnly: true,
@@ -174,8 +177,8 @@ async function retrieveUserFollowers(
 }
 
 async function retrieveUserFollowing(
-  logger: Logger,
-  store: ReturnType<typeof useUIStore> | void,
+  logger?: Logger,
+  store?: ReturnType<typeof useUIStore>,
 ) {
   return retrieveUserFollowersAndFollowing(logger, store, {
     followingOnly: true,
@@ -183,56 +186,70 @@ async function retrieveUserFollowing(
 }
 
 async function retrieveUserFollowersAndFollowing(
-  logger: Logger,
-  store: ReturnType<typeof useUIStore> | void,
+  logger?: Logger,
+  store?: ReturnType<typeof useUIStore>,
   options?: { followersOnly?: boolean; followingOnly?: boolean },
 ) {
   const appId = findAppId();
   if (!appId) {
-    logger.error("Failed to retrieve Instagram App ID.");
-    store!.showNotification(
+    logger?.error("Failed to retrieve Instagram App ID.");
+    store?.showNotification(
       "Failed to retrieve Instagram App ID. Please make sure you are on a valid profile page.",
       "error",
       5000,
     );
     return false;
   }
-  logger.info("Instagram App ID:", appId);
+  logger?.info("Instagram App ID:", appId);
 
   const csrfToken = exportCSRFToken();
   if (!csrfToken) {
-    logger.error("Failed to retrieve CSRF Token.");
-    store!.showNotification(
+    logger?.error("Failed to retrieve CSRF Token.");
+    store?.showNotification(
       "Failed to retrieve Instagram CSRF Token. Please make sure you are on a valid profile page.",
       "error",
       5000,
     );
     return false;
   }
-  logger.info("CSRF Token:", csrfToken);
+  logger?.info("CSRF Token:", csrfToken);
 
   const userId = findUserId();
+
+  const wwwClaim = sessionStorage.getItem("www-claim-v2") || "";
+
   if (!userId) {
-    logger.error("Failed to retrieve Instagram User ID.");
-    store!.showNotification(
+    logger?.error("Failed to retrieve Instagram User ID.");
+    store?.showNotification(
       "Failed to retrieve Instagram User ID. Please make sure you are on a valid profile page.",
       "error",
       5000,
     );
     return false;
   }
-  logger.info("Instagram User ID:", userId);
+  
+  chrome.runtime.sendMessage({
+    type: ActionType.SEND_APP_DATA,
+    payload: {
+      appId,
+      csrfToken,
+      wwwClaim,
+    },
+  } satisfies ExtensionMessage);
+
+  logger?.info("Instagram User ID:", userId);
 
   const fetchBoth = !options?.followersOnly && !options?.followingOnly;
 
   let followers: User[] = [];
   if (fetchBoth || options?.followersOnly) {
-    logger.info("Fetching followers...");
+    logger?.info("Fetching followers...");
     const result = await fetchUsers(
       userId,
       "followers",
       appId,
       csrfToken,
+      wwwClaim,
       logger,
       store!,
     );
@@ -244,12 +261,13 @@ async function retrieveUserFollowersAndFollowing(
 
   let following: User[] = [];
   if (fetchBoth || options?.followingOnly) {
-    logger.info("Fetching following...");
+    logger?.info("Fetching following...");
     const result = await fetchUsers(
       userId,
       "following",
       appId,
       csrfToken,
+      wwwClaim,
       logger,
       store!,
     );
@@ -262,16 +280,16 @@ async function retrieveUserFollowersAndFollowing(
   try {
     if (fetchBoth) {
       await saveCompleteSnapshot(userId, followers, following, logger);
-      logger.info("Successfully saved complete snapshot");
+      logger?.info("Successfully saved complete snapshot");
     } else if (options?.followersOnly) {
       await saveFollowersSnapshot(userId, followers, logger);
-      logger.info("Successfully saved followers snapshot");
+      logger?.info("Successfully saved followers snapshot");
     } else if (options?.followingOnly) {
       await saveFollowingSnapshot(userId, following, logger);
-      logger.info("Successfully saved following snapshot");
+      logger?.info("Successfully saved following snapshot");
     }
   } catch (error) {
-    logger.error("Failed to save snapshot:", error);
+    logger?.error("Failed to save snapshot:", error);
     return false;
   }
 
@@ -280,8 +298,8 @@ async function retrieveUserFollowersAndFollowing(
     payload: userId,
   } satisfies ExtensionMessage);
 
-  store!.setLoading(false);
-  store!.showNotification(
+  store?.setLoading(false);
+  store?.showNotification(
     `Snapshot saved for user @${userId}`,
     "success",
     3000,
@@ -296,72 +314,89 @@ async function saveUserInfo(
   const userId = findUserId();
   const globalUserMap = await getGlobalUserMap();
   let retry = 0;
-  if (!(userId in globalUserMap) && userId) {
-    logger.info("Saving user info with UID =", userId);
-    const username = window.location.pathname.split("/").filter(Boolean)[0];
+  logger.info("Saving user info with UID =", userId);
+  const username = window.location.pathname.split("/").filter(Boolean)[0];
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  let username_xpath = document.evaluate(
+    `//*[text()='${username}']`,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null,
+  );
+  while (retry < 5 && username_xpath.singleNodeValue === null) {
+    logger.info("Retrying to get full name element, attempt", retry + 1);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    let username_xpath = document.evaluate(
+    username_xpath = document.evaluate(
       `//*[text()='${username}']`,
       document,
       null,
       XPathResult.FIRST_ORDERED_NODE_TYPE,
       null,
     );
-    while (retry < 5 && username_xpath.singleNodeValue === null) {
-      logger.info("Retrying to get full name element, attempt", retry + 1);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      username_xpath = document.evaluate(
-        `//*[text()='${username}']`,
-        document,
-        null,
-        XPathResult.FIRST_ORDERED_NODE_TYPE,
-        null,
-      );
-      retry++;
-    }
-
-    if (!username_xpath.singleNodeValue) {
-      logger.error("Failed to retrieve username element.");
-      return;
-    }
-
-    const usernameEl = username_xpath.singleNodeValue as HTMLElement;
-    const firstDiv = usernameEl.closest("div");
-    const secondDiv = firstDiv?.parentElement?.closest("div");
-    const fullname_elem = secondDiv?.nextElementSibling?.querySelector("span");
-
-    const img_elem = document.querySelectorAll(
-      "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
-    ) as NodeListOf<HTMLImageElement>;
-    if (img_elem.length <= 1) {
-      logger.error("Failed to retrieve profile picture URL.");
-      return;
-    }
-
-    let fullname = "Failed to retrieve";
-    if (!fullname_elem) {
-      logger.error("Failed to retrieve full name element.");
-    } else {
-      fullname = fullname_elem.textContent;
-    }
-
-    const profile_pic_url = img_elem[1].src;
-    const userData = {
-      username,
-      profile_pic_url,
-      full_name: fullname,
-      last_updated: Date.now(),
-    };
-
-    logger.info("Retrieved user data:", userData);
-    globalUserMap[userId] = userData;
-
-    await chrome.storage.local.set({ users_metadata: globalUserMap });
-    logger.info("Saved user info to storage:", globalUserMap[userId]);
+    retry++;
   }
+
+  if (!username_xpath.singleNodeValue) {
+    logger.error("Failed to retrieve username element.");
+    return;
+  }
+
+  const usernameEl = username_xpath.singleNodeValue as HTMLElement;
+  const firstDiv = usernameEl.closest("div");
+  const secondDiv = firstDiv?.parentElement?.closest("div");
+  const fullname_elem = secondDiv?.nextElementSibling?.querySelector("span");
+
+  const img_elem = document.querySelectorAll(
+    "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
+  ) as NodeListOf<HTMLImageElement>;
+  if (img_elem.length <= 1) {
+    logger.error("Failed to retrieve profile picture URL.");
+    return;
+  }
+
+  let fullname = "Failed to retrieve";
+  if (!fullname_elem) {
+    logger.error("Failed to retrieve full name element.");
+  } else {
+    fullname = fullname_elem.textContent;
+  }
+
+  const profile_pic_url = img_elem[1].src;
+  const userData = {
+    username,
+    profile_pic_url,
+    full_name: fullname,
+    last_updated: Date.now(),
+  };
+
+  logger.info("Retrieved user data:", userData);
+  globalUserMap[userId] = userData;
+
+  await chrome.storage.local.set({ users_metadata: globalUserMap });
+  logger.info("Saved user info to storage:", globalUserMap[userId]);
+}
+
+function sendAppDataToBg() {
+  const appId = findAppId();
+  const csrfToken = exportCSRFToken();
+  const wwwClaim = sessionStorage.getItem("www-claim-v2") || "";
+  if (!appId || !csrfToken || !wwwClaim) {
+    return;
+  }
+
+  chrome.runtime.sendMessage({
+    type: ActionType.SEND_APP_DATA,
+    payload: {
+      appId,
+      csrfToken,
+      wwwClaim,
+    },
+  } satisfies ExtensionMessage);
 }
 
 export {
+  sendAppDataToBg,
   saveUserInfo,
   buildFollowersEndpoint,
   buildFollowingEndpoint,
@@ -372,5 +407,6 @@ export {
   retrieveUserFollowersAndFollowing,
   findAppId,
   IGFetch,
+  fetchUsers,
   findUserId,
 };

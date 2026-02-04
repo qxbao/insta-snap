@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useUIStore } from "../stores/ui.store";
-import Fa6SolidCameraRetro from '~icons/fa6-solid/camera-retro'
-import Fa6SolidCheck from '~icons/fa6-solid/check'
-import Fa6SolidXmark from '~icons/fa6-solid/xmark'
-import Fa6SolidCircleInfo from '~icons/fa6-solid/circle-info'
+import Fa6SolidCameraRetro from "~icons/fa6-solid/camera-retro";
+import Fa6SolidCheck from "~icons/fa6-solid/check";
+import Fa6SolidXmark from "~icons/fa6-solid/xmark";
+import Fa6SolidCircleInfo from "~icons/fa6-solid/circle-info";
 
 const ui = useUIStore();
 </script>
@@ -26,22 +26,22 @@ const ui = useUIStore();
           class="flex flex-col items-center justify-center"
         >
           <div
-            class="bg-linear-to-br opacity-90 from-purple-600/80 via-pink-500/80 to-orange-500/80 w-100 text-white flex flex-col items-center p-8 rounded-3xl shadow-lg backdrop-blur-md border-2 border-[#10B981]/30"
+            class="bg-linear-to-br from-purple-600/80 via-pink-500/80 to-orange-500/80 w-100 text-white flex flex-col items-center p-8 rounded-2xl shadow-lg backdrop-blur-lg"
           >
             <h3 class="mb-3 text-2xl font-semibold tracking-tight">
               Taking snapshot
             </h3>
             <div class="mb-3">
-              <Fa6SolidCameraRetro class="w-12 h-12 animate-[shake_0.5s_ease-in-out_infinite]" />
+              <Fa6SolidCameraRetro
+                class="w-12 h-12 animate-[shake_0.5s_ease-in-out_infinite]"
+              />
             </div>
-            <p
-              class="mb-2 text-sm leading-relaxed text-gray-200 "
-            >
+            <p class="mb-2 text-sm leading-relaxed text-gray-200">
               For a while, please don't leave this page
             </p>
             <p
               v-if="ui.progress.target"
-              class="text-[13px] font-semibold text-blue-500 mt-4 pt-4 border-t border-black/8 dark:border-white/8"
+              class="text-[13px] font-semibold text-blue-300 mt-4 pt-4 border-t border-black/8 dark:border-white/8"
             >
               Loaded {{ ui.progress.loaded }} of {{ ui.progress.target }} users
             </p>
@@ -51,11 +51,13 @@ const ui = useUIStore();
     </Transition>
 
     <Transition
+      v-if="ui.notifyMessage"
       enter-active-class="animate-[slideDown_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
       leave-active-class="animate-[slideUp_0.3s_ease-out]"
     >
       <div
-        class="fixed top-6 left-1/2 -translate-x-1/2 pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2),inset_0_0_0_1px_rgba(255,255,255,0.2)] backdrop-blur-xl font-semibold text-[15px] text-white max-w-125 animate-[float_3s_ease-in-out_infinite]"
+        class="fixed top-6 left-1/2 pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2),inset_0_0_0_1px_rgba(255,255,255,0.2)] backdrop-blur-xl font-semibold text-[15px] text-white max-w-125 animate-[float_3s_ease-in-out_infinite]"
+        style="transform: translateX(-50%)"
         :class="{
           'bg-linear-to-r from-emerald-700/95 to-green-800/95':
             ui.notifyType === 'success',
@@ -67,8 +69,14 @@ const ui = useUIStore();
         }"
       >
         <div class="w-6 h-6 shrink-0">
-          <Fa6SolidCheck v-if="ui.notifyType === 'success'" class="w-full h-full" />
-          <Fa6SolidXmark v-else-if="ui.notifyType === 'error'" class="w-full h-full" />
+          <Fa6SolidCheck
+            v-if="ui.notifyType === 'success'"
+            class="w-full h-full"
+          />
+          <Fa6SolidXmark
+            v-else-if="ui.notifyType === 'error'"
+            class="w-full h-full"
+          />
           <Fa6SolidCircleInfo v-else class="w-full h-full" />
         </div>
         <span class="leading-snug">{{ ui.notifyMessage }}</span>

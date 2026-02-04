@@ -9,6 +9,11 @@
     "esModuleInterop": true,
     "outDir": "./dist",
     "skipLibCheck": false,
+    "types": [
+      "unplugin-icons/types/vue",
+      "vite/client",
+      "chrome",
+    ],
   },
   "include": ["src/**/*", "vite.config.ts", "src/vite-env.d.ts"],
   "exclude": ["node_modules", "dist"]

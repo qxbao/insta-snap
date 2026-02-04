@@ -3,6 +3,7 @@ import { ExtensionMessageResponse, Status } from "../constants/status";
 import {
   retrieveUserFollowersAndFollowing,
   saveUserInfo,
+  sendAppDataToBg,
 } from "../utils/instagram";
 import { findUserId } from "../utils/instagram";
 import { createLogger } from "../utils/logger";
@@ -21,7 +22,11 @@ function registerMessages(
 
   switch (message.type) {
     case ActionType.TAKE_SNAPSHOT:
-      retrieveUserFollowersAndFollowing(logger, uiStore);
+      if (uiStore) {
+        retrieveUserFollowersAndFollowing(logger, uiStore);
+      } else {
+        logger.error("UI Store is not initialized.");
+      }
       break;
     case ActionType.GET_USER_INFO:
       const userId = findUserId();
@@ -43,6 +48,7 @@ function registerMessages(
 async function init() {
   await saveUserInfo();
   chrome.runtime.onMessage.addListener(registerMessages);
+  sendAppDataToBg();
 }
 
 init();

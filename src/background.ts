@@ -1,5 +1,12 @@
 import { ActionType } from "./constants/actions";
-import { ExtensionMessageResponse, Status } from "./constants/status";
+import { ExtensionRules } from "./constants/rules";
+import { User } from "./types/instapi";
+import { getJitter } from "./utils/alarms";
+import { fetchUsers } from "./utils/instagram";
+import { createLogger } from "./utils/logger";
+import { saveCompleteSnapshot } from "./utils/storage";
+
+const logger = createLogger("Background");
 
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({
@@ -8,91 +15,9 @@ chrome.action.onClicked.addListener(() => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  const rules = [
-    {
-      id: 1,
-      priority: 1,
-      action: {
-        type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-        responseHeaders: [
-          {
-            header: "cross-origin-resource-policy",
-            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-          },
-          {
-            header: "access-control-allow-origin",
-            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-            value: "*",
-          },
-        ],
-      },
-      condition: {
-        urlFilter: "||cdninstagram.com",
-        resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
-      },
-    },
-    {
-      id: 2,
-      priority: 1,
-      action: {
-        type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-        responseHeaders: [
-          {
-            header: "access-control-allow-origin",
-            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-            value: chrome.runtime.getURL("").slice(0, -1),
-          },
-          {
-            header: "access-control-allow-methods",
-            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-            value: "GET, POST, OPTIONS, PUT, DELETE",
-          },
-          {
-            header: "access-control-allow-headers",
-            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-            value: chrome.runtime.getURL("").slice(0, -1),
-          },
-          {
-            header: "cross-origin-resource-policy",
-            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-          },
-        ],
-      },
-      condition: {
-        urlFilter: "||instagram.com",
-        resourceTypes: [
-          chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
-          chrome.declarativeNetRequest.ResourceType.IMAGE,
-        ],
-      },
-    },
-    {
-      id: 3,
-      priority: 1,
-      action: {
-        type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-        responseHeaders: [
-          {
-            header: "cross-origin-resource-policy",
-            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-          },
-          {
-            header: "access-control-allow-origin",
-            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-            value: "*",
-          },
-        ],
-      },
-      condition: {
-        urlFilter: "||fbcdn.net",
-        resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
-      },
-    },
-  ];
-
   chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [1, 2, 3],
-    addRules: rules,
+    removeRuleIds: ExtensionRules.map((rule) => rule.id),
+    addRules: ExtensionRules,
   });
 });
 
@@ -100,32 +25,30 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session" && changes["locks"]) {
     const newLocks = changes["locks"].newValue;
     if (newLocks === undefined) {
-      chrome.runtime.sendMessage({
-        type: ActionType.SYNC_LOCKS,
-        payload: {
-          
-        },
-      }).catch(() => {
-        // Ignore if no listener in background
-      });
+      chrome.runtime
+        .sendMessage({
+          type: ActionType.SYNC_LOCKS,
+          payload: {},
+        })
+        .catch(() => {});
     } else {
-      chrome.runtime.sendMessage({
-        type: ActionType.SYNC_LOCKS,
-        payload: newLocks,
-      }).catch(() => {
-        // Ignore if no listener in background
-      });
+      chrome.runtime
+        .sendMessage({
+          type: ActionType.SYNC_LOCKS,
+          payload: newLocks,
+        })
+        .catch(() => {});
     }
 
     chrome.tabs.query({}).then((tabs) => {
       for (const tab of tabs) {
         if (tab.id) {
-          chrome.tabs.sendMessage(tab.id, {
-            type: ActionType.SYNC_LOCKS,
-            payload: newLocks,
-          }).catch(() => {
-            // Ignore if content script not loaded
-          });
+          chrome.tabs
+            .sendMessage(tab.id, {
+              type: ActionType.SYNC_LOCKS,
+              payload: newLocks,
+            })
+            .catch(() => {});
         }
       }
     });
@@ -133,16 +56,107 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === Status.SnapshotComplete) {
-    const userId = message.payload;
-    chrome.storage.session.get("locks").then((res) => {
-      const locks = { ...(res.locks || {}) } as Record<string, number>;
-      if (userId in locks) {
-        delete locks[userId];
-        chrome.storage.session.set({ locks });
+  switch (message.type) {
+    case ActionType.NOTIFY_SNAPSHOT_COMPLETE:
+      const userId = message.payload;
+      chrome.storage.session
+        .get("locks")
+        .then((res) => {
+          const locks = { ...(res.locks || {}) } as Record<string, number>;
+          if (userId in locks) {
+            delete locks[userId];
+            chrome.storage.session.set({ locks });
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to update locks:", error);
+        });
+      break;
+    case ActionType.SEND_APP_DATA:
+      const newData: Record<string, any> = {};
+      for (const key in message.payload) {
+        newData[key] = message.payload[key];
       }
-    }).catch((error) => {
-      console.error("Failed to update locks:", error);
-    });
+      chrome.storage.local.set(newData);
+      break;
+    default:
+      return;
+  }
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create(ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS, {
+    periodInMinutes: 1,
+  });
+});
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  logger.info(`Alarm triggered: ${alarm.name}`);
+  if (alarm.name === ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS) {
+    const appId = (await chrome.storage.local.get("appId")).appId as
+      | undefined
+      | string;
+    const csrfToken = (await chrome.storage.local.get("csrfToken"))
+      .csrfToken as undefined | string;
+
+    const wwwClaim = (await chrome.storage.local.get("wwwClaim")).wwwClaim as
+      | undefined
+      | string;
+
+    if (!appId || !csrfToken || !wwwClaim) {
+      logger.error("App data missing, cannot process snapshot subscriptions.", { appData: { appId, csrfToken, wwwClaim } });
+      return;
+    }
+
+    const crons = (await chrome.storage.local.get("crons")).crons as
+      | Record<string, { userId: string; interval: number; lastRun: number }>
+      | undefined;
+
+    if (!crons) {
+      await chrome.storage.local.set({ crons: {} });
+      return;
+    }
+
+    const now = Date.now();
+    for (const userId in crons) {
+      logger.info(`Processing snapshot cron for user: ${userId}`);
+      // TODO: Follower/following only opt
+      const cron = crons[userId];
+      if (now - cron.lastRun * 60 * 60 * 1000 >= cron.interval) {
+        let followers: User[] = [];
+        logger?.info("Fetching followers...");
+        const flwerRes = await fetchUsers(
+          userId,
+          "followers",
+          appId,
+          csrfToken,
+          wwwClaim,
+          logger,
+        );
+        if (flwerRes === false) {
+          return false;
+        }
+        followers = flwerRes;
+
+        let following: User[] = [];
+        logger?.info("Fetching following...");
+        const flwingRes = await fetchUsers(
+          userId,
+          "following",
+          appId,
+          csrfToken,
+          wwwClaim,
+          logger,
+        );
+        if (flwingRes === false) return false;
+
+        following = flwingRes;
+        await saveCompleteSnapshot(userId, followers, following, logger);
+        // TODO: Magic numbers
+        await new Promise((resolve) =>
+          setTimeout(resolve, getJitter(5000, 15000)),
+        );
+      }
+    }
   }
 });
