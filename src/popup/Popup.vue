@@ -34,9 +34,9 @@ onMounted(async () => {
           {
             type: ActionType.GET_USER_INFO,
           } satisfies ExtensionMessage,
-          async (response: { userId: string }) => {
+          async (response: ExtensionMessageResponse<string>) => {
             console.log("User info response:", response);
-            const uid = response?.userId;
+            const uid = response?.payload;
             userId.value = uid || null;
             if (uid) {
               snapshotCount.value = await getUserSnapshotCount(uid);
@@ -53,17 +53,10 @@ onMounted(async () => {
 
 const sendSnapshotSignal = async () => {
   await sharedStore.tryLockUser(userId.value || "");
-  sendMessageToActiveTab(
-    {
-      type: ActionType.TAKE_SNAPSHOT,
-      payload: { username: igUsername.value },
-    } satisfies ExtensionMessage,
-    (response: ExtensionMessageResponse) => {
-      if (response.status === Status.SyncDone) {
-        sharedStore.unlockUser(response.payload);
-      }
-    }
-  );
+  sendMessageToActiveTab({
+    type: ActionType.TAKE_SNAPSHOT,
+    payload: { username: igUsername.value },
+  } satisfies ExtensionMessage);
 };
 
 const openDashboard = () => {
@@ -73,9 +66,9 @@ const openDashboard = () => {
 </script>
 
 <template>
-  <div id="main" class="w-100 p-3">
-    <div class="card mb-3 p-5 text-center">
-      <div class="text-sm flex justify-center gap-1">
+  <div id="main" class="p-3 w-100">
+    <div class="p-5 mb-3 text-center card">
+      <div class="flex justify-center gap-1 text-sm">
         <div>Profile:</div>
         <div
           class="font-bold"
@@ -90,7 +83,7 @@ const openDashboard = () => {
       </div>
       <div id="snapshotBtnContainer" :class="{ 'mb-3': igUsername }">
         <div v-if="!igUsername">
-          <p class="text-xs text-gray-500 mt-2 mb-3">
+          <p class="mt-2 mb-3 text-xs text-gray-500">
             Navigate to an Instagram profile page to use this feature.
           </p>
         </div>
@@ -100,16 +93,20 @@ const openDashboard = () => {
             @click="sendSnapshotSignal"
             :disabled="userId ? userId in sharedStore.activeLocks : false"
           >
-            {{ userId && userId in sharedStore.activeLocks ? "Processing..." : "Take Snapshot" }}
+            {{
+              userId && userId in sharedStore.activeLocks
+                ? "Processing..."
+                : "Take Snapshot"
+            }}
           </button>
         </div>
       </div>
       <div
         id="snapshot-info"
-        class="text-center flex flex-col gap-1 mb-3"
+        class="flex flex-col gap-1 mb-3 text-center"
         v-if="igUsername"
       >
-        <p class="text-sm font-bold text-gray-800 dark:text-gray-300 mb-1">
+        <p class="mb-1 text-sm font-bold text-gray-800 dark:text-gray-300">
           This account has:
         </p>
         <p class="text-xs text-gray-600 dark:text-gray-400">
@@ -140,7 +137,7 @@ const openDashboard = () => {
     </div>
     <hr class="mb-3" />
     <div id="copyright">
-      <p class="text-center text-xs text-gray-500">
+      <p class="text-xs text-center text-gray-500">
         &copy; {{ new Date().getFullYear() }} InstaSnap. All rights reserved.
       </p>
     </div>

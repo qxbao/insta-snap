@@ -1,4 +1,5 @@
 import { ActionType, ExtensionMessage } from "../constants/actions";
+import { ExtensionMessageResponse, Status } from "../constants/status";
 import {
   retrieveUserFollowersAndFollowing,
   saveUserInfo,
@@ -25,12 +26,15 @@ function registerMessages(
     case ActionType.GET_USER_INFO:
       const userId = findUserId();
       logger.info("Retrieved User ID:", userId);
-      sendResponse({ userId });
-      return true;
+      sendResponse({
+        status: Status.Done,
+        payload: userId,
+      } satisfies ExtensionMessageResponse);
+      break;
     case ActionType.SYNC_LOCKS:
       Object.assign(locks, message.payload || {});
       logger.info("Synchronized locks:", locks);
-      return true;
+      break;
     default:
       return false;
   }

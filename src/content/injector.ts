@@ -29,6 +29,11 @@ export function setupVueApp(): ReturnType<typeof useUIStore> | void {
   const app = createApp(ContentMasterLayer);
   const pinia = createPinia();
   
+  let atProperties = tailwindStyles.slice(tailwindStyles.indexOf('@property'))
+  let style = document.createElement('style')
+  style.innerText = atProperties
+  document.head.appendChild(style)
+
   app.use(pinia);
   app.mount(root);
   
