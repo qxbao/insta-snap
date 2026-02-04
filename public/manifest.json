@@ -25,7 +25,7 @@
   "content_scripts": [
     {
       "js": ["src/content/content.ts"],
-      "matches": ["https://www.instagram.com/*"]
+      "matches": ["https://www.instagram.com/*", "https://*.instagram.com/*/"]
     }
   ],
   "permissions": [
