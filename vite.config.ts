@@ -17,7 +17,10 @@ export default defineConfig({
       port: 5173,
     },
     cors: {
-      origin: ["chrome-extension://lkhdgfhpbplamljkpcpiblkjpdfjfhaa"],
+      origin: [
+        "chrome-extension://lkhdgfhpbplamljkpcpiblkjpdfjfhaa",
+        "chrome-extension://bcgiblflplhlnhndbbbdgplpcedimbkd",
+      ],
     },
   },
   build: {

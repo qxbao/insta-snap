@@ -8,8 +8,8 @@
     "noImplicitAny": true,
     "esModuleInterop": true,
     "outDir": "./dist",
-    "skipLibCheck": false
+    "skipLibCheck": false,
   },
-  "include": ["src/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "vite.config.ts", "src/vite-env.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
