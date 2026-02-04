@@ -354,7 +354,7 @@ async function saveUserInfo(
     if (script.textContent?.includes("profile_pic_url")) {
       const match = script.textContent.match(/"profile_pic_url":"([^"]+)"/);
       if (match) {
-        profile_pic_url = match[1].replace(/\\u0026/g, "&");
+        profile_pic_url = match[1].replace(/\\u0026/g, "&").replace(/\\/g, "");
         break; 
       }
     }
