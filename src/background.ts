@@ -86,7 +86,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS, {
-    periodInMinutes: 1,
+    periodInMinutes: 30,
   });
 });
 
@@ -156,7 +156,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         await new Promise((resolve) =>
           setTimeout(resolve, getJitter(5000, 15000)),
         );
+        crons[userId].lastRun = now;
       }
     }
+    await chrome.storage.local.set({ crons });
   }
 });
