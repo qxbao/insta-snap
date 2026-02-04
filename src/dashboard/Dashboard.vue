@@ -2,6 +2,9 @@
 import { ref, onMounted } from "vue";
 import { getAllTrackedUsers } from "../utils/storage";
 import UserDetails from "./UserDetails.vue";
+import Fa6SolidArrowUpRightFromSquare from '~icons/fa6-solid/arrow-up-right-from-square'
+import Fa6SolidRotateLeft from '~icons/fa6-solid/rotate-left'
+import Fa6SolidEye from '~icons/fa6-solid/eye'
 
 interface TrackedUser {
   userId: string;
@@ -89,7 +92,7 @@ const backToDashboard = () => {
   />
 
   <!-- Dashboard View -->
-  <div v-else id="main" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div v-else id="main" class="min-h-screen">
     <!-- Header -->
     <header class="card mb-0 rounded-none">
       <div class="max-w-7xl mx-auto py-6">
@@ -104,37 +107,23 @@ const backToDashboard = () => {
           </div>
           <button
             @click="refreshData"
-            class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors duration-200 flex items-center gap-2"
+            class="flex justify-center gap-1 px-4 py-2 bg-emerald-600 rounded-lg hover:bg-emerald-600 transition-colors duration-200 font-semibold items-center cursor-pointer text-gray-900"
             :disabled="loading"
           >
-            <svg
-              class="w-5 h-5"
-              :class="{ 'animate-spin': loading }"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Refresh
+            <Fa6SolidRotateLeft :class="{ 'animate-spin': loading }" />
+            <span>
+              {{ loading ? "Refreshing..." : "Refresh" }}
+            </span>
           </button>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Loading State -->
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
       </div>
 
-      <!-- Error State -->
       <div
         v-else-if="error"
         class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
@@ -142,7 +131,6 @@ const backToDashboard = () => {
         <p class="text-red-800 dark:text-red-200">{{ error }}</p>
       </div>
 
-      <!-- Empty State -->
       <div v-else-if="trackedUsers.length === 0" class="card text-center py-12">
         <svg
           class="mx-auto h-12 w-12 text-gray-400"
@@ -210,16 +198,17 @@ const backToDashboard = () => {
 
           <div class="mt-4 flex gap-2">
             <button
-              @click="openInstagramProfile(user.username)"
-              class="flex-1 px-4 py-2 bg-emerald-600 cursor-pointer hover:brightness-95 active:scale-95 rounded-xl duration-200 text-sm font-medium text-black"
+              @click="showUserDetails(user.userId)"
+              class="flex justify-center gap-1 px-4 py-2 rounded-xl bg-emerald-600 text-gray-900 font-semibold flex-1 transition-colors duration-200 text-sm cursor-pointer"
             >
-              Open in Instagram
+              <Fa6SolidEye />
+              View Details
             </button>
             <button
-              @click="showUserDetails(user.userId)"
-              class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 text-sm cursor-pointer font-medium"
+              @click="openInstagramProfile(user.username)"
+              class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer hover:brightness-95 active:scale-95 duration-200 text-sm font-medium"
             >
-              Details
+              <Fa6SolidArrowUpRightFromSquare />
             </button>
           </div>
         </div>

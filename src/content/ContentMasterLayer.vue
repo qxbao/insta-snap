@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { useUIStore } from "../stores/ui.store";
+import Fa6SolidCameraRetro from '~icons/fa6-solid/camera-retro'
+import Fa6SolidCheck from '~icons/fa6-solid/check'
+import Fa6SolidXmark from '~icons/fa6-solid/xmark'
+import Fa6SolidCircleInfo from '~icons/fa6-solid/circle-info'
+
 const ui = useUIStore();
 </script>
 
@@ -21,13 +26,16 @@ const ui = useUIStore();
           class="flex flex-col items-center justify-center"
         >
           <div
-            class="bg-emerald-900/70 w-100 text-white flex flex-col items-center p-8 rounded-3xl shadow-lg backdrop-blur-md border-2 border-[#10B981]/30"
+            class="bg-linear-to-br opacity-90 from-purple-600/80 via-pink-500/80 to-orange-500/80 w-100 text-white flex flex-col items-center p-8 rounded-3xl shadow-lg backdrop-blur-md border-2 border-[#10B981]/30"
           >
-            <h3 class="mb-3 text-2xl font-bold tracking-tight">
-              Taking snapshot...
+            <h3 class="mb-3 text-2xl font-semibold tracking-tight">
+              Taking snapshot
             </h3>
+            <div class="mb-3">
+              <Fa6SolidCameraRetro class="w-12 h-12 animate-[shake_0.5s_ease-in-out_infinite]" />
+            </div>
             <p
-              class="mb-2 text-sm leading-relaxed text-gray-400 dark:text-gray-400"
+              class="mb-2 text-sm leading-relaxed text-gray-200 "
             >
               For a while, please don't leave this page
             </p>
@@ -43,7 +51,6 @@ const ui = useUIStore();
     </Transition>
 
     <Transition
-      v-if="ui.isNotifyVisible"
       enter-active-class="animate-[slideDown_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
       leave-active-class="animate-[slideUp_0.3s_ease-out]"
     >
@@ -60,85 +67,12 @@ const ui = useUIStore();
         }"
       >
         <div class="w-6 h-6 shrink-0">
-          <svg
-            v-if="ui.notifyType === 'success'"
-            class="w-full h-full"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            ></path>
-          </svg>
-          <svg
-            v-else-if="ui.notifyType === 'error'"
-            class="w-full h-full"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
-          </svg>
-          <svg
-            v-else
-            class="w-full h-full"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
+          <Fa6SolidCheck v-if="ui.notifyType === 'success'" class="w-full h-full" />
+          <Fa6SolidXmark v-else-if="ui.notifyType === 'error'" class="w-full h-full" />
+          <Fa6SolidCircleInfo v-else class="w-full h-full" />
         </div>
         <span class="leading-snug">{{ ui.notifyMessage }}</span>
       </div>
     </Transition>
   </div>
 </template>
-
-<style scoped>
-@keyframes float {
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(-4px);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-}
-</style>

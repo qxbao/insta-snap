@@ -9,6 +9,7 @@ import {
 import { useSharedStore } from "../stores/shared.store";
 import { ExtensionMessageResponse, Status } from "../constants/status";
 
+import Fa6SolidChartSimple from '~icons/fa6-solid/chart-simple'
 const igUsername = ref<string | null>(null);
 const snapshotCount = ref<number>(0);
 const lastSnapshotTime = ref<number | null>(null);
@@ -126,12 +127,13 @@ const openDashboard = () => {
           </span>
         </p>
       </div>
-      <div>
+      <div class="flex justify-center">
         <button
           @click="openDashboard"
-          class="mt-2 px-4 py-2 bg-gray-200 text-gray-800 cursor-pointer font-semibold text-sm rounded-xl hover:bg-gray-300 active:scale-[0.95] transition-all duration-300"
+          class="flex justify-center gap-2 mt-2 px-4 py-2 bg-gray-200 text-gray-800 cursor-pointer font-semibold text-sm rounded-xl hover:bg-gray-300 active:scale-[0.95] transition-all duration-300"
         >
-          Go to Dashboard
+          <Fa6SolidChartSimple/>
+          Open Dashboard
         </button>
       </div>
     </div>
