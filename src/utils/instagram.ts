@@ -357,7 +357,7 @@ async function saveUserInfo(
   ) as NodeListOf<HTMLImageElement>;
 
   if (img_elems.length <= 1) {
-    logger.error("Failed to retrieve profile picture URL.");
+    logger.error("Failed to retrieve profile picture URL using first method, trying alternative.");
     img_elem = document.querySelector(
       "img.xz74otr.x15mokao.x1ga7v0g.x16uus16.xbiv7yw.x972fbf.x10w94by",
     ) as HTMLImageElement;
