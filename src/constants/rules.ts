@@ -57,9 +57,34 @@ export const ExtensionRules: chrome.declarativeNetRequest.Rule[] = [
       ],
     },
     condition: {
-      urlFilter: "*",
-      domains: ["cdninstagram.com", "fbcdn.net"],
+      initiatorDomains: [chrome.runtime.id],
+      urlFilter: "||cdninstagram.com",
       resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
     },
   },
+  {
+    id: 3,
+    priority: 2,
+    action: {
+      type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+      responseHeaders: [
+        {
+          header: "cross-origin-resource-policy",
+          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          value: "cross-origin",
+        },
+        {
+          header: "access-control-allow-origin",
+          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          value: "*",
+        },
+      ],
+    },
+    condition: {
+      initiatorDomains: [chrome.runtime.id],
+      urlFilter: "||fbcdn.net",
+      resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
+    },
+  },
+  
 ];
