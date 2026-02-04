@@ -346,13 +346,18 @@ async function saveUserInfo(
   const firstDiv = usernameEl.closest("div");
   const secondDiv = firstDiv?.parentElement?.closest("div");
   const fullname_elem = secondDiv?.nextElementSibling?.querySelector("span");
+  
+  const scripts = document.querySelectorAll('script');
+  let profile_pic_url = "";
 
-  const img_elem = document.querySelectorAll(
-    "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
-  ) as NodeListOf<HTMLImageElement>;
-  if (img_elem.length <= 1) {
-    logger.error("Failed to retrieve profile picture URL.");
-    return;
+  for (const script of scripts) {
+    if (script.textContent?.includes("profile_pic_url")) {
+      const match = script.textContent.match(/"profile_pic_url":"([^"]+)"/);
+      if (match) {
+        profile_pic_url = match[1].replace(/\\u0026/g, "&");
+        break; 
+      }
+    }
   }
 
   let fullname = "Failed to retrieve";
@@ -362,7 +367,6 @@ async function saveUserInfo(
     fullname = fullname_elem.textContent;
   }
 
-  const profile_pic_url = img_elem[1].src;
   const userData = {
     username,
     profile_pic_url,
