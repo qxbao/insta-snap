@@ -63,7 +63,11 @@ function exportCSRFToken(): string {
  * @param appId Instagram App ID
  * @return InstagramAPIHeader Headers object
  * */
-function buildHeaders(appId: string, csrfToken: string, wwwClaim: string): InstagramAPIHeader {
+function buildHeaders(
+  appId: string,
+  csrfToken: string,
+  wwwClaim: string,
+): InstagramAPIHeader {
   const headers: InstagramAPIHeader = {} as InstagramAPIHeader;
 
   // Fixed values
@@ -122,7 +126,7 @@ async function fetchUsers(
   const users: User[] = [];
   let after: string | null = null;
   let hasMore = true;
-  
+
   store?.setLoading(true);
   store?.setLoadingProgress(0, type);
   while (hasMore) {
@@ -227,7 +231,7 @@ async function retrieveUserFollowersAndFollowing(
     );
     return false;
   }
-  
+
   chrome.runtime.sendMessage({
     type: ActionType.SEND_APP_DATA,
     payload: {
@@ -347,12 +351,21 @@ async function saveUserInfo(
   const secondDiv = firstDiv?.parentElement?.closest("div");
   const fullname_elem = secondDiv?.nextElementSibling?.querySelector("span");
 
-  const img_elem = document.querySelectorAll(
+  let img_elem: HTMLImageElement | null = null;
+  let img_elems = document.querySelectorAll(
     "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
   ) as NodeListOf<HTMLImageElement>;
-  if (img_elem.length <= 1) {
+
+  if (img_elems.length <= 1) {
     logger.error("Failed to retrieve profile picture URL.");
-    return;
+    img_elem = document.querySelector(
+      "img.xz74otr.x15mokao.x1ga7v0g.x16uus16.xbiv7yw.x972fbf.x10w94by",
+    ) as HTMLImageElement;
+
+    if (!img_elem) {
+      logger.error("Failed to retrieve profile picture element.");
+      return;
+    }
   }
 
   let fullname = "Failed to retrieve";
@@ -362,7 +375,7 @@ async function saveUserInfo(
     fullname = fullname_elem.textContent;
   }
 
-  const profile_pic_url = img_elem[1].src;
+  const profile_pic_url = img_elem ? img_elem.src : img_elems[1].src;
   const userData = {
     username,
     profile_pic_url,
