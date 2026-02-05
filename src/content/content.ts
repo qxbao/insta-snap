@@ -19,23 +19,26 @@ function registerMessages(
   sendResponse: (response: any) => void,
 ): boolean | void {
   logger.debug("Received message:", message);
+  const username = window.location.pathname.split("/").filter(Boolean)[0];
 
   switch (message.type) {
     case ActionType.TAKE_SNAPSHOT:
       if (uiStore) {
-        retrieveUserFollowersAndFollowing(logger, uiStore);
+        retrieveUserFollowersAndFollowing(username, logger, uiStore);
       } else {
         logger.error("UI Store is not initialized.");
       }
       break;
     case ActionType.GET_USER_INFO:
-      const userId = findUserId();
-      logger.info("Retrieved User ID:", userId);
-      sendResponse({
-        status: Status.Done,
-        payload: userId,
-      } satisfies ExtensionMessageResponse);
-      break;
+      (async function(){
+        const userId = await findUserId(username);
+        logger.info("Retrieved User ID:", userId);
+        sendResponse({
+          status: Status.Done,
+          payload: userId,
+        } satisfies ExtensionMessageResponse);
+      })();
+      return true;
     case ActionType.SYNC_LOCKS:
       Object.assign(locks, message.payload || {});
       logger.info("Synchronized locks:", locks);
@@ -46,7 +49,8 @@ function registerMessages(
 }
 
 async function init() {
-  await saveUserInfo();
+  const username = window.location.pathname.split("/").filter(Boolean)[0];
+  await saveUserInfo(username, logger);
   chrome.runtime.onMessage.addListener(registerMessages);
   sendAppDataToBg();
 }

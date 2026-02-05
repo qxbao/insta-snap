@@ -9,6 +9,10 @@ import {
   getFollowingHistory,
 } from "../utils/storage";
 import type { UserSnapshotMeta } from "../types/storage";
+import UserDetailsHeader from "./components/UserDetailsHeader.vue";
+import UserStatsGrid from "./components/UserStatsGrid.vue";
+import SnapshotTimeline from "./components/SnapshotTimeline.vue";
+import HistoryList from "./components/HistoryList.vue";
 
 interface Props {
   userId: string;
@@ -74,26 +78,17 @@ const loadData = async () => {
   }
 };
 
-const formatDate = (timestamp: number) => {
-  return new Date(timestamp).toLocaleString();
-};
-
-const formatRelativeTime = (timestamp: number) => {
-  const now = Date.now();
-  const diff = now - timestamp;
-
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-};
-
 const totalSnapshots = computed(() => meta.value?.logTimeline.length || 0);
 const checkpointCount = computed(() => meta.value?.checkpoints.length || 0);
+
+const openInstagramProfile = () => {
+  if (userInfo.value) {
+    window.open(
+      `https://www.instagram.com/${userInfo.value.username}`,
+      "_blank",
+    );
+  }
+};
 
 const combinedTimeline = computed(() => {
   const timelineMap = new Map<
@@ -152,15 +147,6 @@ const combinedTimeline = computed(() => {
     (a, b) => b.timestamp - a.timestamp,
   );
 });
-
-const openInstagramProfile = () => {
-  if (userInfo.value) {
-    window.open(
-      `https://www.instagram.com/${userInfo.value.username}`,
-      "_blank",
-    );
-  }
-};
 </script>
 
 <template>
@@ -205,71 +191,19 @@ const openInstagramProfile = () => {
       </div>
 
       <div v-else-if="userInfo && meta">
-        <div class="card mb-6">
-          <div class="flex items-center gap-6">
-            <img
-              :src="userInfo.profile_pic_url"
-              :alt="userInfo.username"
-              referrerpolicy="no-referrer"
-              class="w-24 h-24 rounded-full object-cover border-2 border-emerald-500"
-            />
-            <div class="flex-1">
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ userInfo.full_name || userInfo.username }}
-              </h2>
-              <p class="text-gray-600 dark:text-gray-400">
-                @{{ userInfo.username }}
-              </p>
-              <button
-                @click="openInstagramProfile"
-                class="mt-2 text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
-              >
-                View on Instagram →
-              </button>
-            </div>
-            <div class="text-right">
-              <p class="text-sm text-gray-600 dark:text-gray-400">User ID</p>
-              <p class="text-lg font-mono text-gray-900 dark:text-white">
-                {{ userId }}
-              </p>
-            </div>
-          </div>
-        </div>
+        <UserDetailsHeader
+          :user-info="userInfo"
+          :user-id="userId"
+          @open-profile="openInstagramProfile"
+        />
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="card text-center">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              Total Snapshots
-            </p>
-            <p
-              class="text-3xl font-bold text-emerald-600 dark:text-emerald-400"
-            >
-              {{ totalSnapshots }}
-            </p>
-          </div>
-          <div class="card text-center">
-            <p class="text-sm text-gray-600 dark:text-gray-400">Checkpoints</p>
-            <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {{ checkpointCount }}
-            </p>
-          </div>
-          <div class="card text-center">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              Current Followers
-            </p>
-            <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-              {{ currentFollowers.length }}
-            </p>
-          </div>
-          <div class="card text-center">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              Current Following
-            </p>
-            <p class="text-3xl font-bold text-pink-600 dark:text-pink-400">
-              {{ currentFollowing.length }}
-            </p>
-          </div>
-        </div>
+        <UserStatsGrid
+          :total-snapshots="totalSnapshots"
+          :checkpoint-count="checkpointCount"
+          :current-followers-count="currentFollowers.length"
+          :current-following-count="currentFollowing.length"
+        />
+
         <div class="card mb-6">
           <div
             class="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-4"
@@ -310,176 +244,25 @@ const openInstagramProfile = () => {
           </div>
 
           <div class="mt-6">
-            <div v-if="activeTab === 'overview'">
-              <h3
-                class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-              >
-                Snapshot Timeline
-              </h3>
-              <div class="space-y-2">
-                <div
-                  v-for="entry in combinedTimeline"
-                  :key="entry.timestamp"
-                  class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div class="flex items-center gap-4">
-                    <div
-                      :class="[
-                        'w-3 h-3 rounded-full',
-                        entry.isCheckpoint ? 'bg-blue-500' : 'bg-gray-400',
-                      ]"
-                    ></div>
-                    <div>
-                      <p class="font-medium text-gray-900 dark:text-white">
-                        {{ entry.isCheckpoint ? "Checkpoint" : "Delta" }}
-                      </p>
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ formatDate(entry.timestamp) }}
-                        <span class="text-gray-500">
-                          ({{ formatRelativeTime(entry.timestamp) }})
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <p
-                      v-if="entry.isCheckpoint"
-                      class="text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      Total:
-                      <span class="font-semibold">{{
-                        entry.followers.totalCount || 0
-                      }}</span>
-                      /
-                      <span class="font-semibold">{{
-                        entry.following.totalCount || 0
-                      }}</span>
-                    </p>
-                    <p v-else class="text-sm">
-                      <span class="text-green-600 dark:text-green-400"
-                        >+{{ entry.followers.addedCount }}</span
-                      >
-                      <span class="text-red-600 dark:text-red-400"
-                        >-{{ entry.followers.removedCount }}</span
-                      >
-                      /
-                      <span class="text-green-600 dark:text-green-400"
-                        >+{{ entry.following.addedCount }}</span
-                      >
-                      <span class="text-red-600 dark:text-red-400"
-                        >-{{ entry.following.removedCount }}</span
-                      >
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SnapshotTimeline
+              v-if="activeTab === 'overview'"
+              :entries="combinedTimeline"
+              :user-id="userId"
+            />
 
-            <div v-else-if="activeTab === 'followers'">
-              <h3
-                class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-              >
-                Followers Changes Over Time
-              </h3>
-              <div class="space-y-2">
-                <div
-                  v-for="entry in history.followers"
-                  :key="entry.timestamp"
-                  class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div class="flex items-center gap-4">
-                    <div
-                      :class="[
-                        'w-3 h-3 rounded-full',
-                        entry.isCheckpoint ? 'bg-blue-500' : 'bg-gray-400',
-                      ]"
-                    ></div>
-                    <div>
-                      <p class="font-medium text-gray-900 dark:text-white">
-                        {{ entry.isCheckpoint ? "Checkpoint" : "Delta" }}
-                      </p>
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ formatDate(entry.timestamp) }}
-                        <span class="text-gray-500">
-                          ({{ formatRelativeTime(entry.timestamp) }})
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <p
-                      v-if="entry.isCheckpoint"
-                      class="text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      Total:
-                      <span class="font-semibold">{{ entry.totalCount }}</span>
-                    </p>
-                    <p v-else class="text-sm">
-                      <span class="text-green-600 dark:text-green-400"
-                        >+{{ entry.addedCount }}</span
-                      >
-                      /
-                      <span class="text-red-600 dark:text-red-400"
-                        >-{{ entry.removedCount }}</span
-                      >
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <HistoryList
+              v-else-if="activeTab === 'followers'"
+              :entries="history.followers"
+              type="followers"
+              :user-id="userId"
+            />
 
-            <div v-else-if="activeTab === 'following'">
-              <h3
-                class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-              >
-                Following Changes Over Time
-              </h3>
-              <div class="space-y-2">
-                <div
-                  v-for="entry in history.following"
-                  :key="entry.timestamp"
-                  class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div class="flex items-center gap-4">
-                    <div
-                      :class="[
-                        'w-3 h-3 rounded-full',
-                        entry.isCheckpoint ? 'bg-blue-500' : 'bg-gray-400',
-                      ]"
-                    ></div>
-                    <div>
-                      <p class="font-medium text-gray-900 dark:text-white">
-                        {{ entry.isCheckpoint ? "Checkpoint" : "Delta" }}
-                      </p>
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ formatDate(entry.timestamp) }}
-                        <span class="text-gray-500">
-                          ({{ formatRelativeTime(entry.timestamp) }})
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <p
-                      v-if="entry.isCheckpoint"
-                      class="text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      Total:
-                      <span class="font-semibold">{{ entry.totalCount }}</span>
-                    </p>
-                    <p v-else class="text-sm">
-                      <span class="text-green-600 dark:text-green-400"
-                        >+{{ entry.addedCount }}</span
-                      >
-                      /
-                      <span class="text-red-600 dark:text-red-400"
-                        >-{{ entry.removedCount }}</span
-                      >
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <HistoryList
+              v-else-if="activeTab === 'following'"
+              :entries="history.following"
+              type="following"
+              :user-id="userId"
+            />
           </div>
         </div>
       </div>

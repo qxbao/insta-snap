@@ -1,9 +1,20 @@
 import { defineStore } from "pinia";
+import { getAllTrackedUsers, deleteUserData } from "../utils/storage";
 
-interface SnapshotCron {
+export interface SnapshotCron {
   userId: string;
   interval: number;
   lastRun: number;
+}
+
+export interface TrackedUser {
+  userId: string;
+  username: string;
+  full_name: string;
+  profile_pic_url: string;
+  snapshotCount: number;
+  lastSnapshot: number | null;
+  last_updated: number;
 }
 
 interface AppState {
@@ -11,6 +22,8 @@ interface AppState {
   locksLoaded: boolean;
   snapshotCrons: Record<string, SnapshotCron>;
   scLoaded: boolean;
+  trackedUsers: TrackedUser[];
+  trackedUsersLoaded: boolean;
 }
 
 const LOCK_TIMEOUT = 10 * 60 * 1000; // 10m
@@ -21,6 +34,8 @@ export const useAppStore = defineStore("app", {
     snapshotCrons: {},
     locksLoaded: false,
     scLoaded: false,
+    trackedUsers: [],
+    trackedUsersLoaded: false,
   }),
   actions: {
     async loadLocks() {
@@ -89,6 +104,25 @@ export const useAppStore = defineStore("app", {
       if (!this.scLoaded) await this.loadSnapshotCrons();
       delete this.snapshotCrons[userId];
       await chrome.storage.local.set({ crons: this.snapshotCrons });
+    },
+
+    async loadTrackedUsers() {
+      try {
+        this.trackedUsers = await getAllTrackedUsers();
+        this.trackedUsersLoaded = true;
+      } catch (error) {
+        console.error("Failed to load tracked users:", error);
+        throw error;
+      }
+    },
+
+    async refreshTrackedUsers() {
+      await this.loadTrackedUsers();
+    },
+
+    async deleteTrackedUser(userId: string) {
+      await deleteUserData(userId);
+      this.trackedUsers = this.trackedUsers.filter(user => user.userId !== userId);
     },
   },
 });
