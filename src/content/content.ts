@@ -13,9 +13,14 @@ const logger = createLogger("ContentScript");
 const locks = {} as Record<string, number>;
 const uiStore = setupVueApp();
 
+let userdataCache: null | {
+  userId: string;
+  username: string;
+} = null;
+
 function registerMessages(
   message: ExtensionMessage,
-  sender: chrome.runtime.MessageSender,
+  _sender: chrome.runtime.MessageSender,
   sendResponse: (response: any) => void,
 ): boolean | void {
   logger.debug("Received message:", message);
@@ -30,13 +35,26 @@ function registerMessages(
       }
       break;
     case ActionType.GET_USER_INFO:
-      (async function(){
-        const userId = await findUserId(username);
-        logger.info("Retrieved User ID:", userId);
-        sendResponse({
-          status: Status.Done,
-          payload: userId,
-        } satisfies ExtensionMessageResponse);
+      (async function () {
+        if (userdataCache && userdataCache.username === message.payload) {
+          sendResponse({
+            status: Status.Done,
+            payload: userdataCache.userId,
+          } satisfies ExtensionMessageResponse);
+        } else {
+          const userId = await findUserId(username);
+          if (!userId) {
+            logger.error("Failed to find user ID for username:", username);
+            return;
+          }
+          userdataCache = { userId, username };
+          logger.info("Retrieved User ID:", userId);
+
+          sendResponse({
+            status: Status.Done,
+            payload: userId,
+          } satisfies ExtensionMessageResponse);
+        }
       })();
       return true;
     case ActionType.SYNC_LOCKS:

@@ -8,8 +8,10 @@ import {
 } from "../utils/storage";
 import { useAppStore } from "../stores/app.store";
 import { ExtensionMessageResponse, Status } from "../constants/status";
-
 import Fa6SolidChartSimple from "~icons/fa6-solid/chart-simple";
+import Fa6SolidCamera from "~icons/fa6-solid/camera";
+import Fa6SolidSpinner from '~icons/fa6-solid/spinner'
+
 const igUsername = ref<string | null>(null);
 const snapshotCount = ref<number>(0);
 const lastSnapshotTime = ref<number | null>(null);
@@ -53,6 +55,7 @@ onMounted(async () => {
 				sendMessageToActiveTab(
 					{
 						type: ActionType.GET_USER_INFO,
+						payload: igUsername.value,
 					} satisfies ExtensionMessage,
 					async (response: ExtensionMessageResponse<string>) => {
 						console.log("User info response:", response);
@@ -134,18 +137,20 @@ const updateCronInterval = async () => {
 						Navigate to an Instagram profile page to use this feature.
 					</p>
 				</div>
-				<div v-else>
+				<div class="flex justify-center" v-else>
 					<button
-						class="mt-3 px-8 py-2 bg-emerald-500 text-black cursor-pointer font-semibold text-lg rounded hover:brightness-110 active:scale-[0.95] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+						class="flex justify-center items-center gap-2 mt-3 px-8 py-2 bg-emerald-500 text-black cursor-pointer font-semibold text-lg rounded hover:brightness-110 active:scale-[0.95] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
 						@click="sendSnapshotSignal"
 						:disabled="userId ? userId in appStore.activeLocks : true"
 					>
+						<Fa6SolidCamera v-if="userId || (userId && userId in appStore.activeLocks)"/>
+						<Fa6SolidSpinner v-else class="animate-spin"/>
 						{{
 							userId && userId in appStore.activeLocks
-								? "Processing..."
+								? "Processing"
 								: userId
 									? "Take Snapshot"
-									: "Loading uid..."
+									: "Syncing"
 						}}
 					</button>
 				</div>
