@@ -56,7 +56,7 @@ Then, follow the steps below:
    If you don't have `pnpm` installed, you can enable it via corepack:
 
    ```bash
-    corepack enable
+    corepack enable pnpm
    ```
 
 4. Build the extension:
