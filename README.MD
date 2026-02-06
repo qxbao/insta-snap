@@ -74,7 +74,7 @@ See the [Releases](https://github.com/qxbao/insta-snap/releases)
 See the [Contributing Guide](CONTRIBUTING.md)
 
 ## About
-[GPLv3 License]([License])
+[GPLv3 License][License]
 
 Free. Open-source. For users by users. Any donations are appreciated!
 
