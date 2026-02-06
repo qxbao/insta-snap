@@ -156,7 +156,7 @@ const combinedTimeline = computed(() => {
         <div class="flex items-center gap-4">
           <button
             @click="emit('back')"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            class="p-2 rounded-lg cursor-pointer hover:brightness-90 duration-300"
           >
             <svg
               class="w-6 h-6"
@@ -206,15 +206,14 @@ const combinedTimeline = computed(() => {
 
         <div class="card mb-6">
           <div
-            class="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-4"
+            class="flex gap-2 [&_button]:font-semibold [&_button]:hover:brightness-90 [&_button]:duration-300 [&_button]:hover:duration [&_button]:px-4 [&_button]:py-2 [&_button]:rounded-lg  [&_button]:cursor-pointer"
           >
             <button
               @click="activeTab = 'overview'"
               :class="[
-                'px-4 py-2 rounded-lg transition-colors',
                 activeTab === 'overview'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
+                  ? 'bg-theme text-contrast'
+                  : 'card-lighter',
               ]"
             >
               Overview
@@ -222,10 +221,9 @@ const combinedTimeline = computed(() => {
             <button
               @click="activeTab = 'followers'"
               :class="[
-                'px-4 py-2 rounded-lg transition-colors',
                 activeTab === 'followers'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
+                  ? 'bg-theme text-contrast'
+                  : 'card-lighter',
               ]"
             >
               Followers History
@@ -233,10 +231,9 @@ const combinedTimeline = computed(() => {
             <button
               @click="activeTab = 'following'"
               :class="[
-                'px-4 py-2 rounded-lg transition-colors',
                 activeTab === 'following'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
+                  ? 'bg-theme text-contrast'
+                  : 'card-lighter',
               ]"
             >
               Following History

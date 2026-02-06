@@ -1,0 +1,16 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"command": "npm run dev",
+			"name": "Run Dev Server",
+			"request": "launch",
+			"type": "node-terminal",
+			"serverReadyAction": {
+				"pattern": "available on",
+				"uriFormat": "http://localhost:5173",
+				"action": "debugWithChrome"
+			}
+		}
+	]
+}

@@ -10,7 +10,6 @@ import CronModal from "./components/CronModal.vue";
 import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left";
 import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open";
 
-
 const appStore = useAppStore();
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -154,16 +153,16 @@ const deleteCron = async (userId: string) => {
 			<div class="max-w-7xl mx-auto py-6">
 				<div class="flex items-center justify-between">
 					<div>
-						<h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+						<h1 class="text-3xl font-bold text-theme">
 							InstaSnap
 						</h1>
-						<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+						<p class="mt-1 text-sm text-lighter">
 							Track and monitor Instagram profiles with ease.
 						</p>
 					</div>
 					<button
 						@click="refreshData"
-						class="flex justify-center gap-1 px-4 py-2 bg-emerald-600 rounded-lg hover:bg-emerald-600 transition-colors duration-200 font-semibold items-center cursor-pointer text-gray-900"
+						class="flex justify-center gap-1 px-4 py-2 rounded theme-btn transition-colors duration-200 items-center cursor-pointer"
 						:disabled="loading"
 					>
 						<Fa6SolidRotateLeft :class="{ 'animate-spin': loading }" />
@@ -176,7 +175,7 @@ const deleteCron = async (userId: string) => {
 		</header>
 
 		<main
-			class="max-w-7xl flex flex-col gap-10 mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-10"
+			class="max-w-7xl flex flex-col gap-10 mx-auto px-4 sm:px-6 lg:px-8 py-8"
 		>
 			<StatsCard v-if="trackedUsers.length > 0" :tracked-users="trackedUsers" />
 

@@ -57,7 +57,7 @@ const formatLastRun = (timestamp: number) => {
 			<div class="flex items-center gap-3">
 				<Fa6SolidClock class="text-4xl" />
 				<div>
-					<h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+					<h2 class="text-2xl font-bold text-nocontrast">
 						Scheduled Snapshots
 					</h2>
 					<p class="text-sm text-gray-600 dark:text-gray-400">
@@ -67,10 +67,10 @@ const formatLastRun = (timestamp: number) => {
 			</div>
 			<button
 				@click="emit('open-cron-modal', null)"
-				class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-gray-900 rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-semibold cursor-pointer"
+				class="flex items-center gap-2 px-4 py-2 rounded-lg theme-btn transition-colors duration-200 font-semibold cursor-pointer"
 			>
 				<Fa6SolidPlus />
-				<span>Add Schedule</span>
+				<span>Add schedule</span>
 			</button>
 		</div>
 
@@ -80,7 +80,7 @@ const formatLastRun = (timestamp: number) => {
 		>
 			<Fa6SolidClock class="mx-auto h-12 w-12 text-gray-400" />
 			<p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-				No scheduled snapshots yet. Click "Add Schedule" to create one.
+				No scheduled snapshots yet. Click "Add schedule" to create one.
 			</p>
 		</div>
 
@@ -88,7 +88,7 @@ const formatLastRun = (timestamp: number) => {
 			<div
 				v-for="cron in Object.values(snapshotCrons)"
 				:key="cron.userId"
-				class="border-2 border-gray-700 rounded-lg p-4 hover:border-emerald-500 transition-colors duration-200"
+				class="border-2 border-lighter/40 rounded-lg p-4 hover:border-emerald-500 transition-colors duration-200"
 			>
 				<div class="flex items-start justify-between">
 					<div class="flex items-center gap-3 flex-1">
@@ -130,7 +130,7 @@ const formatLastRun = (timestamp: number) => {
 						</button>
 						<button
 							@click="emit('delete-cron', cron.userId)"
-							class="p-1.5 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+							class="p-1.5 text-red-700 hover:brightness-110 transition-colors cursor-pointer"
 							title="Delete"
 						>
 							<Fa6SolidTrashCan />

@@ -183,7 +183,7 @@ const updateCronInterval = async () => {
 			<div class="flex justify-center">
 				<button
 					@click="openDashboard"
-					class="flex justify-center gap-2 mt-2 px-4 py-2 bg-gray-200 text-gray-800 cursor-pointer font-semibold text-sm rounded-xl hover:bg-gray-300 active:scale-[0.95] transition-all duration-300"
+					class="flex justify-center gap-2 mt-2 px-4 py-2 bg-nocontrast text-contrast  cursor-pointer font-semibold text-sm rounded-xl hover:bg-gray-300 active:scale-[0.95] transition-all duration-300"
 				>
 					<Fa6SolidChartSimple />
 					Open Dashboard
@@ -230,7 +230,7 @@ const updateCronInterval = async () => {
 		</div>
 		<hr class="mb-3" />
 		<div id="copyright">
-			<p class="text-xs text-center text-gray-500">
+			<p class="text-xs text-center text-lighter font-semibold">
 				&copy; {{ new Date().getFullYear() }} InstaSnap. All rights reserved.
 			</p>
 		</div>

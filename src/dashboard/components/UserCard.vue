@@ -42,7 +42,7 @@ const formatRelativeTime = (timestamp: number | null) => {
 	<div class="card hover:shadow-lg transition-shadow duration-200">
 		<div class="relative flex items-center gap-4">
 			<div
-				class="absolute top-0 right-0 p-2 duration-300 text-red-500 cursor-pointer hover:text-red-800"
+				class="absolute top-0 right-0 p-2 duration-300 text-red-700 cursor-pointer hover:brightness-110"
 				@click="emit('delete', user.userId)"
 			>
 				<Fa6SolidTrashCan class="text-base" />
@@ -70,14 +70,14 @@ const formatRelativeTime = (timestamp: number | null) => {
 		</div>
 
 		<div class="mt-6 grid grid-cols-2 gap-4">
-			<div class="border-2 border-gray-700 rounded-lg p-3">
-				<p class="text-xs text-gray-600 dark:text-gray-400">Snapshots</p>
+			<div class="border-2 border-lighter/40 rounded-lg p-3">
+				<p class="text-xs text-lighter">Snapshots</p>
 				<p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
 					{{ user.snapshotCount }}
 				</p>
 			</div>
-			<div class="border-2 border-gray-700 rounded-lg p-3">
-				<p class="text-xs text-gray-600 dark:text-gray-400">Last Snapshot</p>
+			<div class="border-2 border-lighter/40 rounded-lg p-3">
+				<p class="text-xs text-lighter">Last Snapshot</p>
 				<p class="text-sm font-semibold text-gray-900 dark:text-white">
 					{{ formatRelativeTime(user.lastSnapshot) }}
 				</p>
@@ -91,14 +91,14 @@ const formatRelativeTime = (timestamp: number | null) => {
 		<div class="mt-4 flex gap-2">
 			<button
 				@click="emit('view-details', user.userId)"
-				class="flex justify-center gap-1 px-4 py-2 rounded-xl bg-emerald-600 text-gray-900 font-semibold flex-1 transition-colors duration-200 text-sm cursor-pointer"
+				class="flex justify-center gap-1 px-4 py-2 rounded-xl theme-btn font-semibold flex-1 transition-colors text-sm cursor-pointer"
 			>
 				<Fa6SolidMagnifyingGlassChart />
-				View Details
+				View details
 			</button>
 			<button
 				@click="emit('open-profile', user.username)"
-				class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer hover:brightness-95 active:scale-95 duration-200 text-sm font-medium"
+				class="px-4 py-2 rounded-lg theme-btn cursor-pointer active:scale-95 text-sm font-medium"
 			>
 				<Fa6SolidArrowUpRightFromSquare />
 			</button>

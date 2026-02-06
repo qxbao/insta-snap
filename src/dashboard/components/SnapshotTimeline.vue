@@ -32,7 +32,10 @@ const snapshotDetails = ref<
 		{
 			followers: { added: string[]; removed: string[] };
 			following: { added: string[]; removed: string[] };
-			userMap: Record<string, { username: string; full_name: string; profile_pic_url: string }>;
+			userMap: Record<
+				string,
+				{ username: string; full_name: string; profile_pic_url: string }
+			>;
 		}
 	>
 >(new Map());
@@ -81,7 +84,7 @@ const toggleExpand = async (timestamp: number) => {
 		expandedItems.value.delete(timestamp);
 	} else {
 		expandedItems.value.add(timestamp);
-		
+
 		// Load details if not already loaded
 		if (!snapshotDetails.value.has(timestamp)) {
 			await loadSnapshotDetails(timestamp);
@@ -91,12 +94,13 @@ const toggleExpand = async (timestamp: number) => {
 
 const loadSnapshotDetails = async (timestamp: number) => {
 	loadingDetails.value.add(timestamp);
-	
+
 	try {
-		const { getSnapshotRecord, getGlobalUserMap } = await import("../../utils/storage");
+		const { getSnapshotRecord, getGlobalUserMap } =
+			await import("../../utils/storage");
 		const record = await getSnapshotRecord(props.userId, timestamp);
 		const userMap = await getGlobalUserMap();
-		
+
 		if (record) {
 			snapshotDetails.value.set(timestamp, {
 				followers: {
@@ -118,27 +122,31 @@ const loadSnapshotDetails = async (timestamp: number) => {
 };
 
 const getUserInfo = (userId: string, userMap: Record<string, any>) => {
-	return userMap[userId] || { username: userId, full_name: "", profile_pic_url: "" };
+	return (
+		userMap[userId] || { username: userId, full_name: "", profile_pic_url: "" }
+	);
 };
 </script>
 
 <template>
 	<div>
 		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-			Snapshot Timeline
+			Snapshot timeline
 		</h3>
 		<div class="space-y-2">
 			<div
 				v-for="entry in entries"
 				:key="entry.timestamp"
-				class="border-2 border-gray-600 rounded-lg overflow-hidden"
+				class="border-2 border-lighter/40 rounded-lg overflow-hidden"
 			>
 				<div
-					class="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+					class="flex items-center justify-between p-4 cursor-pointer hover:bg-lighter/5 transition-colors"
 					@click="toggleExpand(entry.timestamp)"
 				>
 					<div class="flex items-center gap-4 flex-1">
-						<button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+						<button
+							class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+						>
 							<Fa6SolidChevronDown
 								v-if="expandedItems.has(entry.timestamp)"
 								class="w-4 h-4"
@@ -194,13 +202,14 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 						</p>
 					</div>
 				</div>
-
-				<!-- Expanded Details -->
 				<div
 					v-if="expandedItems.has(entry.timestamp)"
-					class="border-t border-gray-200 dark:border-gray-600 p-4 bg-white dark:bg-gray-800"
+					class="border-t border-gray-200 dark:border-gray-600 p-4"
 				>
-					<div v-if="loadingDetails.has(entry.timestamp)" class="text-center py-4">
+					<div
+						v-if="loadingDetails.has(entry.timestamp)"
+						class="text-center py-4"
+					>
 						<div
 							class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"
 						></div>
@@ -215,21 +224,37 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								snapshotDetails.get(entry.timestamp)!.followers.added.length > 0
 							"
 						>
-							<h4 class="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
-								Followers Added ({{ snapshotDetails.get(entry.timestamp)!.followers.added.length }})
+							<h4
+								class="text-sm font-semibold text-green-600 dark:text-green-400 mb-2"
+							>
+								Followers Added ({{
+									snapshotDetails.get(entry.timestamp)!.followers.added.length
+								}})
 							</h4>
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
 								<div
-									v-for="userId in snapshotDetails.get(entry.timestamp)!.followers.added.slice(0, getVisibleCount(entry.timestamp, 'followers-added'))"
+									v-for="userId in snapshotDetails
+										.get(entry.timestamp)!
+										.followers.added.slice(
+											0,
+											getVisibleCount(entry.timestamp, 'followers-added'),
+										)"
 									:key="userId"
-									class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+									class="flex items-center gap-2 p-2 bg-lighter/20 rounded"
 								>
 									<img
 										:src="
-											getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap)
-												.profile_pic_url || '/images/user_avatar.png'
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).profile_pic_url || '/images/user_avatar.png'
 										"
-										:alt="getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username"
+										:alt="
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).username
+										"
 										referrerpolicy="no-referrer"
 										class="w-8 h-8 rounded-full object-cover"
 										@error="
@@ -239,17 +264,38 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 										"
 									/>
 									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-											{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).full_name || getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-sm font-medium text-gray-900 dark:text-white truncate"
+										>
+											{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).full_name ||
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
-										<p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-											@{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-xs text-gray-500 dark:text-gray-400 truncate"
+										>
+											@{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
 									</div>
 								</div>
 							</div>
 							<div
-								v-if="getVisibleCount(entry.timestamp, 'followers-added') < snapshotDetails.get(entry.timestamp)!.followers.added.length"
+								v-if="
+									getVisibleCount(entry.timestamp, 'followers-added') <
+									snapshotDetails.get(entry.timestamp)!.followers.added.length
+								"
 								class="flex gap-2 mt-2"
 							>
 								<button
@@ -260,7 +306,14 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								</button>
 								<span class="text-gray-400">•</span>
 								<button
-									@click="loadAll(entry.timestamp, 'followers-added', snapshotDetails.get(entry.timestamp)!.followers.added.length)"
+									@click="
+										loadAll(
+											entry.timestamp,
+											'followers-added',
+											snapshotDetails.get(entry.timestamp)!.followers.added
+												.length,
+										)
+									"
 									class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
 								>
 									Load all
@@ -270,24 +323,42 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 
 						<div
 							v-if="
-								snapshotDetails.get(entry.timestamp)!.followers.removed.length > 0
+								snapshotDetails.get(entry.timestamp)!.followers.removed.length >
+								0
 							"
 						>
-							<h4 class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
-								Followers Removed ({{ snapshotDetails.get(entry.timestamp)!.followers.removed.length }})
+							<h4
+								class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2"
+							>
+								Followers Removed ({{
+									snapshotDetails.get(entry.timestamp)!.followers.removed
+										.length
+								}})
 							</h4>
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
 								<div
-									v-for="userId in snapshotDetails.get(entry.timestamp)!.followers.removed.slice(0, getVisibleCount(entry.timestamp, 'followers-removed'))"
+									v-for="userId in snapshotDetails
+										.get(entry.timestamp)!
+										.followers.removed.slice(
+											0,
+											getVisibleCount(entry.timestamp, 'followers-removed'),
+										)"
 									:key="userId"
-									class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+									class="flex items-center gap-2 p-2 bg-lighter/20 rounded"
 								>
 									<img
 										:src="
-											getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap)
-												.profile_pic_url || '/images/user_avatar.png'
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).profile_pic_url || '/images/user_avatar.png'
 										"
-										:alt="getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username"
+										:alt="
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).username
+										"
 										referrerpolicy="no-referrer"
 										class="w-8 h-8 rounded-full object-cover"
 										@error="
@@ -297,17 +368,38 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 										"
 									/>
 									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-											{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).full_name || getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-sm font-medium text-gray-900 dark:text-white truncate"
+										>
+											{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).full_name ||
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
-										<p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-											@{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-xs text-gray-500 dark:text-gray-400 truncate"
+										>
+											@{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
 									</div>
 								</div>
 							</div>
 							<div
-								v-if="getVisibleCount(entry.timestamp, 'followers-removed') < snapshotDetails.get(entry.timestamp)!.followers.removed.length"
+								v-if="
+									getVisibleCount(entry.timestamp, 'followers-removed') <
+									snapshotDetails.get(entry.timestamp)!.followers.removed.length
+								"
 								class="flex gap-2 mt-2"
 							>
 								<button
@@ -318,7 +410,14 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								</button>
 								<span class="text-gray-400">•</span>
 								<button
-									@click="loadAll(entry.timestamp, 'followers-removed', snapshotDetails.get(entry.timestamp)!.followers.removed.length)"
+									@click="
+										loadAll(
+											entry.timestamp,
+											'followers-removed',
+											snapshotDetails.get(entry.timestamp)!.followers.removed
+												.length,
+										)
+									"
 									class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
 								>
 									Load all
@@ -331,21 +430,37 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								snapshotDetails.get(entry.timestamp)!.following.added.length > 0
 							"
 						>
-							<h4 class="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
-								Following Added ({{ snapshotDetails.get(entry.timestamp)!.following.added.length }})
+							<h4
+								class="text-sm font-semibold text-green-600 dark:text-green-400 mb-2"
+							>
+								Following Added ({{
+									snapshotDetails.get(entry.timestamp)!.following.added.length
+								}})
 							</h4>
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
 								<div
-									v-for="userId in snapshotDetails.get(entry.timestamp)!.following.added.slice(0, getVisibleCount(entry.timestamp, 'following-added'))"
+									v-for="userId in snapshotDetails
+										.get(entry.timestamp)!
+										.following.added.slice(
+											0,
+											getVisibleCount(entry.timestamp, 'following-added'),
+										)"
 									:key="userId"
-									class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+									class="flex items-center gap-2 p-2 bg-lighter/20 rounded"
 								>
 									<img
 										:src="
-											getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap)
-												.profile_pic_url || '/images/user_avatar.png'
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).profile_pic_url || '/images/user_avatar.png'
 										"
-										:alt="getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username"
+										:alt="
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).username
+										"
 										referrerpolicy="no-referrer"
 										class="w-8 h-8 rounded-full object-cover"
 										@error="
@@ -355,17 +470,38 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 										"
 									/>
 									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-											{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).full_name || getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-sm font-medium text-gray-900 dark:text-white truncate"
+										>
+											{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).full_name ||
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
-										<p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-											@{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-xs text-gray-500 dark:text-gray-400 truncate"
+										>
+											@{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
 									</div>
 								</div>
 							</div>
 							<div
-								v-if="getVisibleCount(entry.timestamp, 'following-added') < snapshotDetails.get(entry.timestamp)!.following.added.length"
+								v-if="
+									getVisibleCount(entry.timestamp, 'following-added') <
+									snapshotDetails.get(entry.timestamp)!.following.added.length
+								"
 								class="flex gap-2 mt-2"
 							>
 								<button
@@ -376,7 +512,14 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								</button>
 								<span class="text-gray-400">•</span>
 								<button
-									@click="loadAll(entry.timestamp, 'following-added', snapshotDetails.get(entry.timestamp)!.following.added.length)"
+									@click="
+										loadAll(
+											entry.timestamp,
+											'following-added',
+											snapshotDetails.get(entry.timestamp)!.following.added
+												.length,
+										)
+									"
 									class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
 								>
 									Load all
@@ -386,24 +529,42 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 
 						<div
 							v-if="
-								snapshotDetails.get(entry.timestamp)!.following.removed.length > 0
+								snapshotDetails.get(entry.timestamp)!.following.removed.length >
+								0
 							"
 						>
-							<h4 class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
-								Following Removed ({{ snapshotDetails.get(entry.timestamp)!.following.removed.length }})
+							<h4
+								class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2"
+							>
+								Following Removed ({{
+									snapshotDetails.get(entry.timestamp)!.following.removed
+										.length
+								}})
 							</h4>
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
 								<div
-									v-for="userId in snapshotDetails.get(entry.timestamp)!.following.removed.slice(0, getVisibleCount(entry.timestamp, 'following-removed'))"
+									v-for="userId in snapshotDetails
+										.get(entry.timestamp)!
+										.following.removed.slice(
+											0,
+											getVisibleCount(entry.timestamp, 'following-removed'),
+										)"
 									:key="userId"
-									class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+									class="flex items-center gap-2 p-2 bg-lighter/20 rounded"
 								>
 									<img
 										:src="
-											getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap)
-												.profile_pic_url || '/images/user_avatar.png'
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).profile_pic_url || '/images/user_avatar.png'
 										"
-										:alt="getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username"
+										:alt="
+											getUserInfo(
+												userId,
+												snapshotDetails.get(entry.timestamp)!.userMap,
+											).username
+										"
 										referrerpolicy="no-referrer"
 										class="w-8 h-8 rounded-full object-cover"
 										@error="
@@ -413,17 +574,38 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 										"
 									/>
 									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-											{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).full_name || getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-sm font-medium text-gray-900 dark:text-white truncate"
+										>
+											{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).full_name ||
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
-										<p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-											@{{ getUserInfo(userId, snapshotDetails.get(entry.timestamp)!.userMap).username }}
+										<p
+											class="text-xs text-gray-500 dark:text-gray-400 truncate"
+										>
+											@{{
+												getUserInfo(
+													userId,
+													snapshotDetails.get(entry.timestamp)!.userMap,
+												).username
+											}}
 										</p>
 									</div>
 								</div>
 							</div>
 							<div
-								v-if="getVisibleCount(entry.timestamp, 'following-removed') < snapshotDetails.get(entry.timestamp)!.following.removed.length"
+								v-if="
+									getVisibleCount(entry.timestamp, 'following-removed') <
+									snapshotDetails.get(entry.timestamp)!.following.removed.length
+								"
 								class="flex gap-2 mt-2"
 							>
 								<button
@@ -434,7 +616,14 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								</button>
 								<span class="text-gray-400">•</span>
 								<button
-									@click="loadAll(entry.timestamp, 'following-removed', snapshotDetails.get(entry.timestamp)!.following.removed.length)"
+									@click="
+										loadAll(
+											entry.timestamp,
+											'following-removed',
+											snapshotDetails.get(entry.timestamp)!.following.removed
+												.length,
+										)
+									"
 									class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
 								>
 									Load all
@@ -444,10 +633,14 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 
 						<div
 							v-if="
-								snapshotDetails.get(entry.timestamp)!.followers.added.length === 0 &&
-								snapshotDetails.get(entry.timestamp)!.followers.removed.length === 0 &&
-								snapshotDetails.get(entry.timestamp)!.following.added.length === 0 &&
-								snapshotDetails.get(entry.timestamp)!.following.removed.length === 0
+								snapshotDetails.get(entry.timestamp)!.followers.added.length ===
+									0 &&
+								snapshotDetails.get(entry.timestamp)!.followers.removed
+									.length === 0 &&
+								snapshotDetails.get(entry.timestamp)!.following.added.length ===
+									0 &&
+								snapshotDetails.get(entry.timestamp)!.following.removed
+									.length === 0
 							"
 							class="text-center py-4 text-gray-500 dark:text-gray-400"
 						>

@@ -114,16 +114,16 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 <template>
 	<div>
 		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-			{{ type === "followers" ? "Followers" : "Following" }} Changes Over Time
+			{{ type === "followers" ? "Followers" : "Following" }} changes
 		</h3>
 		<div class="space-y-2">
 			<div
 				v-for="entry in entries"
 				:key="entry.timestamp"
-				class="border-2 border-gray-600 rounded-lg overflow-hidden"
+				class="border-2 border-lighter/40 rounded-lg overflow-hidden"
 			>
 				<div
-					class="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+					class="flex items-center justify-between p-4 cursor-pointer hover:bg-lighter/5 transition-colors"
 					@click="toggleExpand(entry.timestamp)"
 				>
 					<div class="flex items-center gap-4 flex-1">
@@ -172,10 +172,9 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 					</div>
 				</div>
 
-				<!-- Expanded Details -->
 				<div
 					v-if="expandedItems.has(entry.timestamp)"
-					class="border-t border-gray-200 dark:border-gray-600 p-4 bg-white dark:bg-gray-800"
+					class="border-t border-gray-200 dark:border-gray-600 p-4 "
 				>
 					<div v-if="loadingDetails.has(entry.timestamp)" class="text-center py-4">
 						<div
@@ -197,7 +196,7 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								<div
 									v-for="userId in snapshotDetails.get(entry.timestamp)!.added.slice(0, getVisibleCount(entry.timestamp, 'added'))"
 									:key="userId"
-									class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+									class="flex items-center gap-2 p-2 bg-lighter/20 rounded"
 								>
 									<img
 										:src="
@@ -253,7 +252,7 @@ const getUserInfo = (userId: string, userMap: Record<string, any>) => {
 								<div
 									v-for="userId in snapshotDetails.get(entry.timestamp)!.removed.slice(0, getVisibleCount(entry.timestamp, 'removed'))"
 									:key="userId"
-									class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+									class="flex items-center gap-2 p-2 bg-lighter/20 rounded"
 								>
 									<img
 										:src="
