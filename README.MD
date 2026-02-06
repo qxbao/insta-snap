@@ -2,12 +2,11 @@
 [![Badge License]][License]
 ![Build Status](https://github.com/qxbao/insta-snap/actions/workflows/build.yml/badge.svg)
 ![Lint Status](https://github.com/qxbao/insta-snap/actions/workflows/lint.yml/badge.svg)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/USERNAME/REPO_NAME)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/qxbao/insta-snap)
 
 ---
 
 <h1 align="center">
-<img src="https://github.com/qxbao/insta-snap/blob/master/public/images/icon.png" height="38" width="38">
 InstaSnap
 </h1>
 
