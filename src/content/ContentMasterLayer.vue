@@ -11,13 +11,13 @@ const ui = useUIStore();
 <template>
   <div style="height: 100%">
     <Transition
-      v-if="ui.loading"
       enter-active-class="transition-opacity duration-300"
       leave-active-class="transition-opacity duration-300"
       enter-from-class="opacity-0"
       leave-to-class="opacity-0"
     >
       <div
+        v-if="ui.loading"
         style="height: 100%"
         class="fixed -translate-x-1/2 -translate-y-1/2 pointer-events-auto top-1/2 left-1/2"
       >
@@ -51,11 +51,11 @@ const ui = useUIStore();
     </Transition>
 
     <Transition
-      v-if="ui.notifyMessage"
-      enter-active-class="animate-[slideDown_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
-      leave-active-class="animate-[slideUp_0.3s_ease-out]"
+      enterActiveClass="animate-[slideDown_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+      leaveActiveClass="animate-[slideUp_0.3s_ease-out]"
     >
       <div
+        v-if="ui.notifyMessage"
         class="fixed top-6 left-1/2 pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2),inset_0_0_0_1px_rgba(255,255,255,0.2)] backdrop-blur-xl font-semibold text-[15px] text-white max-w-125 animate-[float_3s_ease-in-out_infinite]"
         style="transform: translateX(-50%)"
         :class="{

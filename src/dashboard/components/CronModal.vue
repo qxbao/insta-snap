@@ -64,7 +64,7 @@ const handleSave = () => {
 	emit("save", { userId: localUserId.value, interval: localInterval.value });
 };
 
-const formatIntervalTime = (hours: any) => {
+const formatIntervalTime = (hours: number) => {
 	if (hours < 24) return `${hours}h`;
 	const days = Math.floor(hours / 24);
 	const hour = hours % 24;

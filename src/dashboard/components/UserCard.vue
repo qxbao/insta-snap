@@ -98,7 +98,7 @@ const formatRelativeTime = (timestamp: number | null) => {
 			</button>
 			<button
 				@click="emit('open-profile', user.username)"
-				class="px-4 py-2 rounded-lg theme-btn cursor-pointer active:scale-95 text-sm font-medium"
+				class="px-4 py-2 rounded-lg theme-btn bg-gray-600 text-white cursor-pointer active:scale-95 text-sm font-medium"
 			>
 				<Fa6SolidArrowUpRightFromSquare />
 			</button>

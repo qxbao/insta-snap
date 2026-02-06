@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,14 +20,21 @@
     "@iconify/json": "^2.2.435",
     "@types/chrome": "^0.1.36",
     "@vitejs/plugin-vue": "^6.0.3",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
     "autoprefixer": "^10.4.24",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.7.0",
     "postcss": "^8.5.6",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4.1.18",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^31.0.0",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vue-eslint-parser": "^10.2.0"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

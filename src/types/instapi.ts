@@ -9,37 +9,92 @@ export interface InstagramAPIHeader {
   'sec-fetch-site': string; // same-origin
 }
 
+export type InstagramRequestType<T extends "followers" | "following"> = T extends 'followers' ? InstagramFollowersResponse : InstagramFollowingsResponse;
+
 export interface InstagramFollowersResponse {
-  users: User[];
-  big_list: boolean;
-  page_size: number;
-  next_max_id: string;
-  has_more: boolean;
-  should_limit_list_of_followers: boolean;
-  use_clickable_see_more: boolean;
-  show_spam_follow_request_tab: boolean;
-  follow_ranking_token: string;
-  status: string;
+  data: FollowerData
+  status: string
 }
 
-export interface User {
-  strong_id__: string;
-  pk: string;
-  pk_id: string;
-  id: string;
-  full_name?: string;
-  fbid_v2: string;
-  allowed_commenter_type?: string;
-  reel_auto_archive?: string;
-  third_party_downloads_enabled: number;
-  profile_pic_id?: string;
-  profile_pic_url: string;
-  is_verified: boolean;
-  username: string;
-  is_private: boolean;
-  has_anonymous_profile_picture: boolean;
-  account_badges: any[];
-  has_onboarded_to_text_post_app?: boolean;
-  interop_messaging_user_fbid?: string;
-  latest_reel_media: number;
+export interface InstagramFollowingsResponse{
+  data: FollowingData
+  status: string
+}
+
+export interface FollowingData {
+  user: UserGetFollowings
+}
+
+export interface FollowerData {
+  user: UserGetFollowers
+}
+
+export interface UserGetFollowings {
+  edge_follow: EdgeFollow
+  edge_mutual_followed_by: EdgeMutualFollowedBy
+}
+
+export interface UserGetFollowers {
+  edge_followed_by: EdgeFollow
+  edge_mutual_followed_by: EdgeMutualFollowedBy
+}
+
+export interface EdgeFollow {
+  count: number
+  page_info: PageInfo
+  edges: Edge[]
+}
+
+export interface PageInfo {
+  has_next_page: boolean
+  end_cursor: string
+}
+
+export interface Edge {
+  node: Node
+}
+
+export interface Node {
+  id: string
+  username: string
+  full_name: string
+  profile_pic_url: string
+  is_private: boolean
+  is_verified: boolean
+  followed_by_viewer: boolean
+  requested_by_viewer: boolean
+}
+
+export interface Owner {
+  __typename: string
+  id: string
+  profile_pic_url: string
+  username: string
+}
+
+export interface EdgeMutualFollowedBy {
+  count: number
+  edges: Edge2[]
+}
+
+export interface Edge2 {
+  node: Node2
+}
+
+export interface Node2 {
+  id: string
+  username: string
+  full_name: string
+  profile_pic_url: string
+  is_private: boolean
+  is_verified: boolean
+  followed_by_viewer: boolean
+  requested_by_viewer: boolean
+}
+
+export interface Owner2 {
+  __typename: string
+  id: string
+  profile_pic_url: string
+  username: string
 }

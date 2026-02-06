@@ -11,7 +11,7 @@ const appStore = useAppStore(pinia);
 app.use(pinia)
 app.mount('#app');
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
   if (message.type == ActionType.SYNC_LOCKS) {
     appStore.loadLocks();
   } else if (message.type == ActionType.NOTIFY_SNAPSHOT_COMPLETE) {

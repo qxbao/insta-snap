@@ -9,5 +9,6 @@ export enum ActionType {
 
 export interface ExtensionMessage {
   type: ActionType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: any;
 }

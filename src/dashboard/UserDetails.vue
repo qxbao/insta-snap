@@ -8,11 +8,12 @@ import {
   getFullFollowingList,
   getFollowingHistory,
 } from "../utils/storage";
-import type { UserSnapshotMeta } from "../types/storage";
+import type { GlobalUserMap, UserSnapshotMeta } from "../types/storage";
 import UserDetailsHeader from "./components/UserDetailsHeader.vue";
 import UserStatsGrid from "./components/UserStatsGrid.vue";
 import SnapshotTimeline from "./components/SnapshotTimeline.vue";
 import HistoryList from "./components/HistoryList.vue";
+import { HistoryEntry } from "../types/etc";
 
 interface Props {
   userId: string;
@@ -24,26 +25,13 @@ const emit = defineEmits<{
 }>();
 
 const meta = ref<UserSnapshotMeta | null>(null);
-const userInfo = ref<any>(null);
+const userInfo = ref<GlobalUserMap[string] | null>(null);
 const loading = ref(true);
 const activeTab = ref<"overview" | "followers" | "following">("overview");
-const selectedTimestamps = ref<number[]>([]);
 
 const history = ref<{
-  followers: Array<{
-    timestamp: number;
-    isCheckpoint: boolean;
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
-  }>;
-  following: Array<{
-    timestamp: number;
-    isCheckpoint: boolean;
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
-  }>;
+  followers: HistoryEntry[];
+  following: HistoryEntry[];
 }>({
   followers: [],
   following: [],

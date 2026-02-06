@@ -27,7 +27,7 @@ const getUserById = (userId: string, trackedUsers: TrackedUser[]) => {
 	return trackedUsers.find((u) => u.userId === userId);
 };
 
-const formatIntervalTime = (hours: any) => {
+const formatIntervalTime = (hours: number) => {
 	if (hours < 24) return `${hours}h`;
 	const days = Math.floor(hours / 24);
 	const hour = hours % 24;

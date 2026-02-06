@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Định nghĩa các level để quản lý log chặt chẽ
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 

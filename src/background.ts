@@ -1,6 +1,6 @@
 import { ActionType } from "./constants/actions";
 import { ExtensionRules } from "./constants/rules";
-import { User } from "./types/instapi";
+import { Node } from "./types/instapi";
 import { getJitter } from "./utils/alarms";
 import { fetchUsers } from "./utils/instagram";
 import { createLogger } from "./utils/logger";
@@ -55,7 +55,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
   switch (message.type) {
     case ActionType.NOTIFY_SNAPSHOT_COMPLETE:
       const userId = message.payload;
@@ -73,6 +73,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       break;
     case ActionType.SEND_APP_DATA:
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newData: Record<string, any> = {};
       for (const key in message.payload) {
         newData[key] = message.payload[key];
@@ -104,7 +105,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       | string;
 
     if (!appId || !csrfToken || !wwwClaim) {
-      logger.error("App data missing, cannot process snapshot subscriptions.", { appData: { appId, csrfToken, wwwClaim } });
+      logger.error("App data missing, cannot process snapshot subscriptions.", {
+        appData: { appId, csrfToken, wwwClaim },
+      });
       return;
     }
 
@@ -123,7 +126,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       // TODO: Follower/following only opt
       const cron = crons[userId];
       if (now - cron.lastRun * 60 * 60 * 1000 >= cron.interval) {
-        let followers: User[] = [];
+        let followers: Node[] = [];
         logger?.info("Fetching followers...");
         const flwerRes = await fetchUsers(
           userId,
@@ -138,7 +141,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         }
         followers = flwerRes;
 
-        let following: User[] = [];
+        let following: Node[] = [];
         logger?.info("Fetching following...");
         const flwingRes = await fetchUsers(
           userId,

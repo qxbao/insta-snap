@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
+import { GlobalUserMap } from "../../types/storage";
 
 interface HistoryEntry {
 	timestamp: number;
@@ -26,7 +27,7 @@ const snapshotDetails = ref<
 		{
 			added: string[];
 			removed: string[];
-			userMap: Record<string, { username: string; full_name: string; profile_pic_url: string }>;
+			userMap: GlobalUserMap;
 		}
 	>
 >(new Map());
@@ -106,7 +107,7 @@ const loadSnapshotDetails = async (timestamp: number) => {
 	}
 };
 
-const getUserInfo = (userId: string, userMap: Record<string, any>) => {
+const getUserInfo = (userId: string, userMap: GlobalUserMap) => {
 	return userMap[userId] || { username: userId, full_name: "", profile_pic_url: "" };
 };
 </script>

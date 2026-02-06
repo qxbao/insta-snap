@@ -1,8 +1,10 @@
 import { ActionType, ExtensionMessage } from "../constants/actions";
 import { useUIStore } from "../stores/ui.store";
 import {
+  Edge,
   InstagramAPIHeader,
-  User
+  InstagramRequestType,
+  Node,
 } from "../types/instapi";
 import { Logger } from "./logger";
 import {
@@ -109,48 +111,49 @@ function IGFetch(
 
 async function fetchUsers(
   userId: string,
-  type: "followers" | "following",
+  rqtype: "followers" | "following",
   appId: string,
   csrfToken: string,
   wwwClaim: string,
   logger?: Logger,
   store?: ReturnType<typeof useUIStore>,
-): Promise<User[] | false> {
+): Promise<Node[] | false> {
   const buildEndpoint =
-    type === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
-  const edgeKey = type === "followers" ? "edge_followed_by" : "edge_follow";
+    rqtype === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
+  const edgeKey = rqtype === "followers" ? "edge_followed_by" : "edge_follow";
 
-  logger?.info(`Fetching ${type} using GraphQL API...`);
+  logger?.info(`Fetching ${rqtype} using GraphQL API...`);
 
-  const users: User[] = [];
+  const users: Node[] = [];
   let after: string | null = null;
   let hasMore = true;
 
   store?.setLoading(true);
-  store?.setLoadingProgress(0, type);
+  store?.setLoadingProgress(0, rqtype);
   while (hasMore) {
     const apiEndpoint = buildEndpoint(userId, after);
 
     const response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim);
     if (!response.ok) {
       logger?.error(
-        `Failed to fetch ${type}: ${response.status} ${response.statusText}`,
+        `Failed to fetch ${rqtype}: ${response.status} ${response.statusText}`,
       );
       return false;
     }
 
-    const data = await response.json();
+    const data: InstagramRequestType<typeof rqtype> = await response.json();
 
-    if (!data.data || !data.data.user || !data.data.user[edgeKey]) {
-      logger?.error(`Invalid GraphQL response structure for ${type}`);
+    if (!data.data || !data.data.user || !(edgeKey in data.data.user)) {
+      logger?.error(`Invalid GraphQL response structure for ${rqtype}`);
       return false;
     }
 
-    const edgeData = data.data.user[edgeKey];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const edgeData = (data.data.user as any)[edgeKey];
     const edges = edgeData.edges || [];
 
-    const batchUsers: User[] = edges.map((edge: any) => ({
-      pk: edge.node.id || edge.node.pk || "",
+    const batchUsers: Node[] = edges.map((edge: Edge) => ({
+      id: edge.node.id || "",
       username: edge.node.username || "",
       full_name: edge.node.full_name || "",
       profile_pic_url: edge.node.profile_pic_url || "",
@@ -161,9 +164,9 @@ async function fetchUsers(
     hasMore = edgeData.page_info?.has_next_page || false;
     after = edgeData.page_info?.end_cursor || null;
 
-    store?.setLoadingProgress(users.length, type);
+    store?.setLoadingProgress(users.length, rqtype);
     logger?.info(
-      `Fetched ${batchUsers.length} ${type}, total so far: ${users.length}`,
+      `Fetched ${batchUsers.length} ${rqtype}, total so far: ${users.length}`,
     );
   }
 
@@ -247,7 +250,7 @@ async function retrieveUserFollowersAndFollowing(
 
   const fetchBoth = !options?.followersOnly && !options?.followingOnly;
 
-  let followers: User[] = [];
+  let followers: Node[] = [];
   if (fetchBoth || options?.followersOnly) {
     logger?.info("Fetching followers...");
     const result = await fetchUsers(
@@ -265,7 +268,7 @@ async function retrieveUserFollowersAndFollowing(
     followers = result;
   }
 
-  let following: User[] = [];
+  let following: Node[] = [];
   if (fetchBoth || options?.followingOnly) {
     logger?.info("Fetching following...");
     const result = await fetchUsers(
@@ -360,7 +363,7 @@ async function saveUserInfo(
   const fullname_elem = secondDiv?.nextElementSibling?.querySelector("span");
 
   let img_elem: HTMLImageElement | null = null;
-  let img_elems = document.querySelectorAll(
+  const img_elems = document.querySelectorAll(
     "img.xpdipgo.x972fbf.x10w94by.x1qhh985",
   ) as NodeListOf<HTMLImageElement>;
 
@@ -422,6 +425,14 @@ export {
   buildFollowersEndpoint,
   buildFollowingEndpoint,
   buildHeaders,
-  exportCSRFToken, fetchUsers, findAppId, findUserId, IGFetch, retrieveUserFollowers, retrieveUserFollowersAndFollowing, retrieveUserFollowing, saveUserInfo, sendAppDataToBg
+  exportCSRFToken,
+  fetchUsers,
+  findAppId,
+  findUserId,
+  IGFetch,
+  retrieveUserFollowers,
+  retrieveUserFollowersAndFollowing,
+  retrieveUserFollowing,
+  saveUserInfo,
+  sendAppDataToBg,
 };
-

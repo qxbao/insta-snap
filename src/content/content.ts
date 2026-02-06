@@ -21,7 +21,7 @@ let userdataCache: null | {
 function registerMessages(
   message: ExtensionMessage,
   _sender: chrome.runtime.MessageSender,
-  sendResponse: (response: any) => void,
+  sendResponse: (response: ExtensionMessageResponse) => void,
 ): boolean | void {
   logger.debug("Received message:", message);
   const username = window.location.pathname.split("/").filter(Boolean)[0];
