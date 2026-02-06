@@ -35,12 +35,12 @@ jobs:
       - name: Zip extension
         run: |
           cd dist
-          zip -r ../instantsnap-extension.zip .
+          zip -r ../instasnap-${{ github.ref_name }}.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: instantsnap-extension.zip
+          files: instasnap-${{ github.ref_name }}.zip
           name: Release ${{ github.ref_name }}
           body: |
             Auto release for version ${{ github.ref_name }}.
