@@ -14,9 +14,9 @@ This project is open-sourced. Any contributions are welcome!
 ***
 
 <!----------------------------------------------------------------------------->
-[Commit Rate]: https://github.com/gorhill/uBlock/commits/master
+[Commit Rate]: https://img.shields.io/github/commit-activity/m/qxbao/insta-snap?label=Commits
 [License]: LICENSE.txt
 
 <!----------------------------------------------------------------------------->
-[Badge Commits]: https://img.shields.io/github/commit-activity/m/qxbao/insta-Snap?style=for-the-badge
-[Badge License]: https://img.shields.io/github/license/qxbao/insta-Snap?style=for-the-badge
+[Badge Commits]: https://img.shields.io/github/commit-activity/m/qxbao/insta-snap
+[Badge License]: https://img.shields.io/badge/License-GPLv3-blue.svg
