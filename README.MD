@@ -7,6 +7,7 @@
 ---
 
 <h1 align="center">
+<img src="https://github.com/qxbao/insta-snap/blob/master/public/images/icon.png" height="38" width="38">
 InstaSnap
 </h1>
 
