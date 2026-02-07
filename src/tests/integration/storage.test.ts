@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createMockStorage, createMockUserNode } from "../utils/test-helpers";
 
 // Import storage functions - adjust based on actual exports
@@ -78,10 +78,10 @@ describe("Storage Utils Integration", () => {
       const userId = "12345";
       const timestamp = Date.now();
       const followers = Array.from({ length: 5 }, (_, i) =>
-        createMockUserNode(`follower_${i}`)
+        createMockUserNode(`follower_${i}`),
       );
       const following = Array.from({ length: 3 }, (_, i) =>
-        createMockUserNode(`following_${i}`)
+        createMockUserNode(`following_${i}`),
       );
 
       const snapshotKey = `snapshot_${userId}_${timestamp}`;
@@ -140,7 +140,7 @@ describe("Storage Utils Integration", () => {
       await chrome.storage.local.set({ crons });
 
       const result = await chrome.storage.local.get("crons");
-      expect((result.crons as any)).toEqual(crons);
+      expect(result.crons as any).toEqual(crons);
     });
 
     it("should update cron interval", async () => {

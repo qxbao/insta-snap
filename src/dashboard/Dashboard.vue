@@ -9,6 +9,7 @@ import ScheduledSnapshots from "./components/ScheduledSnapshots.vue";
 import CronModal from "./components/CronModal.vue";
 import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left";
 import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open";
+import { createLogger } from "../utils/logger";
 
 const appStore = useAppStore();
 const loading = ref(true);
@@ -21,6 +22,7 @@ const showCronModal = ref(false);
 const cronUserId = ref<string | null>(null);
 const cronInterval = ref(24);
 const editingCron = ref(false);
+const logger = createLogger("Dashboard");
 
 const trackedUsers = computed(() => appStore.trackedUsers);
 const snapshotCrons = computed(() => appStore.snapshotCrons);
@@ -45,7 +47,7 @@ onMounted(async () => {
 		} else {
 			error.value = "An unknown error occurred";
 		}
-		console.error(err);
+		logger.error("Failed to load dashboard data:", err);
 	} finally {
 		loading.value = false;
 	}
@@ -62,7 +64,7 @@ const refreshData = async () => {
 		currentPage.value = 1;
 	} catch (err) {
 		error.value = "Failed to refresh data";
-		console.error(err);
+		logger.error("Failed to refresh data:", err);
 	} finally {
 		loading.value = false;
 	}
@@ -129,7 +131,7 @@ const saveCron = async (data: { userId: string; interval: number }) => {
 		await appStore.addUserSnapshotCron(data.userId, data.interval);
 		closeCronModal();
 	} catch (err) {
-		console.error("Failed to save cron:", err);
+		logger.error("Failed to save cron:", err);
 		alert("Failed to save cron job");
 	}
 };

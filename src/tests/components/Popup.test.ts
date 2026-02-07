@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mount, VueWrapper } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import Popup from "../../popup/Popup.vue";
 import { useAppStore } from "../../stores/app.store";
 import { createMockStorage } from "../utils/test-helpers";

@@ -1,6 +1,9 @@
 import { defineStore } from "pinia";
 import { getAllTrackedUsers, deleteUserData } from "../utils/storage";
 import { GlobalUserMap } from "../types/storage";
+import { createLogger } from "../utils/logger";
+
+const logger = createLogger("AppStore");
 
 export interface SnapshotCron {
   userId: string;
@@ -123,7 +126,7 @@ export const useAppStore = defineStore("app", {
         this.trackedUsers = await getAllTrackedUsers();
         this.trackedUsersLoaded = true;
       } catch (error) {
-        console.error("Failed to load tracked users:", error);
+        logger.error("Failed to load tracked users:", error);
         throw error;
       }
     },

@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { useTimeFormat } from "../../utils/time";
 
 describe("useTimeFormat", () => {
-  const { formatRelativeTime, formatDate, formatIntervalTime } = useTimeFormat();
+  const { formatRelativeTime, formatDate, formatIntervalTime } =
+    useTimeFormat();
 
   describe("formatRelativeTime", () => {
     it("should return 'Never' for null timestamp", () => {

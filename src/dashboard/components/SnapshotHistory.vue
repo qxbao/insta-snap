@@ -1,301 +1,303 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
-import UserChangesList from "./UserChangesList.vue";
 import { GlobalUserMap } from "../../types/storage";
+import { createLogger } from "../../utils/logger";
+import { useTimeFormat } from "../../utils/time";
+import UserChangesList from "./UserChangesList.vue";
 
 interface HistoryEntry {
-	timestamp: number;
-	isCheckpoint: boolean;
-	followers: {
-		addedCount: number;
-		removedCount: number;
-		totalCount?: number;
-	};
-	following: {
-		addedCount: number;
-		removedCount: number;
-		totalCount?: number;
-	};
+  timestamp: number;
+  isCheckpoint: boolean;
+  followers: {
+    addedCount: number;
+    removedCount: number;
+    totalCount?: number;
+  };
+  following: {
+    addedCount: number;
+    removedCount: number;
+    totalCount?: number;
+  };
 }
 
 interface Props {
-	entries: HistoryEntry[];
-	userId: string;
-	mode?: "both" | "followers" | "following";
-	title?: string;
+  entries: HistoryEntry[];
+  userId: string;
+  mode?: "both" | "followers" | "following";
+  title?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-	mode: "both",
+  mode: "both",
 });
 
+const logger = createLogger("SnapshotHistory");
 const expandedItems = ref<Set<number>>(new Set());
 const snapshotDetails = ref<
-	Map<
-		number,
-		{
-			followers: { added: string[]; removed: string[] };
-			following: { added: string[]; removed: string[] };
-			userMap: GlobalUserMap;
-		}
-	>
+  Map<
+    number,
+    {
+      followers: { added: string[]; removed: string[] };
+      following: { added: string[]; removed: string[] };
+      userMap: GlobalUserMap;
+    }
+  >
 >(new Map());
 const loadingDetails = ref<Set<number>>(new Set());
 
 const MAX_CACHED_SNAPSHOTS = 50;
 
-import { useTimeFormat } from "../../utils/time";
 const { formatDate, formatRelativeTime } = useTimeFormat();
 
 onBeforeUnmount(() => {
-	expandedItems.value.clear();
-	snapshotDetails.value.clear();
-	loadingDetails.value.clear();
+  expandedItems.value.clear();
+  snapshotDetails.value.clear();
+  loadingDetails.value.clear();
 });
 
 const toggleExpand = async (timestamp: number) => {
-	if (expandedItems.value.has(timestamp)) {
-		expandedItems.value.delete(timestamp);
-	} else {
-		expandedItems.value.add(timestamp);
+  if (expandedItems.value.has(timestamp)) {
+    expandedItems.value.delete(timestamp);
+  } else {
+    expandedItems.value.add(timestamp);
 
-		if (!snapshotDetails.value.has(timestamp)) {
-			await loadSnapshotDetails(timestamp);
-		}
-	}
+    if (!snapshotDetails.value.has(timestamp)) {
+      await loadSnapshotDetails(timestamp);
+    }
+  }
 };
 
 const loadSnapshotDetails = async (timestamp: number) => {
-	loadingDetails.value.add(timestamp);
+  loadingDetails.value.add(timestamp);
 
-	try {
-		const { getSnapshotRecord, getGlobalUserMap } =
-			await import("../../utils/storage");
-		const record = await getSnapshotRecord(props.userId, timestamp);
-		const userMap = await getGlobalUserMap();
+  try {
+    const { getSnapshotRecord, getGlobalUserMap } =
+      await import("../../utils/storage");
+    const record = await getSnapshotRecord(props.userId, timestamp);
+    const userMap = await getGlobalUserMap();
 
-		if (record) {
-			if (snapshotDetails.value.size >= MAX_CACHED_SNAPSHOTS) {
-				const firstKey = snapshotDetails.value.keys().next().value;
-				if (firstKey !== undefined) {
-					snapshotDetails.value.delete(firstKey);
-					expandedItems.value.delete(firstKey);
-				}
-			}
+    if (record) {
+      if (snapshotDetails.value.size >= MAX_CACHED_SNAPSHOTS) {
+        const firstKey = snapshotDetails.value.keys().next().value;
+        if (firstKey !== undefined) {
+          snapshotDetails.value.delete(firstKey);
+          expandedItems.value.delete(firstKey);
+        }
+      }
 
-			snapshotDetails.value.set(timestamp, {
-				followers: {
-					added: record.followers.add || [],
-					removed: record.followers.rem || [],
-				},
-				following: {
-					added: record.following.add || [],
-					removed: record.following.rem || [],
-				},
-				userMap,
-			});
-		}
-	} catch (err) {
-		console.error("Failed to load snapshot details:", err);
-	} finally {
-		loadingDetails.value.delete(timestamp);
-	}
+      snapshotDetails.value.set(timestamp, {
+        followers: {
+          added: record.followers.add || [],
+          removed: record.followers.rem || [],
+        },
+        following: {
+          added: record.following.add || [],
+          removed: record.following.rem || [],
+        },
+        userMap,
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to load snapshot details:", err);
+  } finally {
+    loadingDetails.value.delete(timestamp);
+  }
 };
 
 const getTitle = () => {
-	if (props.title) return props.title;
-	if (props.mode === "followers") return "Followers changes";
-	if (props.mode === "following") return "Following changes";
-	return "Snapshot timeline";
+  if (props.title) return props.title;
+  if (props.mode === "followers") return "Followers changes";
+  if (props.mode === "following") return "Following changes";
+  return "Snapshot timeline";
 };
 
 const shouldShowSection = (section: "followers" | "following") => {
-	return props.mode === "both" || props.mode === section;
+  return props.mode === "both" || props.mode === section;
 };
 </script>
 
 <template>
-	<div>
-		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-			{{ getTitle() }}
-		</h3>
-		<div class="space-y-2">
-			<div
-				v-for="entry in entries"
-				:key="entry.timestamp"
-				class="border-2 border-lighter/40 rounded-lg overflow-hidden"
-			>
-				<div
-					class="flex items-center justify-between p-4 cursor-pointer hover:bg-lighter/5 transition-colors"
-					@click="toggleExpand(entry.timestamp)"
-				>
-					<div class="flex items-center gap-4 flex-1">
-						<button
-							class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-						>
-							<Fa6SolidChevronDown
-								v-if="expandedItems.has(entry.timestamp)"
-								class="w-4 h-4"
-							/>
-							<Fa6SolidChevronRight v-else class="w-4 h-4" />
-						</button>
-						<div
-							:class="[
-								'w-3 h-3 rounded-full',
-								entry.isCheckpoint ? 'bg-blue-500' : 'bg-gray-400',
-							]"
-						></div>
-						<div>
-							<p class="font-medium text-gray-900 dark:text-white">
-								{{ entry.isCheckpoint ? "Checkpoint" : "Delta" }}
-							</p>
-							<p class="text-sm text-gray-600 dark:text-gray-400">
-								{{ formatDate(entry.timestamp) }}
-								<span class="text-gray-500">
-									({{ formatRelativeTime(entry.timestamp) }})
-								</span>
-							</p>
-						</div>
-					</div>
-					<div class="text-right">
-						<p
-							v-if="entry.isCheckpoint"
-							class="text-sm text-gray-600 dark:text-gray-400"
-						>
-							<template v-if="mode === 'both'">
-								Total:
-								<span class="font-semibold">{{
-									entry.followers.totalCount || 0
-								}}</span>
-								/
-								<span class="font-semibold">{{
-									entry.following.totalCount || 0
-								}}</span>
-							</template>
-							<template v-else>
-								Total:
-								<span class="font-semibold">{{
-									mode === "followers"
-										? entry.followers.totalCount
-										: entry.following.totalCount
-								}}</span>
-							</template>
-						</p>
-						<p v-else class="text-sm">
-							<template v-if="mode === 'both'">
-								<span class="text-green-600 dark:text-green-400"
-									>+{{ entry.followers.addedCount }}</span
-								>
-								<span class="text-red-600 dark:text-red-400"
-									>-{{ entry.followers.removedCount }}</span
-								>
-								/
-								<span class="text-green-600 dark:text-green-400"
-									>+{{ entry.following.addedCount }}</span
-								>
-								<span class="text-red-600 dark:text-red-400"
-									>-{{ entry.following.removedCount }}</span
-								>
-							</template>
-							<template v-else-if="mode === 'followers'">
-								<span class="text-green-600 dark:text-green-400"
-									>+{{ entry.followers.addedCount }}</span
-								>
-								/
-								<span class="text-red-600 dark:text-red-400"
-									>-{{ entry.followers.removedCount }}</span
-								>
-							</template>
-							<template v-else>
-								<span class="text-green-600 dark:text-green-400"
-									>+{{ entry.following.addedCount }}</span
-								>
-								/
-								<span class="text-red-600 dark:text-red-400"
-									>-{{ entry.following.removedCount }}</span
-								>
-							</template>
-						</p>
-					</div>
-				</div>
+  <div>
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      {{ getTitle() }}
+    </h3>
+    <div class="space-y-2">
+      <div
+        v-for="entry in entries"
+        :key="entry.timestamp"
+        class="border-2 border-lighter/40 rounded-lg overflow-hidden"
+      >
+        <div
+          class="flex items-center justify-between p-4 cursor-pointer hover:bg-lighter/5 transition-colors"
+          @click="toggleExpand(entry.timestamp)"
+        >
+          <div class="flex items-center gap-4 flex-1">
+            <button
+              class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <Fa6SolidChevronDown
+                v-if="expandedItems.has(entry.timestamp)"
+                class="w-4 h-4"
+              />
+              <Fa6SolidChevronRight v-else class="w-4 h-4" />
+            </button>
+            <div
+              :class="[
+                'w-3 h-3 rounded-full',
+                entry.isCheckpoint ? 'bg-blue-500' : 'bg-gray-400',
+              ]"
+            ></div>
+            <div>
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ entry.isCheckpoint ? "Checkpoint" : "Delta" }}
+              </p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ formatDate(entry.timestamp) }}
+                <span class="text-gray-500">
+                  ({{ formatRelativeTime(entry.timestamp) }})
+                </span>
+              </p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p
+              v-if="entry.isCheckpoint"
+              class="text-sm text-gray-600 dark:text-gray-400"
+            >
+              <template v-if="mode === 'both'">
+                Total:
+                <span class="font-semibold">{{
+                  entry.followers.totalCount || 0
+                }}</span>
+                /
+                <span class="font-semibold">{{
+                  entry.following.totalCount || 0
+                }}</span>
+              </template>
+              <template v-else>
+                Total:
+                <span class="font-semibold">{{
+                  mode === "followers"
+                    ? entry.followers.totalCount
+                    : entry.following.totalCount
+                }}</span>
+              </template>
+            </p>
+            <p v-else class="text-sm">
+              <template v-if="mode === 'both'">
+                <span class="text-green-600 dark:text-green-400"
+                  >+{{ entry.followers.addedCount }}</span
+                >
+                <span class="text-red-600 dark:text-red-400"
+                  >-{{ entry.followers.removedCount }}</span
+                >
+                /
+                <span class="text-green-600 dark:text-green-400"
+                  >+{{ entry.following.addedCount }}</span
+                >
+                <span class="text-red-600 dark:text-red-400"
+                  >-{{ entry.following.removedCount }}</span
+                >
+              </template>
+              <template v-else-if="mode === 'followers'">
+                <span class="text-green-600 dark:text-green-400"
+                  >+{{ entry.followers.addedCount }}</span
+                >
+                /
+                <span class="text-red-600 dark:text-red-400"
+                  >-{{ entry.followers.removedCount }}</span
+                >
+              </template>
+              <template v-else>
+                <span class="text-green-600 dark:text-green-400"
+                  >+{{ entry.following.addedCount }}</span
+                >
+                /
+                <span class="text-red-600 dark:text-red-400"
+                  >-{{ entry.following.removedCount }}</span
+                >
+              </template>
+            </p>
+          </div>
+        </div>
 
-				<div
-					v-if="expandedItems.has(entry.timestamp)"
-					class="border-t border-gray-200 dark:border-gray-600 p-4"
-				>
-					<div
-						v-if="loadingDetails.has(entry.timestamp)"
-						class="text-center py-4"
-					>
-						<div
-							class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"
-						></div>
-					</div>
+        <div
+          v-if="expandedItems.has(entry.timestamp)"
+          class="border-t border-gray-200 dark:border-gray-600 p-4"
+        >
+          <div
+            v-if="loadingDetails.has(entry.timestamp)"
+            class="text-center py-4"
+          >
+            <div
+              class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"
+            ></div>
+          </div>
 
-					<div
-						v-else-if="snapshotDetails.has(entry.timestamp)"
-						class="space-y-4"
-					>
-						<UserChangesList
-							v-if="shouldShowSection('followers')"
-							:users="snapshotDetails.get(entry.timestamp)!.followers.added"
-							:user-map="snapshotDetails.get(entry.timestamp)!.userMap"
-							:timestamp="entry.timestamp"
-							section="followers-added"
-							title="New followers"
-							color-class="green"
-						/>
+          <div
+            v-else-if="snapshotDetails.has(entry.timestamp)"
+            class="space-y-4"
+          >
+            <UserChangesList
+              v-if="shouldShowSection('followers')"
+              :users="snapshotDetails.get(entry.timestamp)!.followers.added"
+              :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
+              :timestamp="entry.timestamp"
+              section="followers-added"
+              title="New followers"
+              color-class="green"
+            />
 
-						<UserChangesList
-							v-if="shouldShowSection('followers')"
-							:users="snapshotDetails.get(entry.timestamp)!.followers.removed"
-							:user-map="snapshotDetails.get(entry.timestamp)!.userMap"
-							:timestamp="entry.timestamp"
-							section="followers-removed"
-							title="Followers gone"
-							color-class="red"
-						/>
+            <UserChangesList
+              v-if="shouldShowSection('followers')"
+              :users="snapshotDetails.get(entry.timestamp)!.followers.removed"
+              :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
+              :timestamp="entry.timestamp"
+              section="followers-removed"
+              title="Followers gone"
+              color-class="red"
+            />
 
-						<UserChangesList
-							v-if="shouldShowSection('following')"
-							:users="snapshotDetails.get(entry.timestamp)!.following.added"
-							:user-map="snapshotDetails.get(entry.timestamp)!.userMap"
-							:timestamp="entry.timestamp"
-							section="following-added"
-							title="New following"
-							color-class="green"
-						/>
+            <UserChangesList
+              v-if="shouldShowSection('following')"
+              :users="snapshotDetails.get(entry.timestamp)!.following.added"
+              :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
+              :timestamp="entry.timestamp"
+              section="following-added"
+              title="New following"
+              color-class="green"
+            />
 
-						<UserChangesList
-							v-if="shouldShowSection('following')"
-							:users="snapshotDetails.get(entry.timestamp)!.following.removed"
-							:user-map="snapshotDetails.get(entry.timestamp)!.userMap"
-							:timestamp="entry.timestamp"
-							section="following-removed"
-							title="Following gone"
-							color-class="red"
-						/>
+            <UserChangesList
+              v-if="shouldShowSection('following')"
+              :users="snapshotDetails.get(entry.timestamp)!.following.removed"
+              :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
+              :timestamp="entry.timestamp"
+              section="following-removed"
+              title="Following gone"
+              color-class="red"
+            />
 
-						<div
-							v-if="
-								snapshotDetails.get(entry.timestamp)!.followers.added.length ===
-									0 &&
-								snapshotDetails.get(entry.timestamp)!.followers.removed
-									.length === 0 &&
-								snapshotDetails.get(entry.timestamp)!.following.added.length ===
-									0 &&
-								snapshotDetails.get(entry.timestamp)!.following.removed
-									.length === 0
-							"
-							class="text-center py-4 text-gray-500 dark:text-gray-400"
-						>
-							No changes in this snapshot
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+            <div
+              v-if="
+                snapshotDetails.get(entry.timestamp)!.followers.added.length ===
+                  0 &&
+                snapshotDetails.get(entry.timestamp)!.followers.removed
+                  .length === 0 &&
+                snapshotDetails.get(entry.timestamp)!.following.added.length ===
+                  0 &&
+                snapshotDetails.get(entry.timestamp)!.following.removed
+                  .length === 0
+              "
+              class="text-center py-4 text-gray-500 dark:text-gray-400"
+            >
+              No changes in this snapshot
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

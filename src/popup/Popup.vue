@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, watchEffect } from "vue";
+import { computed, onMounted, ref, watchEffect } from "vue";
 import Fa6SolidCamera from "~icons/fa6-solid/camera";
 import Fa6SolidChartSimple from "~icons/fa6-solid/chart-simple";
 import Fa6SolidSpinner from "~icons/fa6-solid/spinner";
@@ -9,11 +9,13 @@ import { ActionType, ExtensionMessage } from "../constants/actions";
 import { ExtensionMessageResponse } from "../constants/status";
 import { useAppStore } from "../stores/app.store";
 import { sendMessageToActiveTab } from "../utils/chrome";
+import { createLogger } from "../utils/logger";
 import {
   getUserLastSnapshotTime,
   getUserSnapshotCount,
 } from "../utils/storage";
 
+const logger = createLogger("Popup");
 const igUsername = ref<string | null>(null);
 const snapshotCount = ref<number>(0);
 const lastSnapshotTime = ref<number | null>(null);
@@ -26,19 +28,6 @@ const cronSetting = ref<{ interval: number; enabled: boolean }>({
 const userId = ref<string | null>(null);
 
 appStore.loadSnapshotCrons();
-
-watch([() => appStore.scLoaded, userId], (loaded) => {
-  if (loaded && userId.value) {
-    if (userId.value in appStore.snapshotCrons) {
-      cronSetting.value.interval =
-        appStore.snapshotCrons[userId.value].interval;
-      cronSetting.value.enabled = true;
-    } else {
-      cronSetting.value.interval = 24;
-      cronSetting.value.enabled = false;
-    }
-  }
-});
 
 onMounted(async () => {
   await appStore.loadLocks();
@@ -60,7 +49,7 @@ onMounted(async () => {
             payload: igUsername.value,
           } satisfies ExtensionMessage,
           async (response: ExtensionMessageResponse<string>) => {
-            console.log("User info response:", response);
+            logger.info("User info response:", response);
             const uid = response?.payload;
             userId.value = uid || null;
             if (uid) {
@@ -72,7 +61,7 @@ onMounted(async () => {
       }
     }
   } catch (error) {
-    console.error("Error fetching active tab:", error);
+    logger.error("Error fetching active tab:", error);
   }
 });
 
@@ -115,15 +104,15 @@ const updateCronInterval = async () => {
   }
 };
 
-const isProcessing = computed(() => 
-  userId.value && userId.value in appStore.activeLocks
+const isProcessing = computed(
+  () => userId.value && userId.value in appStore.activeLocks,
 );
 
 const cronSettingForUser = computed(() => {
   if (!userId.value || !appStore.scLoaded) return null;
-  
+
   const cron = appStore.snapshotCrons[userId.value];
-  return cron 
+  return cron
     ? { interval: cron.interval, enabled: true }
     : { interval: 24, enabled: false };
 });
@@ -142,11 +131,7 @@ watchEffect(() => {
         <div>Profile:</div>
         <div
           class="font-bold"
-          :class="
-            igUsername
-              ? 'text-emerald-600'
-              : 'text-theme'
-          "
+          :class="igUsername ? 'text-emerald-600' : 'text-theme'"
         >
           {{ igUsername ? `@${igUsername}` : "Undetected" }}
         </div>
@@ -163,16 +148,10 @@ watchEffect(() => {
             @click="sendSnapshotSignal"
             :disabled="userId ? userId in appStore.activeLocks : true"
           >
-            <Fa6SolidCamera
-              v-if="userId && !isProcessing"
-            />
+            <Fa6SolidCamera v-if="userId && !isProcessing" />
             <Fa6SolidSpinner v-else class="animate-spin" />
             {{
-              isProcessing
-                ? "Processing"
-                : userId
-                  ? "Take Snapshot"
-                  : "Syncing"
+              isProcessing ? "Processing" : userId ? "Take Snapshot" : "Syncing"
             }}
           </button>
         </div>
@@ -252,7 +231,9 @@ watchEffect(() => {
     </div>
     <hr class="mb-3" />
     <div id="copyright">
-      <p class="flex justify-center gap-1 text-xs text-center text-lighter font-semibold">
+      <p
+        class="flex justify-center gap-1 text-xs text-center text-lighter font-semibold"
+      >
         <Copyright /> {{ new Date().getFullYear() }} qxbao (InstaSnap)
       </p>
     </div>

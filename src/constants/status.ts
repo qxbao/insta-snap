@@ -1,7 +1,8 @@
 export enum Status {
-  SyncDone = "SyncDone",
+  SyncDone = "isnap-sync-done",
   SnapshotComplete = "isnap-snapshot-complete",
-  Done = "Done",
+  Done = "isnap-done",
+  InProgress = "isnap-in-progress",
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

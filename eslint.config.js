@@ -9,7 +9,7 @@ export default [
   },
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/dist/**', '**/node_modules/**', '**/public/**', '**/*.spec.ts', '**/*.test.ts'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/public/**', '**/tests/**'],
   },
   ...pluginVue.configs['flat/essential'],
   ...vueTsEslintConfig(),

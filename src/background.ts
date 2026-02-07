@@ -51,7 +51,7 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
           }
         })
         .catch((error) => {
-          console.error("Failed to update locks:", error);
+          logger.error("Failed to update locks:", error);
         });
       break;
     case ActionType.SEND_APP_DATA:

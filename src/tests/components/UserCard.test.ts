@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mount } from "@vue/test-utils";
+import { describe, expect, it } from "vitest";
 import UserCard from "../../dashboard/components/UserCard.vue";
 import { TrackedUser } from "../../stores/app.store";
 
@@ -67,7 +67,7 @@ describe("UserCard.vue", () => {
 
   it("should handle null lastSnapshot gracefully", () => {
     const userWithoutSnapshot = { ...mockUser, lastSnapshot: null };
-    
+
     const wrapper = mount(UserCard, {
       props: {
         user: userWithoutSnapshot,

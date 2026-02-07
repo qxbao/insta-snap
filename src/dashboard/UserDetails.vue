@@ -13,12 +13,13 @@ import {
 import SnapshotHistory from "./components/SnapshotHistory.vue";
 import UserDetailsHeader from "./components/UserDetailsHeader.vue";
 import UserStatsGrid from "./components/UserStatsGrid.vue";
-
+import { createLogger } from "../utils/logger";
 interface Props {
   userId: string;
 }
 
 const props = defineProps<Props>();
+const logger = createLogger("UserDetails");
 const emit = defineEmits<{
   back: [];
 }>();
@@ -59,7 +60,7 @@ const loadData = async () => {
       currentFollowing.value = await getFullFollowingList(props.userId);
     }
   } catch (err) {
-    console.error("Failed to load user details:", err);
+    logger.error("Failed to load user details:", err);
   } finally {
     loading.value = false;
   }
@@ -193,7 +194,7 @@ const combinedTimeline = computed(() => {
 
         <div class="card mb-6">
           <div
-            class="flex gap-2 [&_button]:font-semibold [&_button]:hover:brightness-90 [&_button]:duration-300 [&_button]:hover:duration [&_button]:px-4 [&_button]:py-2 [&_button]:rounded-lg  [&_button]:cursor-pointer"
+            class="flex gap-2 [&_button]:font-semibold [&_button]:hover:brightness-90 [&_button]:duration-300 [&_button]:hover:duration [&_button]:px-4 [&_button]:py-2 [&_button]:rounded-lg [&_button]:cursor-pointer"
           >
             <button
               @click="activeTab = 'overview'"

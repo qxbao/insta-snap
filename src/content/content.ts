@@ -28,6 +28,14 @@ function registerMessages(
 
   switch (message.type) {
     case ActionType.TAKE_SNAPSHOT:
+      if (locks[username]) {
+        logger.info("Snapshot already in progress for user:", username);
+        sendResponse({
+          status: Status.InProgress,
+          payload: null,
+        } satisfies ExtensionMessageResponse);
+        return;
+      }
       if (uiStore) {
         retrieveUserFollowersAndFollowing(username, logger, uiStore);
       } else {
