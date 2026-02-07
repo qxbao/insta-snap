@@ -12,12 +12,16 @@
   "action": {
     "default_popup": "popup.html"
   },
-  "options_page": "dashboard.html",
+  "options_ui": {
+    "page": "dashboard.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "src/background.ts",
     "type": "module"
   },
   "host_permissions": [
+    "https://www.instagram.com/",
     "https://*.instagram.com/*",
     "https://*.cdninstagram.com/*",
     "https://*.fbcdn.net/*"
@@ -30,10 +34,8 @@
   ],
   "permissions": [
     "declarativeNetRequest",
-    "declarativeNetRequestFeedback",
     "alarms",
     "storage",
-    "tabs",
     "unlimitedStorage",
     "activeTab"
   ]

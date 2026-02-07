@@ -8,12 +8,6 @@ import { saveCompleteSnapshot } from "./utils/storage";
 
 const logger = createLogger("Background");
 
-chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({
-    url: chrome.runtime.getURL("dashboard.html"),
-  });
-});
-
 chrome.runtime.onInstalled.addListener(() => {
   chrome.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: ExtensionRules.map((rule) => rule.id),
@@ -39,19 +33,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         })
         .catch(() => {});
     }
-
-    chrome.tabs.query({}).then((tabs) => {
-      for (const tab of tabs) {
-        if (tab.id) {
-          chrome.tabs
-            .sendMessage(tab.id, {
-              type: ActionType.SYNC_LOCKS,
-              payload: newLocks,
-            })
-            .catch(() => {});
-        }
-      }
-    });
   }
 });
 

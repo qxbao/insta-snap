@@ -85,8 +85,7 @@ const sendSnapshotSignal = async () => {
 };
 
 const openDashboard = () => {
-  const dashboardUrl = chrome.runtime.getURL("dashboard.html");
-  chrome.tabs.create({ url: dashboardUrl });
+  chrome.runtime.openOptionsPage();
 };
 
 const handleCronChange = async (event: Event) => {
