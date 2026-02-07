@@ -6,9 +6,8 @@ import Fa6SolidSpinner from "~icons/fa6-solid/spinner";
 import Copyright from "~icons/mdi/copyright";
 
 import { ActionType, ExtensionMessage } from "../constants/actions";
-import { ExtensionMessageResponse } from "../constants/status";
 import { useAppStore } from "../stores/app.store";
-import { sendMessageToActiveTab } from "../utils/chrome";
+import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/chrome";
 import { createLogger } from "../utils/logger";
 import {
   getUserLastSnapshotTime,
@@ -43,21 +42,30 @@ onMounted(async () => {
           igUsername.value = pathSegments[0];
         }
 
-        sendMessageToActiveTab(
-          {
-            type: ActionType.GET_USER_INFO,
-            payload: igUsername.value,
-          } satisfies ExtensionMessage,
-          async (response: ExtensionMessageResponse<string>) => {
-            logger.info("User info response:", response);
-            const uid = response?.payload;
-            userId.value = uid || null;
-            if (uid) {
-              snapshotCount.value = await getUserSnapshotCount(uid);
-              lastSnapshotTime.value = await getUserLastSnapshotTime(uid);
-            }
-          },
-        );
+        try {
+          const response = await sendMessageWithRetry<string>(
+            {
+              type: ActionType.GET_USER_INFO,
+              payload: igUsername.value,
+            } satisfies ExtensionMessage,
+            {
+              maxRetries: 100,
+              retryDelay: 1000,
+              timeout: 5000,
+            },
+          );
+
+          logger.info("User info response:", response);
+          const uid = response?.payload;
+          userId.value = uid || null;
+          if (uid) {
+            snapshotCount.value = await getUserSnapshotCount(uid);
+            lastSnapshotTime.value = await getUserLastSnapshotTime(uid);
+          }
+        } catch (error) {
+          logger.error("Failed to get user info after retries:", error);
+          userId.value = null;
+        }
       }
     }
   } catch (error) {

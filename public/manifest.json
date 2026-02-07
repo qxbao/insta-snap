@@ -29,7 +29,9 @@
   "content_scripts": [
     {
       "js": ["src/content/content.ts"],
-      "matches": ["https://www.instagram.com/*", "https://*.instagram.com/*/"]
+      "matches": ["https://www.instagram.com/*", "https://*.instagram.com/*/"],
+      "run_at": "document_idle", 
+      "all_frames": false
     }
   ],
   "permissions": [

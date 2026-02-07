@@ -71,16 +71,29 @@ function registerMessages(
 }
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'session' && changes.locks) {
-    const newLocks = changes["locks"].newValue == undefined ? {} : changes["locks"].newValue as Record<string, number>;
+  if (areaName === "session" && changes.locks) {
+    const newLocks =
+      changes["locks"].newValue == undefined
+        ? {}
+        : (changes["locks"].newValue as Record<string, number>);
     Object.assign(locks, newLocks);
     logger.info("Locks updated from storage:", locks);
+  }
+});
+
+let lastUrl = location.href;
+const observer = new MutationObserver(async () => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    const username = window.location.pathname.split("/").filter(Boolean)[0];
+    await saveUserInfo(username, logger);
   }
 });
 
 async function init() {
   const username = window.location.pathname.split("/").filter(Boolean)[0];
   await saveUserInfo(username, logger);
+  observer.observe(document, { subtree: true, childList: true, characterData: true });
   chrome.runtime.onMessage.addListener(registerMessages);
   sendAppDataToBg();
 }
