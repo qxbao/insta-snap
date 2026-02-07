@@ -69,15 +69,20 @@ Then, follow the steps below:
 5. Load the `dist` folder as an unpacked extension in your browser.
 
 ## Release history
+
 See the [Releases](https://github.com/qxbao/insta-snap/releases)
 
 ## Development
-See the [Contributing Guide](CONTRIBUTING.md)
+
+See the [Contributing Guide](CONTRIBUTING.MD)
 
 ## About
+
 [GPLv3 License][License]
 
-Free. Open-source. For users by users. Any donations are appreciated!
+[Privacy Policy](https://github.com/qxbao/insta-snap/wiki/Privacy-Policy)
+
+Free. Open-source. Any donations are appreciated!
 
 <!----------------------------------------------------------------------------->
 
