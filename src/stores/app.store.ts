@@ -1,11 +1,24 @@
 import { defineStore } from "pinia";
 import { getAllTrackedUsers, deleteUserData } from "../utils/storage";
+import { GlobalUserMap } from "../types/storage";
+import { createLogger } from "../utils/logger";
+
+const logger = createLogger("AppStore");
 
 export interface SnapshotCron {
   userId: string;
   interval: number;
   lastRun: number;
 }
+
+export type StorageSchema = {
+  locks: Record<string, number>;
+  crons: Record<string, SnapshotCron>;
+  users_metadata: GlobalUserMap;
+  appId: string;
+  csrfToken: string;
+  wwwClaim: string;
+};
 
 export interface TrackedUser {
   userId: string;
@@ -16,6 +29,8 @@ export interface TrackedUser {
   lastSnapshot: number | null;
   last_updated: number;
 }
+
+export type StorageKey = keyof StorageSchema;
 
 interface AppState {
   activeLocks: Record<string, number>;
@@ -111,7 +126,7 @@ export const useAppStore = defineStore("app", {
         this.trackedUsers = await getAllTrackedUsers();
         this.trackedUsersLoaded = true;
       } catch (error) {
-        console.error("Failed to load tracked users:", error);
+        logger.error("Failed to load tracked users:", error);
         throw error;
       }
     },
@@ -122,7 +137,43 @@ export const useAppStore = defineStore("app", {
 
     async deleteTrackedUser(userId: string) {
       await deleteUserData(userId);
-      this.trackedUsers = this.trackedUsers.filter(user => user.userId !== userId);
+      this.trackedUsers = this.trackedUsers.filter(
+        (user) => user.userId !== userId,
+      );
     },
   },
 });
+
+class TypedStorage {
+  async get<K extends StorageKey>(
+    key: K,
+    area: "local" | "session" = "local",
+  ): Promise<StorageSchema[K] | undefined> {
+    const storage =
+      area === "local" ? chrome.storage.local : chrome.storage.session;
+    const result = await storage.get(key);
+    return result[key] as StorageSchema[K] | undefined;
+  }
+
+  async set<K extends StorageKey>(
+    key: K,
+    value: StorageSchema[K],
+    area: "local" | "session" = "local",
+  ): Promise<void> {
+    const storage =
+      area === "local" ? chrome.storage.local : chrome.storage.session;
+    await storage.set({ [key]: value });
+  }
+
+  async update<K extends StorageKey>(
+    key: K,
+    updater: (current: StorageSchema[K] | undefined) => StorageSchema[K],
+    area: "local" | "session" = "local",
+  ): Promise<void> {
+    const current = await this.get(key, area);
+    const updated = updater(current);
+    await this.set(key, updated, area);
+  }
+}
+
+export const typedStorage = new TypedStorage();

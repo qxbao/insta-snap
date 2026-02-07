@@ -1,7 +1,8 @@
 [![Badge Commits]][Commit Rate]
 [![Badge License]][License]
-![Build Status](https://github.com/qxbao/insta-snap/actions/workflows/build.yml/badge.svg)
-![Lint Status](https://github.com/qxbao/insta-snap/actions/workflows/lint.yml/badge.svg)
+![Build](https://github.com/qxbao/insta-snap/actions/workflows/build.yml/badge.svg)
+![Lint](https://github.com/qxbao/insta-snap/actions/workflows/lint.yml/badge.svg)
+![Tests](https://github.com/qxbao/insta-snap/actions/workflows/test.yml/badge.svg)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/qxbao/insta-snap)
 
 ---

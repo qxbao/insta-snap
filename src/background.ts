@@ -1,5 +1,6 @@
 import { ActionType } from "./constants/actions";
 import { ExtensionRules } from "./constants/rules";
+import { typedStorage } from "./stores/app.store";
 import { Node } from "./types/instapi";
 import { getJitter } from "./utils/alarms";
 import { fetchUsers } from "./utils/instagram";
@@ -7,12 +8,6 @@ import { createLogger } from "./utils/logger";
 import { saveCompleteSnapshot } from "./utils/storage";
 
 const logger = createLogger("Background");
-
-chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({
-    url: chrome.runtime.getURL("dashboard.html"),
-  });
-});
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.declarativeNetRequest.updateDynamicRules({
@@ -39,19 +34,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         })
         .catch(() => {});
     }
-
-    chrome.tabs.query({}).then((tabs) => {
-      for (const tab of tabs) {
-        if (tab.id) {
-          chrome.tabs
-            .sendMessage(tab.id, {
-              type: ActionType.SYNC_LOCKS,
-              payload: newLocks,
-            })
-            .catch(() => {});
-        }
-      }
-    });
   }
 });
 
@@ -69,7 +51,7 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
           }
         })
         .catch((error) => {
-          console.error("Failed to update locks:", error);
+          logger.error("Failed to update locks:", error);
         });
       break;
     case ActionType.SEND_APP_DATA:
@@ -111,9 +93,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       return;
     }
 
-    const crons = (await chrome.storage.local.get("crons")).crons as
-      | Record<string, { userId: string; interval: number; lastRun: number }>
-      | undefined;
+    const crons = await typedStorage.get('crons');
 
     if (!crons) {
       await chrome.storage.local.set({ crons: {} });

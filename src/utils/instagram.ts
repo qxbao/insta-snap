@@ -6,7 +6,7 @@ import {
   InstagramRequestType,
   Node,
 } from "../types/instapi";
-import { Logger } from "./logger";
+import { createLogger, Logger } from "./logger";
 import {
   getGlobalUserMap,
   saveCompleteSnapshot,
@@ -18,6 +18,7 @@ const IGGraphQLBase = "https://www.instagram.com/graphql/query";
 const MAX_USERS_PER_REQUEST = 50;
 const FOLLOWERS_QUERY_HASH = "c76146de99bb02f6415203be841dd25a";
 const FOLLOWING_QUERY_HASH = "d04b0a864b4b54837c0d870b0e77e076";
+const logger = createLogger("InstaSnap:Instagram");
 
 function buildFollowersEndpoint(uid: string, after?: string | null): string {
   const variables = {
@@ -48,10 +49,26 @@ function findAppId(): string {
 }
 
 async function findUserId(username: string): Promise<string | null> {
-  const response = await fetch(`https://www.instagram.com/${username}`);
-  const text = await response.text();
-  const userId = text?.match(/"profile_id":"(\d+)"/);
-  return userId ? userId[1] : "";
+  try {
+    const response = await fetchWithRetry(
+      `https://www.instagram.com/${username}`,
+      {},
+      {
+        maxRetries: 2,
+        retryDelay: 1000,
+        timeout: 10000,
+      },
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const text = await response.text();
+    const userId = text?.match(/"profile_id":"(\d+)"/);
+    return userId ? userId[1] : "";
+  } catch (error) {
+    logger.error("Failed to find user ID:", error);
+    return null;
+  }
 }
 
 function exportCSRFToken(): string {
@@ -86,7 +103,7 @@ function buildHeaders(
 }
 
 /**
- * Custom fetch function for Instagram API requests.
+ * Custom fetch function for Instagram API requests with retry logic.
  * @param input URL or RequestInfo
  * @param appId Instagram App ID
  * @param init Optional RequestInit object
@@ -99,14 +116,87 @@ function IGFetch(
   wwwClaim: string,
   init?: RequestInit,
 ): Promise<Response> {
-  return fetch(input, {
-    headers: {
-      ...buildHeaders(appId, csrfToken, wwwClaim),
+  const url =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+
+  return fetchWithRetry(
+    url,
+    {
+      headers: {
+        ...buildHeaders(appId, csrfToken, wwwClaim),
+      },
+      credentials: "include",
+      mode: "cors",
+      ...init,
     },
-    credentials: "include",
-    mode: "cors",
-    ...init,
-  });
+    {
+      maxRetries: 3,
+      retryDelay: 2000,
+      timeout: 15000,
+    },
+  );
+}
+
+interface FetchOptions {
+  maxRetries?: number;
+  retryDelay?: number;
+  timeout?: number;
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  fetchOptions: FetchOptions = {},
+): Promise<Response> {
+  const { maxRetries = 3, retryDelay = 1000, timeout = 10000 } = fetchOptions;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        const delay = retryAfter
+          ? parseInt(retryAfter) * 1000
+          : retryDelay * Math.pow(2, attempt);
+
+        if (attempt < maxRetries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
+      );
+    }
+  }
+
+  throw new Error("Max retries exceeded");
 }
 
 async function fetchUsers(
@@ -133,11 +223,13 @@ async function fetchUsers(
   while (hasMore) {
     const apiEndpoint = buildEndpoint(userId, after);
 
-    const response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim);
-    if (!response.ok) {
-      logger?.error(
-        `Failed to fetch ${rqtype}: ${response.status} ${response.statusText}`,
-      );
+    let response;
+
+    try {
+      response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim);
+    } catch (error) {
+      logger?.error(`Failed to fetch ${rqtype}:`, error);
+      store?.setLoading(false);
       return false;
     }
 
@@ -434,5 +526,6 @@ export {
   retrieveUserFollowersAndFollowing,
   retrieveUserFollowing,
   saveUserInfo,
-  sendAppDataToBg,
+  sendAppDataToBg
 };
+

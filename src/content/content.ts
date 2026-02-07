@@ -28,6 +28,14 @@ function registerMessages(
 
   switch (message.type) {
     case ActionType.TAKE_SNAPSHOT:
+      if (locks[username]) {
+        logger.info("Snapshot already in progress for user:", username);
+        sendResponse({
+          status: Status.InProgress,
+          payload: null,
+        } satisfies ExtensionMessageResponse);
+        return;
+      }
       if (uiStore) {
         retrieveUserFollowersAndFollowing(username, logger, uiStore);
       } else {
@@ -57,14 +65,18 @@ function registerMessages(
         }
       })();
       return true;
-    case ActionType.SYNC_LOCKS:
-      Object.assign(locks, message.payload || {});
-      logger.info("Synchronized locks:", locks);
-      break;
     default:
       return false;
   }
 }
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'session' && changes.locks) {
+    const newLocks = changes["locks"].newValue == undefined ? {} : changes["locks"].newValue as Record<string, number>;
+    Object.assign(locks, newLocks);
+    logger.info("Locks updated from storage:", locks);
+  }
+});
 
 async function init() {
   const username = window.location.pathname.split("/").filter(Boolean)[0];

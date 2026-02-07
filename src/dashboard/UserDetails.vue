@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { HistoryEntry } from "../types/etc";
+import type { GlobalUserMap, UserSnapshotMeta } from "../types/storage";
 import {
-  getUserSnapshotMeta,
   getFollowersHistory,
-  getGlobalUserMap,
+  getFollowingHistory,
   getFullFollowersList,
   getFullFollowingList,
-  getFollowingHistory,
+  getGlobalUserMap,
+  getUserSnapshotMeta,
 } from "../utils/storage";
-import type { GlobalUserMap, UserSnapshotMeta } from "../types/storage";
+import SnapshotHistory from "./components/SnapshotHistory.vue";
 import UserDetailsHeader from "./components/UserDetailsHeader.vue";
 import UserStatsGrid from "./components/UserStatsGrid.vue";
-import SnapshotTimeline from "./components/SnapshotTimeline.vue";
-import HistoryList from "./components/HistoryList.vue";
-import { HistoryEntry } from "../types/etc";
-
+import { createLogger } from "../utils/logger";
 interface Props {
   userId: string;
 }
 
 const props = defineProps<Props>();
+const logger = createLogger("UserDetails");
 const emit = defineEmits<{
   back: [];
 }>();
@@ -60,7 +60,7 @@ const loadData = async () => {
       currentFollowing.value = await getFullFollowingList(props.userId);
     }
   } catch (err) {
-    console.error("Failed to load user details:", err);
+    logger.error("Failed to load user details:", err);
   } finally {
     loading.value = false;
   }
@@ -174,7 +174,7 @@ const combinedTimeline = computed(() => {
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div
-          class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme"
         ></div>
       </div>
 
@@ -194,7 +194,7 @@ const combinedTimeline = computed(() => {
 
         <div class="card mb-6">
           <div
-            class="flex gap-2 [&_button]:font-semibold [&_button]:hover:brightness-90 [&_button]:duration-300 [&_button]:hover:duration [&_button]:px-4 [&_button]:py-2 [&_button]:rounded-lg  [&_button]:cursor-pointer"
+            class="flex gap-2 [&_button]:font-semibold [&_button]:hover:brightness-90 [&_button]:duration-300 [&_button]:hover:duration [&_button]:px-4 [&_button]:py-2 [&_button]:rounded-lg [&_button]:cursor-pointer"
           >
             <button
               @click="activeTab = 'overview'"
@@ -229,23 +229,24 @@ const combinedTimeline = computed(() => {
           </div>
 
           <div class="mt-6">
-            <SnapshotTimeline
+            <SnapshotHistory
               v-if="activeTab === 'overview'"
               :entries="combinedTimeline"
+              mode="both"
               :user-id="userId"
             />
 
-            <HistoryList
+            <SnapshotHistory
               v-else-if="activeTab === 'followers'"
-              :entries="history.followers"
-              type="followers"
+              :entries="combinedTimeline"
+              mode="followers"
               :user-id="userId"
             />
 
-            <HistoryList
+            <SnapshotHistory
               v-else-if="activeTab === 'following'"
-              :entries="history.following"
-              type="following"
+              :entries="combinedTimeline"
+              mode="following"
               :user-id="userId"
             />
           </div>
