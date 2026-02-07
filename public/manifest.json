@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "InstaSnap - Instagram Profile Tracker",
-  "description": "Advanced Instagram follower tracking & analytics. Effortlessly take snapshots of your (or others) followers and following lists, detect unfollowers, and visualize growth trends with local differential storage for maximum performance.",
+  "description": "Track Instagram followers, detect unfollowers, and analyze growth trends with secure, local-only snapshots.",
   "version": "1.0",
   "icons": {
     "16": "images/icon.png",
