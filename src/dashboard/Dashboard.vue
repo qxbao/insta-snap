@@ -151,7 +151,10 @@ const deleteCron = async (userId: string) => {
 	<div v-else id="main" class="min-h-screen">
 		<header class="card mb-0 rounded-none">
 			<div class="max-w-7xl mx-auto py-6">
-				<div class="flex items-center justify-between">
+				<div class="flex items-center justify-start">
+					<div class="me-5">
+						<img src="/images/icon.png?url" width="100" height="100" alt="">
+					</div>
 					<div>
 						<h1 class="text-3xl font-bold text-theme">
 							InstaSnap
@@ -162,7 +165,7 @@ const deleteCron = async (userId: string) => {
 					</div>
 					<button
 						@click="refreshData"
-						class="flex justify-center gap-1 px-4 py-2 rounded theme-btn transition-colors duration-200 items-center cursor-pointer"
+						class="flex justify-center ms-auto gap-1 px-4 py-2 rounded theme-btn items-center cursor-pointer"
 						:disabled="loading"
 					>
 						<Fa6SolidRotateLeft :class="{ 'animate-spin': loading }" />
@@ -181,7 +184,7 @@ const deleteCron = async (userId: string) => {
 
 			<div v-if="loading" class="flex justify-center items-center py-12">
 				<div
-					class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"
+					class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme"
 				></div>
 			</div>
 

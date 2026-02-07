@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, watchEffect } from "vue";
 import Fa6SolidCamera from "~icons/fa6-solid/camera";
 import Fa6SolidChartSimple from "~icons/fa6-solid/chart-simple";
 import Fa6SolidSpinner from "~icons/fa6-solid/spinner";
@@ -114,6 +114,25 @@ const updateCronInterval = async () => {
     );
   }
 };
+
+const isProcessing = computed(() => 
+  userId.value && userId.value in appStore.activeLocks
+);
+
+const cronSettingForUser = computed(() => {
+  if (!userId.value || !appStore.scLoaded) return null;
+  
+  const cron = appStore.snapshotCrons[userId.value];
+  return cron 
+    ? { interval: cron.interval, enabled: true }
+    : { interval: 24, enabled: false };
+});
+
+watchEffect(() => {
+  if (cronSettingForUser.value) {
+    cronSetting.value = { ...cronSettingForUser.value };
+  }
+});
 </script>
 
 <template>
@@ -125,8 +144,8 @@ const updateCronInterval = async () => {
           class="font-bold"
           :class="
             igUsername
-              ? 'text-emerald-700 dark:text-emerald-500'
-              : 'text-red-500'
+              ? 'text-emerald-600'
+              : 'text-theme'
           "
         >
           {{ igUsername ? `@${igUsername}` : "Undetected" }}
@@ -140,16 +159,16 @@ const updateCronInterval = async () => {
         </div>
         <div class="flex justify-center" v-else>
           <button
-            class="flex justify-center items-center gap-2 mt-3 px-8 py-2 bg-emerald-500 text-black cursor-pointer font-semibold text-lg rounded hover:brightness-110 active:scale-[0.95] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            class="flex justify-center items-center gap-2 mt-3 px-8 py-2 theme-btn cursor-pointer font-semibold text-lg rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
             @click="sendSnapshotSignal"
             :disabled="userId ? userId in appStore.activeLocks : true"
           >
             <Fa6SolidCamera
-              v-if="userId || (userId && userId in appStore.activeLocks)"
+              v-if="userId && !isProcessing"
             />
             <Fa6SolidSpinner v-else class="animate-spin" />
             {{
-              userId && userId in appStore.activeLocks
+              isProcessing
                 ? "Processing"
                 : userId
                   ? "Take Snapshot"
@@ -234,7 +253,7 @@ const updateCronInterval = async () => {
     <hr class="mb-3" />
     <div id="copyright">
       <p class="flex justify-center gap-1 text-xs text-center text-lighter font-semibold">
-        <Copyright /> {{ new Date().getFullYear() }} InstaSnap
+        <Copyright /> {{ new Date().getFullYear() }} qxbao (InstaSnap)
       </p>
     </div>
   </div>

@@ -1,4 +1,4 @@
-export interface InstagramAPIHeader {
+export type InstagramAPIHeader = {
   'accept': string; // */*
   'accept-language': string; // vi,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6
   'x-ig-www-claim': string;

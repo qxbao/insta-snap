@@ -3,6 +3,9 @@ import type { TrackedUser } from "../../stores/app.store";
 import Fa6SolidArrowUpRightFromSquare from "~icons/fa6-solid/arrow-up-right-from-square";
 import Fa6SolidMagnifyingGlassChart from "~icons/fa6-solid/magnifying-glass-chart";
 import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can";
+import { useTimeFormat } from "../../utils/time"
+
+const { formatRelativeTime, formatDate } = useTimeFormat();
 
 interface Props {
 	user: TrackedUser;
@@ -16,26 +19,6 @@ interface Emits {
 
 defineProps<Props>();
 const emit = defineEmits<Emits>();
-
-const formatDate = (timestamp: number | null) => {
-	if (!timestamp) return "Never";
-	return new Date(timestamp).toLocaleString();
-};
-
-const formatRelativeTime = (timestamp: number | null) => {
-	if (!timestamp) return "Never";
-	const now = Date.now();
-	const diff = now - timestamp;
-
-	const minutes = Math.floor(diff / 60000);
-	const hours = Math.floor(diff / 3600000);
-	const days = Math.floor(diff / 86400000);
-
-	if (minutes < 1) return "Just now";
-	if (minutes < 60) return `${minutes}m ago`;
-	if (hours < 24) return `${hours}h ago`;
-	return `${days}d ago`;
-};
 </script>
 
 <template>
@@ -91,7 +74,7 @@ const formatRelativeTime = (timestamp: number | null) => {
 		<div class="mt-4 flex gap-2">
 			<button
 				@click="emit('view-details', user.userId)"
-				class="flex justify-center gap-1 px-4 py-2 rounded-xl theme-btn font-semibold flex-1 transition-colors text-sm cursor-pointer"
+				class="flex justify-center gap-1 px-4 py-2 rounded-xl theme-btn font-semibold flex-1 text-sm"
 			>
 				<Fa6SolidMagnifyingGlassChart />
 				View details

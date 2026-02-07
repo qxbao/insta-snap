@@ -10,6 +10,31 @@ import { Node } from "../types/instapi";
 
 const CHECKPOINT_INTERVAL = 20;
 
+class AsyncLock {
+  private locks = new Map<string, Promise<void>>();
+
+  async acquire<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    while (this.locks.has(key)) {
+      await this.locks.get(key);
+    }
+
+    let releaseLock: () => void;
+    const lockPromise = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    this.locks.set(key, lockPromise);
+
+    try {
+      return await fn();
+    } finally {
+      this.locks.delete(key);
+      releaseLock!();
+    }
+  }
+}
+
+const storageLock = new AsyncLock();
+
 /**
  * Internal helper to save snapshot with auto checkpoint/delta decision
  */
@@ -20,107 +45,109 @@ async function saveSnapshotInternal(
   followingIds: string[] | null,
   logger?: Logger,
 ): Promise<void> {
-  let meta = await getUserSnapshotMeta(targetId);
+  return storageLock.acquire(`snapshot_${targetId}`, async () => {
+    let meta = await getUserSnapshotMeta(targetId);
 
-  if (!meta) {
-    logger?.info("Creating first checkpoint");
-    meta = {
-      targetId,
-      checkpoints: [timestamp],
-      logTimeline: [timestamp],
-    };
-
-    const record: SnapshotRecord = {
-      isCheckpoint: true,
-      followers: followerIds ? { add: followerIds } : {},
-      following: followingIds ? { add: followingIds } : {},
-    };
-
-    await saveSnapshotRecord(targetId, timestamp, record);
-    await saveUserSnapshotMeta(meta);
-    logger?.info(
-      `Saved first checkpoint with ${followerIds?.length || 0} followers and ${followingIds?.length || 0} following`,
-    );
-    return;
-  }
-
-  const snapshotsSinceLastCheckpoint =
-    meta.logTimeline.length - meta.checkpoints.length + 1;
-  const shouldCreateCheckpoint =
-    snapshotsSinceLastCheckpoint >= CHECKPOINT_INTERVAL;
-
-  if (shouldCreateCheckpoint) {
-    logger?.info(
-      `Creating new checkpoint (${snapshotsSinceLastCheckpoint} snapshots since last)`,
-    );
-
-    const record: SnapshotRecord = {
-      isCheckpoint: true,
-      followers: followerIds ? { add: followerIds } : {},
-      following: followingIds ? { add: followingIds } : {},
-    };
-
-    meta.checkpoints.push(timestamp);
-    meta.logTimeline.push(timestamp);
-
-    await saveSnapshotRecord(targetId, timestamp, record);
-    await saveUserSnapshotMeta(meta);
-    logger?.info(
-      `Saved checkpoint with ${followerIds?.length || 0} followers and ${followingIds?.length || 0} following`,
-    );
-  } else {
-    logger?.info("Creating delta snapshot");
-
-    let hasChanges = false;
-    const record: SnapshotRecord = {
-      isCheckpoint: false,
-      followers: {},
-      following: {},
-    };
-
-    if (followerIds !== null) {
-      const previousFollowers = await getFullFollowersList(
+    if (!meta) {
+      logger?.info("Creating first checkpoint");
+      meta = {
         targetId,
-        undefined,
-        logger,
-      );
-      const followersDiff = calculateDiff(previousFollowers, followerIds);
+        checkpoints: [timestamp],
+        logTimeline: [timestamp],
+      };
 
-      if (followersDiff.add.length > 0 || followersDiff.rem.length > 0) {
-        hasChanges = true;
-        record.followers = {
-          add: followersDiff.add.length > 0 ? followersDiff.add : undefined,
-          rem: followersDiff.rem.length > 0 ? followersDiff.rem : undefined,
-        };
-      }
-    }
+      const record: SnapshotRecord = {
+        isCheckpoint: true,
+        followers: followerIds ? { add: followerIds } : {},
+        following: followingIds ? { add: followingIds } : {},
+      };
 
-    if (followingIds !== null) {
-      const previousFollowing = await getFullFollowingList(
-        targetId,
-        undefined,
-        logger,
-      );
-      const followingDiff = calculateDiff(previousFollowing, followingIds);
-
-      if (followingDiff.add.length > 0 || followingDiff.rem.length > 0) {
-        hasChanges = true;
-        record.following = {
-          add: followingDiff.add.length > 0 ? followingDiff.add : undefined,
-          rem: followingDiff.rem.length > 0 ? followingDiff.rem : undefined,
-        };
-      }
-    }
-
-    if (hasChanges) {
-      meta.logTimeline.push(timestamp);
       await saveSnapshotRecord(targetId, timestamp, record);
       await saveUserSnapshotMeta(meta);
-      logger?.info(`Saved delta snapshot`);
-    } else {
-      logger?.info("No changes detected, skipping snapshot");
+      logger?.info(
+        `Saved first checkpoint with ${followerIds?.length || 0} followers and ${followingIds?.length || 0} following`,
+      );
+      return;
     }
-  }
+
+    const snapshotsSinceLastCheckpoint =
+      meta.logTimeline.length - meta.checkpoints.length + 1;
+    const shouldCreateCheckpoint =
+      snapshotsSinceLastCheckpoint >= CHECKPOINT_INTERVAL;
+
+    if (shouldCreateCheckpoint) {
+      logger?.info(
+        `Creating new checkpoint (${snapshotsSinceLastCheckpoint} snapshots since last)`,
+      );
+
+      const record: SnapshotRecord = {
+        isCheckpoint: true,
+        followers: followerIds ? { add: followerIds } : {},
+        following: followingIds ? { add: followingIds } : {},
+      };
+
+      meta.checkpoints.push(timestamp);
+      meta.logTimeline.push(timestamp);
+
+      await saveSnapshotRecord(targetId, timestamp, record);
+      await saveUserSnapshotMeta(meta);
+      logger?.info(
+        `Saved checkpoint with ${followerIds?.length || 0} followers and ${followingIds?.length || 0} following`,
+      );
+    } else {
+      logger?.info("Creating delta snapshot");
+
+      let hasChanges = false;
+      const record: SnapshotRecord = {
+        isCheckpoint: false,
+        followers: {},
+        following: {},
+      };
+
+      if (followerIds !== null) {
+        const previousFollowers = await getFullFollowersList(
+          targetId,
+          undefined,
+          logger,
+        );
+        const followersDiff = calculateDiff(previousFollowers, followerIds);
+
+        if (followersDiff.add.length > 0 || followersDiff.rem.length > 0) {
+          hasChanges = true;
+          record.followers = {
+            add: followersDiff.add.length > 0 ? followersDiff.add : undefined,
+            rem: followersDiff.rem.length > 0 ? followersDiff.rem : undefined,
+          };
+        }
+      }
+
+      if (followingIds !== null) {
+        const previousFollowing = await getFullFollowingList(
+          targetId,
+          undefined,
+          logger,
+        );
+        const followingDiff = calculateDiff(previousFollowing, followingIds);
+
+        if (followingDiff.add.length > 0 || followingDiff.rem.length > 0) {
+          hasChanges = true;
+          record.following = {
+            add: followingDiff.add.length > 0 ? followingDiff.add : undefined,
+            rem: followingDiff.rem.length > 0 ? followingDiff.rem : undefined,
+          };
+        }
+      }
+
+      if (hasChanges) {
+        meta.logTimeline.push(timestamp);
+        await saveSnapshotRecord(targetId, timestamp, record);
+        await saveUserSnapshotMeta(meta);
+        logger?.info(`Saved delta snapshot`);
+      } else {
+        logger?.info("No changes detected, skipping snapshot");
+      }
+    }
+  });
 }
 
 /**
@@ -141,28 +168,30 @@ export async function getGlobalUserMap(): Promise<GlobalUserMap> {
  * @returns void
  */
 export async function updateGlobalUserMap(users: Node[]): Promise<void> {
-  const userMap = await getGlobalUserMap();
-  const now = Date.now();
+  return storageLock.acquire("users_metadata", async () => {
+    const userMap = await getGlobalUserMap();
+    const now = Date.now();
 
-  for (const user of users) {
-    try {
-      userMap[user.id] = {
-        username: user.username || "unknown",
-        full_name: user.full_name || user.username || "Unknown User",
-        profile_pic_url: user.profile_pic_url || "",
-        last_updated: now,
-      };
-    } catch {
-      userMap[user.id] = {
-        username: user.id || "unknown",
-        full_name: user.full_name || user.username || "No name",
-        profile_pic_url: "",
-        last_updated: now,
-      };
+    for (const user of users) {
+      try {
+        userMap[user.id] = {
+          username: user.username || "unknown",
+          full_name: user.full_name || user.username || "Unknown User",
+          profile_pic_url: user.profile_pic_url || "",
+          last_updated: now,
+        };
+      } catch {
+        userMap[user.id] = {
+          username: user.id || "unknown",
+          full_name: user.full_name || user.username || "No name",
+          profile_pic_url: "",
+          last_updated: now,
+        };
+      }
     }
-  }
 
-  await chrome.storage.local.set({ users_metadata: userMap });
+    await chrome.storage.local.set({ users_metadata: userMap });
+  });
 }
 
 export async function getUserSnapshotMeta(
@@ -529,25 +558,29 @@ export async function getAllTrackedUsers(): Promise<
 }
 
 export async function deleteUserData(uid: string): Promise<void> {
-  const metaKey = `meta_${uid}`;
-  const meta = await getUserSnapshotMeta(uid);
-  if (!meta) {
-    return;
-  }
+  return storageLock.acquire(`delete_${uid}`, async () => {
+    const metaKey = `meta_${uid}`;
+    const meta = await getUserSnapshotMeta(uid);
+    if (!meta) {
+      return;
+    }
 
-  const keysToDelete = [metaKey];
-  for (const timestamp of meta.logTimeline) {
-    const dataKey = `data_${uid}_${timestamp}`;
-    keysToDelete.push(dataKey);
-  }
+    const keysToDelete = [metaKey];
+    for (const timestamp of meta.logTimeline) {
+      const dataKey = `data_${uid}_${timestamp}`;
+      keysToDelete.push(dataKey);
+    }
 
-  await chrome.storage.local.remove(keysToDelete);
+    await chrome.storage.local.remove(keysToDelete);
 
-  const cronsResult = await chrome.storage.local.get("crons");
-  const crons = (cronsResult.crons as Record<string, SnapshotCron>) || {};
+    await storageLock.acquire("crons", async () => {
+      const cronsResult = await chrome.storage.local.get("crons");
+      const crons = (cronsResult.crons as Record<string, SnapshotCron>) || {};
 
-  if (crons[uid]) {
-    delete crons[uid];
-    await chrome.storage.local.set({ crons });
-  }
+      if (crons[uid]) {
+        delete crons[uid];
+        await chrome.storage.local.set({ crons });
+      }
+    });
+  });
 }

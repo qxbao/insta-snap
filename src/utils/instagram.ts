@@ -48,10 +48,26 @@ function findAppId(): string {
 }
 
 async function findUserId(username: string): Promise<string | null> {
-  const response = await fetch(`https://www.instagram.com/${username}`);
-  const text = await response.text();
-  const userId = text?.match(/"profile_id":"(\d+)"/);
-  return userId ? userId[1] : "";
+  try {
+    const response = await fetchWithRetry(
+      `https://www.instagram.com/${username}`,
+      {},
+      {
+        maxRetries: 2,
+        retryDelay: 1000,
+        timeout: 10000,
+      }
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const text = await response.text();
+    const userId = text?.match(/"profile_id":"(\d+)"/);
+    return userId ? userId[1] : "";
+  } catch (error) {
+    console.error('Failed to find user ID:', error);
+    return null;
+  }
 }
 
 function exportCSRFToken(): string {
@@ -86,7 +102,7 @@ function buildHeaders(
 }
 
 /**
- * Custom fetch function for Instagram API requests.
+ * Custom fetch function for Instagram API requests with retry logic.
  * @param input URL or RequestInfo
  * @param appId Instagram App ID
  * @param init Optional RequestInit object
@@ -99,14 +115,82 @@ function IGFetch(
   wwwClaim: string,
   init?: RequestInit,
 ): Promise<Response> {
-  return fetch(input, {
-    headers: {
-      ...buildHeaders(appId, csrfToken, wwwClaim),
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  
+  return fetchWithRetry(
+    url,
+    {
+      headers: {
+        ...buildHeaders(appId, csrfToken, wwwClaim),
+      },
+      credentials: "include",
+      mode: "cors",
+      ...init,
     },
-    credentials: "include",
-    mode: "cors",
-    ...init,
-  });
+    {
+      maxRetries: 3,
+      retryDelay: 2000,
+      timeout: 15000,
+    }
+  );
+}
+
+interface FetchOptions {
+  maxRetries?: number;
+  retryDelay?: number;
+  timeout?: number;
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  fetchOptions: FetchOptions = {}
+): Promise<Response> {
+  const {
+    maxRetries = 3,
+    retryDelay = 1000,
+    timeout = 10000
+  } = fetchOptions;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const delay = retryAfter ? parseInt(retryAfter) * 1000 : retryDelay * Math.pow(2, attempt);
+        
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
+    }
+  }
+  
+  throw new Error('Max retries exceeded');
 }
 
 async function fetchUsers(
@@ -127,7 +211,7 @@ async function fetchUsers(
   const users: Node[] = [];
   let after: string | null = null;
   let hasMore = true;
-
+  
   store?.setLoading(true);
   store?.setLoadingProgress(0, rqtype);
   while (hasMore) {

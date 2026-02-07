@@ -1,5 +1,6 @@
 import { ActionType } from "./constants/actions";
 import { ExtensionRules } from "./constants/rules";
+import { typedStorage } from "./stores/app.store";
 import { Node } from "./types/instapi";
 import { getJitter } from "./utils/alarms";
 import { fetchUsers } from "./utils/instagram";
@@ -92,9 +93,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       return;
     }
 
-    const crons = (await chrome.storage.local.get("crons")).crons as
-      | Record<string, { userId: string; interval: number; lastRun: number }>
-      | undefined;
+    const crons = await typedStorage.get('crons');
 
     if (!crons) {
       await chrome.storage.local.set({ crons: {} });
