@@ -9,6 +9,8 @@ import { saveCompleteSnapshot } from "./utils/storage";
 
 const logger = createLogger("Background");
 
+let isAlarmProcessing = false;
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: ExtensionRules.map((rule) => rule.id),
@@ -76,7 +78,15 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   logger.info(`Alarm triggered: ${alarm.name}`);
   if (alarm.name === ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS) {
-    const appId = (await chrome.storage.local.get("appId")).appId as
+    if (isAlarmProcessing) {
+      logger.info("Previous alarm execution still in progress, skipping...");
+      return;
+    }
+    
+    isAlarmProcessing = true;
+    
+    try {
+      const appId = (await chrome.storage.local.get("appId")).appId as
       | undefined
       | string;
     const csrfToken = (await chrome.storage.local.get("csrfToken"))
@@ -105,7 +115,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       logger.info(`Processing snapshot cron for user: ${userId}`);
       // TODO: Follower/following only opt
       const cron = crons[userId];
-      if (now - cron.lastRun * 60 * 60 * 1000 >= cron.interval) {
+      if (now - cron.lastRun >= cron.interval * 60 * 60 * 1000) {
         let followers: Node[] = [];
         logger?.info("Fetching followers...");
         const flwerRes = await fetchUsers(
@@ -142,6 +152,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         crons[userId].lastRun = now;
       }
     }
-    await chrome.storage.local.set({ crons });
+      await chrome.storage.local.set({ crons });
+    } finally {
+      isAlarmProcessing = false;
+      logger.info("Alarm execution completed");
+    }
   }
 });

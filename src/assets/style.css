@@ -18,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--isnap-theme: #f90431;
+		--isnap-theme: #c6213f;
 		--isnap-contrast: #000000;
 		--isnap-nocontrast: #ffffff;
 		--isnap-lighter: #9e9e9e;
