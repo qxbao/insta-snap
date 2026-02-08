@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { GlobalUserMap } from "../../types/storage";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 
 const visibleCount = ref(10);
 const USERS_PER_PAGE = 10;
@@ -78,14 +80,14 @@ const colorClasses = {
 				@click="loadMore"
 				class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
 			>
-				Load more
+				{{ t("dashboard.details.changes.load_more") }}
 			</button>
 			<span class="text-gray-400">•</span>
 			<button
 				@click="loadAll"
 				class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
 			>
-				Load all
+				{{ t("dashboard.details.changes.load_all") }}
 			</button>
 		</div>
 	</div>

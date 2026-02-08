@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { HistoryEntry } from "../types/etc";
 import type { GlobalUserMap, UserSnapshotMeta } from "../types/storage";
 import {
@@ -19,6 +20,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 const logger = createLogger("UserDetails");
 const emit = defineEmits<{
   back: [];
@@ -162,10 +164,10 @@ const combinedTimeline = computed(() => {
           </button>
           <div class="flex-1">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-              User Details
+              {{ t("dashboard.details.title") }}
             </h1>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              View snapshot history and analytics
+              {{ t("dashboard.details.subtitle") }}
             </p>
           </div>
         </div>
@@ -204,7 +206,7 @@ const combinedTimeline = computed(() => {
                   : 'card-lighter',
               ]"
             >
-              Overview
+              {{ t("dashboard.details.tabs.overview") }}
             </button>
             <button
               @click="activeTab = 'followers'"
@@ -214,7 +216,7 @@ const combinedTimeline = computed(() => {
                   : 'card-lighter',
               ]"
             >
-              Followers History
+              {{ t("dashboard.details.tabs.followers_history") }}
             </button>
             <button
               @click="activeTab = 'following'"
@@ -224,7 +226,7 @@ const combinedTimeline = computed(() => {
                   : 'card-lighter',
               ]"
             >
-              Following History
+              {{ t("dashboard.details.tabs.following_history") }}
             </button>
           </div>
 
@@ -254,7 +256,7 @@ const combinedTimeline = computed(() => {
       </div>
       <div v-else class="card text-center py-12">
         <p class="text-red-600 dark:text-red-400">
-          Failed to load user details
+          {{ t("dashboard.details.failed_to_load") }}
         </p>
       </div>
     </main>

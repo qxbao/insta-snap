@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
+
 interface Props {
 	userInfo: {
 		username: string;
@@ -14,6 +16,7 @@ interface Emits {
 
 defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -36,11 +39,13 @@ const emit = defineEmits<Emits>();
 					@click="emit('open-profile')"
 					class="mt-2 text-sm text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
 				>
-					View on Instagram →
+					{{ t("dashboard.details.header.view_on_instagram") }} →
 				</button>
 			</div>
 			<div class="text-right">
-				<p class="text-sm text-gray-600 dark:text-gray-400">User ID</p>
+				<p class="text-sm text-gray-600 dark:text-gray-400">
+					{{ t("dashboard.details.header.user_id") }}
+				</p>
 				<p class="text-lg font-mono text-gray-900 dark:text-white">
 					{{ userId }}
 				</p>

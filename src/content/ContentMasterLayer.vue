@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useUIStore } from "../stores/ui.store";
+import { useI18n } from "vue-i18n";
 import Fa6SolidCameraRetro from "~icons/fa6-solid/camera-retro";
 import Fa6SolidCheck from "~icons/fa6-solid/check";
 import Fa6SolidXmark from "~icons/fa6-solid/xmark";
 import Fa6SolidCircleInfo from "~icons/fa6-solid/circle-info";
 
 const ui = useUIStore();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -29,7 +31,7 @@ const ui = useUIStore();
             class="bg-linear-to-br from-purple-600/80 via-pink-500/80 to-orange-500/80 w-100 text-white flex flex-col items-center p-8 rounded-2xl shadow-lg backdrop-blur-lg"
           >
             <h3 class="mb-3 text-2xl font-semibold tracking-tight">
-              Taking snapshot
+              {{ t("content.snapshot.taking_snapshot") }}
             </h3>
             <div class="mb-3">
               <Fa6SolidCameraRetro
@@ -37,13 +39,13 @@ const ui = useUIStore();
               />
             </div>
             <p class="mb-2 text-sm leading-relaxed text-gray-200">
-              For a while, please don't leave this page
+              {{ t("content.snapshot.dont_leave_page") }}
             </p>
             <p
               v-if="ui.progress.target"
-              class="text-[13px] font-semibold text-blue-300 mt-4 pt-4 border-t border-black/8 dark:border-white/8"
+              class="text-[13px] font-semibold text-gray-200 mt-4 pt-4 border-t border-black/8 dark:border-white/8"
             >
-              Loaded {{ ui.progress.loaded }} of {{ ui.progress.target }} users
+              {{ t("content.snapshot.progress", { loaded: ui.progress.loaded, target: ui.progress.target }) }}
             </p>
           </div>
         </div>

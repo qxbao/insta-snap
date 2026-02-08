@@ -4,8 +4,10 @@ import Fa6SolidArrowUpRightFromSquare from "~icons/fa6-solid/arrow-up-right-from
 import Fa6SolidMagnifyingGlassChart from "~icons/fa6-solid/magnifying-glass-chart";
 import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can";
 import { useTimeFormat } from "../../utils/time";
+import { useI18n } from "vue-i18n";
 
-const { formatRelativeTime, formatDate } = useTimeFormat();
+const { formatRelativeTime } = useTimeFormat();
+const { t } = useI18n();
 
 interface Props {
   user: TrackedUser;
@@ -54,21 +56,21 @@ const emit = defineEmits<Emits>();
 
     <div class="mt-6 grid grid-cols-2 gap-4">
       <div class="border-2 border-lighter/40 rounded-lg p-3">
-        <p class="text-xs text-lighter">Snapshots</p>
+        <p class="text-xs text-lighter">
+          {{ t("popup.metadata.total_snapshots") }}
+        </p>
         <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
           {{ user.snapshotCount }}
         </p>
       </div>
       <div class="border-2 border-lighter/40 rounded-lg p-3">
-        <p class="text-xs text-lighter">Last Snapshot</p>
+        <p class="text-xs text-lighter">
+          {{ t("popup.metadata.last_snapshot") }}
+        </p>
         <p class="text-sm font-semibold text-gray-900 dark:text-white">
           {{ formatRelativeTime(user.lastSnapshot) }}
         </p>
       </div>
-    </div>
-
-    <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-      <span>Updated: {{ formatDate(user.lastSnapshot) }}</span>
     </div>
 
     <div class="mt-4 flex gap-2">
@@ -77,7 +79,7 @@ const emit = defineEmits<Emits>();
         class="flex justify-center gap-1 px-4 py-2 rounded-xl theme-btn font-semibold flex-1 text-sm"
       >
         <Fa6SolidMagnifyingGlassChart />
-        View details
+        {{ t("dashboard.main.view_details") }}
       </button>
       <button
         @click="emit('open-profile', user.username)"

@@ -4,6 +4,7 @@ import type { TrackedUser } from "../../stores/app.store";
 import Fa6SolidXmark from "~icons/fa6-solid/xmark";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import { useTimeFormat } from "../../utils/time";
+import { useI18n } from "vue-i18n";
 
 interface Props {
   show: boolean;
@@ -23,7 +24,7 @@ interface Emits {
 const { formatIntervalTime } = useTimeFormat();
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-
+const { t } = useI18n();
 const localUserId = ref(props.cronUserId);
 const localInterval = ref(props.cronInterval);
 const dropdownOpen = ref(false);
@@ -55,10 +56,12 @@ watch(localInterval, (newVal) => {
 });
 
 const intervalError = computed(() => {
-  if (!localInterval.value) return "Interval is required";
-  if (localInterval.value < 1) return "Minimum interval is 1 hour";
+  if (!localInterval.value)
+    return t("dashboard.main.cronjob.interval_required");
+  if (localInterval.value < 1)
+    return t("dashboard.main.cronjob.interval_min_er");
   if (localInterval.value > 168)
-    return "Maximum interval is 168 hours (7 days)";
+    return t("dashboard.main.cronjob.interval_max_er");
   return null;
 });
 
@@ -68,7 +71,9 @@ const isValid = computed(
 
 const handleSave = () => {
   if (!isValid.value) {
-    alert(intervalError.value || "Please select a user");
+    alert(
+      intervalError.value || t("dashboard.main.cronjob.select_user_er"),
+    );
     return;
   }
   emit("save", { userId: localUserId.value!, interval: localInterval.value });
@@ -89,7 +94,11 @@ const selectUser = (userId: string) => {
     <div class="card rounded-lg shadow-xl max-w-md w-full p-6">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-xl font-bold">
-          {{ editingCron ? "Edit" : "Add" }} schedule
+          {{
+            editingCron
+              ? t("dashboard.main.cronjob.edit_schedule")
+              : t("dashboard.main.cronjob.add_schedule")
+          }}
         </h3>
         <button
           @click="emit('close')"
@@ -102,7 +111,7 @@ const selectUser = (userId: string) => {
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-lighter mb-2">
-            Select User
+            {{ t("dashboard.main.cronjob.select_user") }}
           </label>
           <div class="relative">
             <button
@@ -116,7 +125,9 @@ const selectUser = (userId: string) => {
                   selectedUser.username
                 }})
               </span>
-              <span v-else class="text-gray-400">Select a user</span>
+              <span v-else class="text-gray-400">{{
+                t("dashboard.main.cronjob.select_user")
+              }}</span>
               <Fa6SolidChevronDown
                 class="text-sm transition-transform duration-200"
                 :class="{ 'rotate-180': dropdownOpen }"
@@ -145,7 +156,7 @@ const selectUser = (userId: string) => {
 
         <div>
           <label class="block text-sm font-medium text-lighter mb-2">
-            Interval (hour)
+            {{ t("dashboard.main.cronjob.interval_w_unit") }}
           </label>
           <input
             v-model.number="localInterval"
@@ -156,8 +167,10 @@ const selectUser = (userId: string) => {
             placeholder="Enter interval in hours"
           />
           <div class="text-lighter flex flex-col gap-1 mt-1">
-            <p class="mt-1 text-xs">Recommended: 12 hours</p>
-            <p>Maximum: 168 hours</p>
+            <p class="mt-1 text-xs">
+              {{ t("dashboard.main.cronjob.interval_rec") }}
+            </p>
+            <p>{{ t("dashboard.main.cronjob.interval_max") }}</p>
           </div>
           <p v-if="intervalError" class="mt-1 text-xs text-red-600">
             {{ intervalError }}
@@ -168,9 +181,12 @@ const selectUser = (userId: string) => {
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3"
         >
           <p class="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Note:</strong> Snapshots will be captured automatically
-            every <strong>{{ formatIntervalTime(localInterval) }}</strong> when
-            the extension is active.
+            <b>Note: </b
+            >{{
+              t("dashboard.main.cronjob.interval_note", {
+                time: formatIntervalTime(localInterval),
+              })
+            }}
           </p>
         </div>
       </div>

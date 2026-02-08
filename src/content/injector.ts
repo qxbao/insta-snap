@@ -4,6 +4,7 @@ import tailwindStyles from '../assets/style.css?inline';
 import ContentMasterLayer from "./ContentMasterLayer.vue";
 import { createPinia } from "pinia";
 import { useUIStore } from "../stores/ui.store";
+import { i18n } from "../i18n";
 
 const logger = createLogger("Injector");
 
@@ -35,11 +36,12 @@ export function setupVueApp(): ReturnType<typeof useUIStore> | void {
   document.head.appendChild(style)
 
   app.use(pinia);
+  app.use(i18n);
+  const uiStore = useUIStore(pinia);
   app.mount(root);
   
   document.body.appendChild(host);
   logger.info("Vue app injected into the page.");
 
-  const uiStore = useUIStore(pinia);
   return uiStore;
 }
