@@ -21,11 +21,13 @@ const i18n = createI18n({
       set: vi.fn(),
       remove: vi.fn(),
       clear: vi.fn(),
+      getKeys: vi.fn().mockResolvedValue([]),
     },
     session: {
       get: vi.fn(),
       set: vi.fn(),
       remove: vi.fn(),
+      getKeys: vi.fn().mockResolvedValue([]),
     },
   },
   alarms: {
