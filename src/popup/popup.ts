@@ -5,7 +5,6 @@ import { createPinia } from 'pinia';
 import { ActionType } from '../constants/actions';
 import { useAppStore } from '../stores/app.store';
 import { i18n } from '../i18n';
-
 const app = createApp(Popup);
 const pinia = createPinia();
 const appStore = useAppStore(pinia);
@@ -21,3 +20,14 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     appStore.unlockUser(userId);
   }
 })
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local") {
+    for (const key in changes) {
+      if (key.startsWith("meta_")) {
+        appStore.loadTrackedUsers();
+        break;
+      }
+    }
+  }
+});

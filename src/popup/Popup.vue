@@ -9,16 +9,10 @@ import { ActionType, ExtensionMessage } from "../constants/actions";
 import { useAppStore } from "../stores/app.store";
 import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/chrome";
 import { createLogger } from "../utils/logger";
-import {
-  getUserLastSnapshotTime,
-  getUserSnapshotCount,
-} from "../utils/storage";
 import { useI18n } from "vue-i18n";
 
 const logger = createLogger("Popup");
 const igUsername = ref<string | null>(null);
-const snapshotCount = ref<number>(0);
-const lastSnapshotTime = ref<number | null>(null);
 const igProfilePattern = /^(https:\/\/www\.instagram\.com\/)[\w.]+[\/]?$/g;
 const appStore = useAppStore();
 const cronSetting = ref<{ interval: number; enabled: boolean }>({
@@ -29,6 +23,7 @@ const userId = ref<string | null>(null);
 const { t } = useI18n();
 
 appStore.loadSnapshotCrons();
+appStore.loadTrackedUsers();
 
 onMounted(async () => {
   await appStore.loadLocks();
@@ -60,10 +55,6 @@ onMounted(async () => {
           logger.debug("User info response:", response);
           const uid = response?.payload;
           userId.value = uid || null;
-          if (uid) {
-            snapshotCount.value = await getUserSnapshotCount(uid);
-            lastSnapshotTime.value = await getUserLastSnapshotTime(uid);
-          }
         } catch (error) {
           logger.error("Failed to get user info after retries:", error);
           userId.value = null;
@@ -132,6 +123,14 @@ watchEffect(() => {
     cronSetting.value = { ...cronSettingForUser.value };
   }
 });
+
+const currentUserData = computed(() => {
+  if (!userId.value) return null;
+  return appStore.trackedUsers.find(user => user.userId === userId.value);
+});
+
+const snapshotCount = computed(() => currentUserData.value?.snapshotCount ?? -1);
+const lastSnapshotTime = computed(() => currentUserData.value?.lastSnapshot ?? null);
 </script>
 
 <template>
