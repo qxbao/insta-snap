@@ -85,6 +85,10 @@ let lastUrl = location.href;
 const observer = new MutationObserver(async () => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
+    const igpattern = /^https?:\/\/(www\.)?instagram\.com\/([^\/]+)\/?$/;
+    if (!igpattern.test(location.href)) {
+      return;
+    }
     const username = window.location.pathname.split("/").filter(Boolean)[0];
     await saveUserInfo(username, logger);
   }

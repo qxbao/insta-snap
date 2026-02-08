@@ -13,6 +13,7 @@ import {
   getUserLastSnapshotTime,
   getUserSnapshotCount,
 } from "../utils/storage";
+import { useI18n } from "vue-i18n";
 
 const logger = createLogger("Popup");
 const igUsername = ref<string | null>(null);
@@ -25,6 +26,7 @@ const cronSetting = ref<{ interval: number; enabled: boolean }>({
   enabled: false,
 });
 const userId = ref<string | null>(null);
+const { t } = useI18n();
 
 appStore.loadSnapshotCrons();
 
@@ -55,7 +57,7 @@ onMounted(async () => {
             },
           );
 
-          logger.info("User info response:", response);
+          logger.debug("User info response:", response);
           const uid = response?.payload;
           userId.value = uid || null;
           if (uid) {
@@ -136,18 +138,18 @@ watchEffect(() => {
   <div id="main" class="p-3 w-100">
     <div class="p-5 mb-3 text-center card">
       <div class="flex justify-center gap-1 text-sm">
-        <div>Profile:</div>
+        <div>{{ t("popup.profile") }}:</div>
         <div
           class="font-bold"
           :class="igUsername ? 'text-emerald-600' : 'text-theme'"
         >
-          {{ igUsername ? `@${igUsername}` : "Undetected" }}
+          {{ igUsername ? `@${igUsername}` : t("errors.undetected_profile") }}
         </div>
       </div>
       <div id="snapshotBtnContainer" :class="{ 'mb-3': igUsername }">
         <div v-if="!igUsername">
           <p class="mt-2 mb-3 text-xs text-gray-500">
-            Navigate to an Instagram profile page to use this feature.
+            {{ t("popup.no_profile_recommend") }}
           </p>
         </div>
         <div class="flex justify-center" v-else>
@@ -159,7 +161,11 @@ watchEffect(() => {
             <Fa6SolidCamera v-if="userId && !isProcessing" />
             <Fa6SolidSpinner v-else class="animate-spin" />
             {{
-              isProcessing ? "Processing" : userId ? "Take Snapshot" : "Syncing"
+              isProcessing
+                ? t("popup.status.processing")
+                : userId
+                  ? t("popup.status.ready")
+                  : t("popup.status.syncing")
             }}
           </button>
         </div>
@@ -170,20 +176,20 @@ watchEffect(() => {
         v-if="igUsername"
       >
         <p class="mb-1 text-sm font-bold text-gray-800 dark:text-gray-300">
-          This account has:
+          {{ t("popup.metadata.title") }}
         </p>
         <p class="text-xs text-gray-600 dark:text-gray-400">
-          Total snapshots:
+          {{ t("popup.metadata.total_snapshots") }}:
           <span class="font-bold text-emerald-700 dark:text-emerald-500">
-            {{ snapshotCount == -1 ? "None" : snapshotCount }}
+            {{ snapshotCount == -1 ? 0 : snapshotCount }}
           </span>
         </p>
         <p class="text-xs text-gray-600 dark:text-gray-400">
-          Last snapshot at:
+          {{ t("popup.metadata.last_snapshot") }}:
           <span class="font-bold text-emerald-700 dark:text-emerald-500">
             {{
               new Date(lastSnapshotTime || 0).getTime() == 0
-                ? "Never"
+                ? t("popup.metadata.never")
                 : new Date(lastSnapshotTime || 0).toLocaleString()
             }}
           </span>
@@ -195,15 +201,17 @@ watchEffect(() => {
           class="flex justify-center gap-2 mt-2 px-4 py-2 bg-nocontrast text-contrast brightness-90 cursor-pointer font-semibold text-sm rounded-xl active:scale-[0.95] transition-all duration-300"
         >
           <Fa6SolidChartSimple />
-          Open dashboard
+          {{ t("popup.open_dashboard") }}
         </button>
       </div>
     </div>
     <div v-if="userId" class="py-3 mb-3">
-      <p class="font-bold text-xl ms-2">Configurations</p>
+      <p class="font-bold text-xl ms-2">
+        {{ t("popup.configurations.title") }}
+      </p>
       <div class="flex justify-between">
         <p class="mt-2 text-xs mx-2 text-gray-600 dark:text-gray-400">
-          Automatic snapshots at regular intervals
+          {{ t("popup.configurations.automatic_snapshots") }}
         </p>
         <label class="inline-flex relative items-center cursor-pointer mt-1">
           <input
@@ -223,8 +231,8 @@ watchEffect(() => {
           <label
             for="interval"
             class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >Interval (hours)</label
-          >
+            >{{ t("popup.configurations.interval") }}
+          </label>
           <input
             id="interval"
             type="number"

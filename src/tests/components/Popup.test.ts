@@ -8,7 +8,6 @@ import { createMockStorage } from "../utils/test-helpers";
 describe("Popup.vue", () => {
   let mockLocalStorage: ReturnType<typeof createMockStorage>;
   let mockSessionStorage: ReturnType<typeof createMockStorage>;
-
   beforeEach(() => {
     setActivePinia(createPinia());
 
@@ -45,7 +44,7 @@ describe("Popup.vue", () => {
 
   it("should detect Instagram profile URL", async () => {
     const wrapper = mount(Popup);
-    
+
     // Wait for onMounted to complete
     await wrapper.vm.$nextTick();
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -58,13 +57,13 @@ describe("Popup.vue", () => {
 
   it("should show loading state initially", () => {
     const wrapper = mount(Popup);
-    
+
     expect(wrapper.html()).toBeTruthy();
   });
 
   it("should open dashboard when button clicked", async () => {
     const wrapper = mount(Popup);
-    
+
     const dashboardButton = wrapper.find('[data-test="dashboard-button"]');
     if (dashboardButton.exists()) {
       await dashboardButton.trigger("click");

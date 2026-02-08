@@ -82,76 +82,79 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       logger.info("Previous alarm execution still in progress, skipping...");
       return;
     }
-    
+
     isAlarmProcessing = true;
-    
+
     try {
       const appId = (await chrome.storage.local.get("appId")).appId as
-      | undefined
-      | string;
-    const csrfToken = (await chrome.storage.local.get("csrfToken"))
-      .csrfToken as undefined | string;
+        | undefined
+        | string;
+      const csrfToken = (await chrome.storage.local.get("csrfToken"))
+        .csrfToken as undefined | string;
 
-    const wwwClaim = (await chrome.storage.local.get("wwwClaim")).wwwClaim as
-      | undefined
-      | string;
+      const wwwClaim = (await chrome.storage.local.get("wwwClaim")).wwwClaim as
+        | undefined
+        | string;
 
-    if (!appId || !csrfToken || !wwwClaim) {
-      logger.error("App data missing, cannot process snapshot subscriptions.", {
-        appData: { appId, csrfToken, wwwClaim },
-      });
-      return;
-    }
-
-    const crons = await typedStorage.get('crons');
-
-    if (!crons) {
-      await chrome.storage.local.set({ crons: {} });
-      return;
-    }
-
-    const now = Date.now();
-    for (const userId in crons) {
-      logger.info(`Processing snapshot cron for user: ${userId}`);
-      // TODO: Follower/following only opt
-      const cron = crons[userId];
-      if (now - cron.lastRun >= cron.interval * 60 * 60 * 1000) {
-        let followers: Node[] = [];
-        logger?.info("Fetching followers...");
-        const flwerRes = await fetchUsers(
-          userId,
-          "followers",
-          appId,
-          csrfToken,
-          wwwClaim,
-          logger,
+      if (!appId || !csrfToken || !wwwClaim) {
+        logger.error(
+          "App data missing, cannot process snapshot subscriptions.",
+          {
+            appData: { appId, csrfToken, wwwClaim },
+          },
         );
-        if (flwerRes === false) {
-          return false;
-        }
-        followers = flwerRes;
-
-        let following: Node[] = [];
-        logger?.info("Fetching following...");
-        const flwingRes = await fetchUsers(
-          userId,
-          "following",
-          appId,
-          csrfToken,
-          wwwClaim,
-          logger,
-        );
-        if (flwingRes === false) return false;
-
-        following = flwingRes;
-        await saveCompleteSnapshot(userId, followers, following, logger);
-        // TODO: Magic numbers
-        await new Promise((resolve) =>
-          setTimeout(resolve, getJitter(5000, 15000)),
-        );
-        crons[userId].lastRun = now;
+        return;
       }
-    }
+
+      const crons = await typedStorage.get("crons");
+
+      if (!crons) {
+        await chrome.storage.local.set({ crons: {} });
+        return;
+      }
+
+      const now = Date.now();
+      for (const userId in crons) {
+        logger.info(`Processing snapshot cron for user: ${userId}`);
+        // TODO: Follower/following only opt
+        const cron = crons[userId];
+        if (now - cron.lastRun >= cron.interval * 60 * 60 * 1000) {
+          let followers: Node[] = [];
+          logger?.info("Fetching followers...");
+          const flwerRes = await fetchUsers(
+            userId,
+            "followers",
+            appId,
+            csrfToken,
+            wwwClaim,
+            logger,
+          );
+          if (flwerRes === false) {
+            return false;
+          }
+          followers = flwerRes;
+
+          let following: Node[] = [];
+          logger?.info("Fetching following...");
+          const flwingRes = await fetchUsers(
+            userId,
+            "following",
+            appId,
+            csrfToken,
+            wwwClaim,
+            logger,
+          );
+          if (flwingRes === false) return false;
+
+          following = flwingRes;
+          await saveCompleteSnapshot(userId, followers, following, logger);
+          // TODO: Magic numbers
+          await new Promise((resolve) =>
+            setTimeout(resolve, getJitter(5000, 15000)),
+          );
+          crons[userId].lastRun = now;
+        }
+      }
       await chrome.storage.local.set({ crons });
     } finally {
       isAlarmProcessing = false;

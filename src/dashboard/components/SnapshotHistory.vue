@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
 import { GlobalUserMap } from "../../types/storage";
@@ -34,6 +35,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const logger = createLogger("SnapshotHistory");
+const { t } = useI18n();
 const expandedItems = ref<Set<number>>(new Set());
 const snapshotDetails = ref<
   Map<
@@ -108,9 +110,9 @@ const loadSnapshotDetails = async (timestamp: number) => {
 
 const getTitle = () => {
   if (props.title) return props.title;
-  if (props.mode === "followers") return "Followers changes";
-  if (props.mode === "following") return "Following changes";
-  return "Snapshot timeline";
+  if (props.mode === "followers") return t("dashboard.details.history.followers_changes");
+  if (props.mode === "following") return t("dashboard.details.history.following_changes");
+  return t("dashboard.details.history.snapshot_timeline");
 };
 
 const shouldShowSection = (section: "followers" | "following") => {
@@ -151,7 +153,7 @@ const shouldShowSection = (section: "followers" | "following") => {
             ></div>
             <div>
               <p class="font-medium text-gray-900 dark:text-white">
-                {{ entry.isCheckpoint ? "Checkpoint" : "Delta" }}
+                {{ entry.isCheckpoint ? t("dashboard.details.history.checkpoint") : t("dashboard.details.history.delta") }}
               </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ formatDate(entry.timestamp) }}
@@ -167,7 +169,7 @@ const shouldShowSection = (section: "followers" | "following") => {
               class="text-sm text-gray-600 dark:text-gray-400"
             >
               <template v-if="mode === 'both'">
-                Total:
+                {{ t("dashboard.details.history.total") }}:
                 <span class="font-semibold">{{
                   entry.followers.totalCount || 0
                 }}</span>
@@ -177,7 +179,7 @@ const shouldShowSection = (section: "followers" | "following") => {
                 }}</span>
               </template>
               <template v-else>
-                Total:
+                {{ t("dashboard.details.history.total") }}:
                 <span class="font-semibold">{{
                   mode === "followers"
                     ? entry.followers.totalCount
@@ -246,7 +248,7 @@ const shouldShowSection = (section: "followers" | "following") => {
               :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
               :timestamp="entry.timestamp"
               section="followers-added"
-              title="New followers"
+              :title="t('dashboard.details.changes.new_followers')"
               color-class="green"
             />
 
@@ -256,7 +258,7 @@ const shouldShowSection = (section: "followers" | "following") => {
               :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
               :timestamp="entry.timestamp"
               section="followers-removed"
-              title="Followers gone"
+              :title="t('dashboard.details.changes.followers_gone')"
               color-class="red"
             />
 
@@ -266,7 +268,7 @@ const shouldShowSection = (section: "followers" | "following") => {
               :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
               :timestamp="entry.timestamp"
               section="following-added"
-              title="New following"
+              :title="t('dashboard.details.changes.new_following')"
               color-class="green"
             />
 
@@ -276,7 +278,7 @@ const shouldShowSection = (section: "followers" | "following") => {
               :user-map="snapshotDetails.get(entry.timestamp)!.userMap"
               :timestamp="entry.timestamp"
               section="following-removed"
-              title="Following gone"
+              :title="t('dashboard.details.changes.following_gone')"
               color-class="red"
             />
 
@@ -293,7 +295,7 @@ const shouldShowSection = (section: "followers" | "following") => {
               "
               class="text-center py-4 text-gray-500 dark:text-gray-400"
             >
-              No changes in this snapshot
+              {{ t("dashboard.details.history.no_changes") }}
             </div>
           </div>
         </div>

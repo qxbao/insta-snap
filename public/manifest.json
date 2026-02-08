@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "InstaSnap - Instagram Profile Tracker",
-  "description": "Track Instagram followers, detect unfollowers, and analyze growth trends with secure, local-only snapshots.",
-  "version": "1.0",
+  "default_locale": "en",
+  "name": "__MSG_ext_name__",
+  "description": "__MSG_ext_desc__",
+  "version": "1.1.0",
   "icons": {
     "16": "images/icon.png",
     "32": "images/icon.png",
@@ -30,7 +31,7 @@
     {
       "js": ["src/content/content.ts"],
       "matches": ["https://www.instagram.com/*", "https://*.instagram.com/*/"],
-      "run_at": "document_idle", 
+      "run_at": "document_idle",
       "all_frames": false
     }
   ],

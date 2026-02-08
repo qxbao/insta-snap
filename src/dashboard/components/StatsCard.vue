@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { TrackedUser } from "../../stores/app.store";
 
 interface Props {
 	trackedUsers: TrackedUser[];
+	t: ReturnType<typeof useI18n>["t"];
 }
 
 defineProps<Props>();
@@ -16,7 +18,7 @@ defineProps<Props>();
 					{{ trackedUsers.length }}
 				</p>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-					Tracked Users
+					{{ t("dashboard.main.heading.tracked_profiles") }}
 				</p>
 			</div>
 			<div class="text-center">
@@ -24,19 +26,19 @@ defineProps<Props>();
 					{{ trackedUsers.reduce((sum, u) => sum + u.snapshotCount, 0) }}
 				</p>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-					Total Snapshots
+					{{ t("dashboard.main.heading.total_snapshot") }}
 				</p>
 			</div>
 			<div class="text-center">
 				<p class="text-3xl font-bold text-purple-600 dark:text-purple-400">
 					{{
 						trackedUsers.filter(
-							(u) => u.lastSnapshot && Date.now() - u.lastSnapshot < 86400000,
+							(u) => u.lastSnapshot && Date.now() - u.lastSnapshot < 24 * 60 * 60 * 1000,
 						).length
 					}}
 				</p>
 				<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-					Active Today
+					{{ t("dashboard.main.heading.active_today") }}
 				</p>
 			</div>
 		</div>

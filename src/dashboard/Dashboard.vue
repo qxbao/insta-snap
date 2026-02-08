@@ -10,6 +10,7 @@ import CronModal from "./components/CronModal.vue";
 import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left";
 import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open";
 import { createLogger } from "../utils/logger";
+import { useI18n } from "vue-i18n";
 
 const appStore = useAppStore();
 const loading = ref(true);
@@ -23,6 +24,7 @@ const cronUserId = ref<string | null>(null);
 const cronInterval = ref(24);
 const editingCron = ref(false);
 const logger = createLogger("Dashboard");
+const { t } = useI18n(); 
 
 const trackedUsers = computed(() => appStore.trackedUsers);
 const snapshotCrons = computed(() => appStore.snapshotCrons);
@@ -90,7 +92,7 @@ const backToDashboard = () => {
 const handleDeleteUserData = async (uid: string) => {
 	if (
 		confirm(
-			"Are you sure you want to delete all data for this user? This action will also delete user's cron jobs and cannot be undone.",
+			t("dashboard.main.confirm.delete_snapshot"),
 		)
 	) {
 		await appStore.deleteTrackedUser(uid);
@@ -137,7 +139,7 @@ const saveCron = async (data: { userId: string; interval: number }) => {
 };
 
 const deleteCron = async (userId: string) => {
-	if (confirm("Are you sure you want to remove this scheduled snapshot?")) {
+	if (confirm(t("dashboard.main.confirm.delete_cron"))) {
 		await appStore.removeUserSnapshotCron(userId);
 	}
 };
@@ -159,10 +161,10 @@ const deleteCron = async (userId: string) => {
 					</div>
 					<div>
 						<h1 class="text-3xl font-bold text-theme">
-							InstaSnap
+							{{ t("metadata.short_name") }}
 						</h1>
 						<p class="mt-1 text-sm text-lighter">
-							Track and monitor Instagram profiles with ease.
+							{{ t("metadata.short_desc") }}
 						</p>
 					</div>
 					<button
@@ -172,7 +174,7 @@ const deleteCron = async (userId: string) => {
 					>
 						<Fa6SolidRotateLeft :class="{ 'animate-spin': loading }" />
 						<span>
-							{{ loading ? "Refreshing..." : "Refresh" }}
+							{{ loading ? t("dashboard.main.status.refreshing") : t("dashboard.main.status.refresh") }}
 						</span>
 					</button>
 				</div>
@@ -182,7 +184,7 @@ const deleteCron = async (userId: string) => {
 		<main
 			class="max-w-7xl flex flex-col gap-10 mx-auto px-4 sm:px-6 lg:px-8 py-8"
 		>
-			<StatsCard v-if="trackedUsers.length > 0" :tracked-users="trackedUsers" />
+			<StatsCard v-if="trackedUsers.length > 0" :tracked-users="trackedUsers" :t="t" />
 
 			<div v-if="loading" class="flex justify-center items-center py-12">
 				<div
@@ -200,10 +202,10 @@ const deleteCron = async (userId: string) => {
 			<div v-else-if="trackedUsers.length === 0" class="card text-center py-12">
 				<Fa6SolidFolderOpen class="mx-auto h-12 w-12 text-gray-400" />
 				<h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-					No snapshots yet
+					{{ t("dashboard.main.no_snapshots") }}
 				</h3>
 				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-					Start tracking Instagram profiles to see snapshots here.
+					{{ t("dashboard.main.no_snapshots_desc") }}
 				</p>
 			</div>
 

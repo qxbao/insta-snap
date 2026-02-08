@@ -5,6 +5,7 @@ import Fa6SolidPlus from "~icons/fa6-solid/plus";
 import Fa6SolidPenToSquare from "~icons/fa6-solid/pen-to-square";
 import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can";
 import { useTimeFormat } from "../../utils/time";
+import { useI18n } from "vue-i18n";
 
 interface Props {
   snapshotCrons: Record<string, SnapshotCron>;
@@ -19,6 +20,7 @@ interface Emits {
 defineProps<Props>();
 const { formatIntervalTime } = useTimeFormat();
 const emit = defineEmits<Emits>();
+const { t } = useI18n();
 
 const getUsernameById = (userId: string, trackedUsers: TrackedUser[]) => {
   const user = trackedUsers.find((u) => u.userId === userId);
@@ -52,10 +54,10 @@ const formatLastRun = (timestamp: number) => {
         <Fa6SolidClock class="text-4xl" />
         <div>
           <h2 class="text-2xl font-bold text-nocontrast">
-            Scheduled Snapshots
+            {{ t("dashboard.main.cronjob.title") }}
           </h2>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Automatically capture snapshots at regular intervals
+            {{ t("dashboard.main.cronjob.desc") }}
           </p>
         </div>
       </div>
@@ -64,7 +66,7 @@ const formatLastRun = (timestamp: number) => {
         class="flex items-center gap-2 px-4 py-2 rounded-lg theme-btn font-semibold cursor-pointer"
       >
         <Fa6SolidPlus />
-        <span>Add schedule</span>
+        <span>{{ t("dashboard.main.cronjob.add_schedule") }}</span>
       </button>
     </div>
 
@@ -74,7 +76,7 @@ const formatLastRun = (timestamp: number) => {
     >
       <Fa6SolidClock class="mx-auto h-12 w-12 text-gray-400" />
       <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        No scheduled snapshots yet. Click "Add schedule" to create one.
+        {{ t("dashboard.main.cronjob.no_cron_recommend") }}
       </p>
     </div>
 
@@ -131,13 +133,17 @@ const formatLastRun = (timestamp: number) => {
         </div>
         <div class="mt-4 grid grid-cols-2 gap-3">
           <div>
-            <p class="text-xs text-gray-600 dark:text-gray-400">Interval</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">
+              {{ t("dashboard.main.cronjob.interval") }}
+            </p>
             <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">
               {{ formatIntervalTime(cron.interval) }}
             </p>
           </div>
           <div>
-            <p class="text-xs text-gray-600 dark:text-gray-400">Last Run</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">
+              {{ t("dashboard.main.cronjob.last_run") }}
+            </p>
             <p class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ formatLastRun(cron.lastRun) }}
             </p>
