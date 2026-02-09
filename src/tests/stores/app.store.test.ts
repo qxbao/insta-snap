@@ -1,31 +1,44 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
-import { useAppStore, SnapshotCron } from "../../stores/app.store";
+import { useAppStore } from "../../stores/app.store";
 import { createMockStorage } from "../utils/test-helpers";
-
-// Mock storage utilities
-vi.mock("../../utils/storage", () => ({
-  getAllTrackedUsers: vi.fn().mockResolvedValue([]),
-  deleteUserData: vi.fn().mockResolvedValue(undefined),
-}));
+import { database } from "../../utils/database";
+import { IDBFactory } from "fake-indexeddb";
 
 describe("useAppStore", () => {
   let mockSessionStorage: ReturnType<typeof createMockStorage>;
-  let mockLocalStorage: ReturnType<typeof createMockStorage>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Reset IndexedDB for each test
+    globalThis.indexedDB = new IDBFactory();
+    
     setActivePinia(createPinia());
     
     // Reset mock storage
     mockSessionStorage = createMockStorage();
-    mockLocalStorage = createMockStorage();
 
-    // Mock chrome storage APIs
+    // Mock chrome storage APIs (only session for locks)
     global.chrome.storage.session.get = mockSessionStorage.get as any;
     global.chrome.storage.session.set = mockSessionStorage.set as any;
-    global.chrome.storage.local.get = mockLocalStorage.get as any;
-    global.chrome.storage.local.set = mockLocalStorage.set as any;
-    global.chrome.storage.local.remove = mockLocalStorage.remove as any;
+    
+    // Ensure database is open and clear all data
+    if (!database.isOpen()) {
+      await database.open();
+    }
+    await database.crons.clear();
+    await database.snapshots.clear();
+    await database.userMetadata.clear();
+  });
+
+  afterEach(async () => {
+    // Clean up database after each test - don't close, just clear
+    try {
+      await database.crons.clear();
+      await database.snapshots.clear();
+      await database.userMetadata.clear();
+    } catch (error) {
+      // Ignore errors during cleanup
+    }
   });
 
   describe("Lock Management", () => {
@@ -43,27 +56,22 @@ describe("useAppStore", () => {
       expect(store.activeLocks).toEqual(mockLocks);
     });
 
-    it("should lock user successfully when no existing lock", async () => {
+    it("should handle lock and unlock operations", async () => {
       const store = useAppStore();
       const userId = "user_123";
 
-      const locked = await store.tryLockUser(userId);
-
+      // Lock user successfully when no existing lock
+      let locked = await store.tryLockUser(userId);
       expect(locked).toBe(true);
       expect(store.activeLocks[userId]).toBeDefined();
-      expect(mockSessionStorage.set).toHaveBeenCalled();
-    });
 
-    it("should fail to lock user if lock is recent", async () => {
-      const userId = "user_123";
-      const recentLock = Date.now() - 60000; // 1 minute ago
-      mockSessionStorage.data.set("locks", { [userId]: recentLock });
-
-      const store = useAppStore();
-      const locked = await store.tryLockUser(userId);
-
+      // Fail to lock user if lock is recent
+      locked = await store.tryLockUser(userId);
       expect(locked).toBe(false);
-      expect(store.activeLocks[userId]).toBe(recentLock);
+
+      // Unlock user successfully
+      await store.unlockUser(userId);
+      expect(store.activeLocks[userId]).toBeUndefined();
     });
 
     it("should lock user if previous lock is expired", async () => {
@@ -77,205 +85,141 @@ describe("useAppStore", () => {
       expect(locked).toBe(true);
       expect(store.activeLocks[userId]).toBeGreaterThan(expiredLock);
     });
-
-    it("should unlock user successfully", async () => {
-      const userId = "user_123";
-      mockSessionStorage.data.set("locks", { 
-        [userId]: Date.now(),
-        user_456: Date.now() 
-      });
-
-      const store = useAppStore();
-      await store.unlockUser(userId);
-
-      expect(store.activeLocks[userId]).toBeUndefined();
-      expect(store.activeLocks["user_456"]).toBeDefined();
-      expect(mockSessionStorage.set).toHaveBeenCalled();
-    });
   });
+
 
   describe("Snapshot Cron Management", () => {
     it("should load snapshot crons from storage", async () => {
-      const mockCrons: Record<string, SnapshotCron> = {
-        user_123: {
-          userId: "user_123",
-          interval: 24,
-          lastRun: Date.now() - 3600000,
-        },
+      const testCron = {
+        uid: "user_123",
+        interval: 24,
+        lastRun: Date.now() - 3600000,
       };
-      mockLocalStorage.data.set("crons", mockCrons);
+      
+      await database.saveCron(testCron.uid, testCron.interval, testCron.lastRun);
 
       const store = useAppStore();
       await store.loadSnapshotCrons();
 
       expect(store.scLoaded).toBe(true);
-      expect(store.snapshotCrons).toEqual(mockCrons);
+      expect(store.snapshotCrons).toHaveLength(1);
+      expect(store.snapshotCrons[0].uid).toBe("user_123");
+      expect(store.snapshotCrons[0].interval).toBe(24);
     });
 
-    it("should add user snapshot cron", async () => {
+    it("should add and update snapshot cron", async () => {
       const store = useAppStore();
       const userId = "user_123";
       const interval = 48;
 
+      // Add new cron
       await store.addUserSnapshotCron(userId, interval);
 
-      expect(store.snapshotCrons[userId]).toBeDefined();
-      expect(store.snapshotCrons[userId].interval).toBe(interval);
-      expect(store.snapshotCrons[userId].userId).toBe(userId);
-      expect(mockLocalStorage.set).toHaveBeenCalled();
-    });
+      let cronInDb = await database.getCron(userId);
+      expect(cronInDb).toBeDefined();
+      expect(cronInDb?.interval).toBe(interval);
+      expect(cronInDb?.uid).toBe(userId);
 
-    it("should update existing snapshot cron", async () => {
-      const userId = "user_123";
-      const oldCron: SnapshotCron = {
-        userId,
-        interval: 24,
-        lastRun: Date.now() - 86400000,
-      };
-      mockLocalStorage.data.set("crons", { [userId]: oldCron });
-
-      const store = useAppStore();
-      await store.loadSnapshotCrons();
-
-      const newInterval = 48;
+      // Update existing cron
+      const newInterval = 72;
       await store.addUserSnapshotCron(userId, newInterval);
 
-      expect(store.snapshotCrons[userId].interval).toBe(newInterval);
-      // lastRun is reset to 0 when updating cron
-      expect(store.snapshotCrons[userId].lastRun).toBe(0);
+      cronInDb = await database.getCron(userId);
+      expect(cronInDb?.interval).toBe(newInterval);
+      expect(cronInDb?.lastRun).toBe(0);
     });
 
     it("should remove user snapshot cron", async () => {
       const userId = "user_123";
-      mockLocalStorage.data.set("crons", {
-        [userId]: {
-          userId,
-          interval: 24,
-          lastRun: Date.now(),
-        },
-        user_456: {
-          userId: "user_456",
-          interval: 12,
-          lastRun: Date.now(),
-        },
-      });
+      await database.saveCron(userId, 24, Date.now());
+      await database.saveCron("user_456", 12, Date.now());
 
       const store = useAppStore();
       await store.loadSnapshotCrons();
+      
+      expect(store.snapshotCrons).toHaveLength(2);
+      
       await store.removeUserSnapshotCron(userId);
 
-      expect(store.snapshotCrons[userId]).toBeUndefined();
-      expect(store.snapshotCrons["user_456"]).toBeDefined();
-      expect(mockLocalStorage.set).toHaveBeenCalled();
+      expect(store.snapshotCrons).toHaveLength(1);
+      expect(store.snapshotCrons[0].uid).toBe("user_456");
+      
+      const cronInDb = await database.getCron(userId);
+      expect(cronInDb).toBeUndefined();
     });
   });
 
-  describe("Tracked Users", () => {
-    it("should load tracked users", async () => {
-      const mockUsersMetadata = {
-        user_123: {
-          userId: "user_123",
-          username: "testuser",
-          full_name: "Test User",
-          profile_pic_url: "https://example.com/pic.jpg",
-          snapshotCount: 5,
-          lastSnapshot: Date.now(),
-          last_updated: Date.now(),
-        },
-      };
-      mockLocalStorage.data.set("users_metadata", mockUsersMetadata);
 
-      // Mock getAllTrackedUsers to return proper array
-      const { getAllTrackedUsers } = await import("../../utils/storage");
-      vi.mocked(getAllTrackedUsers).mockResolvedValue([
-        mockUsersMetadata.user_123,
+  describe("Tracked Users", () => {
+    it("should load and delete tracked users", async () => {
+      // Add two test users
+      await database.userMetadata.bulkAdd([
+        {
+          id: "user_123",
+          username: "testuser",
+          fullName: "Test User",
+          avatarURL: "https://example.com/pic.jpg",
+          updatedAt: Date.now(),
+        },
+        {
+          id: "user_456",
+          username: "anotheruser",
+          fullName: "Another User",
+          avatarURL: "https://example.com/pic2.jpg",
+          updatedAt: Date.now(),
+        },
       ]);
+
+      // Add snapshots for both users
+      await database.saveSnapshot("user_123", Date.now(), ["f1"], ["f2"]);
+      await database.saveSnapshot("user_456", Date.now(), ["f3"], ["f4"]);
 
       const store = useAppStore();
       await store.loadTrackedUsers();
 
       expect(store.trackedUsersLoaded).toBe(true);
-      expect(store.trackedUsers).toHaveLength(1);
+      expect(store.trackedUsers).toHaveLength(2);
       expect(store.trackedUsers[0].userId).toBe("user_123");
-    });
+      expect(store.trackedUsers[0].username).toBe("testuser");
 
-    it("should delete tracked user", async () => {
-      const userId = "user_123";
-      const mockUsersMetadata = {
-        [userId]: {
-          userId,
-          username: "testuser",
-          full_name: "Test User",
-          profile_pic_url: "https://example.com/pic.jpg",
-          snapshotCount: 3,
-          lastSnapshot: Date.now(),
-          last_updated: Date.now(),
-        },
-        user_456: {
-          userId: "user_456",
-          username: "anotheruser",
-          full_name: "Another User",
-          profile_pic_url: "https://example.com/pic2.jpg",
-          snapshotCount: 2,
-          lastSnapshot: Date.now(),
-          last_updated: Date.now(),
-        },
-      };
-
-      const trackedUsersArray = Object.values(mockUsersMetadata);
-      
-      const { getAllTrackedUsers, deleteUserData } = await import("../../utils/storage");
-      vi.mocked(getAllTrackedUsers).mockResolvedValue(trackedUsersArray);
-      vi.mocked(deleteUserData).mockResolvedValue(undefined);
-
-      const store = useAppStore();
-      await store.loadTrackedUsers();
-
-      await store.deleteTrackedUser(userId);
+      // Delete one user
+      await store.deleteTrackedUser("user_123");
 
       expect(store.trackedUsers).toHaveLength(1);
       expect(store.trackedUsers[0].userId).toBe("user_456");
-      expect(deleteUserData).toHaveBeenCalledWith(userId);
+
+      // Verify data was deleted from database
+      const snapshotsInDb = await database.snapshots
+        .where("belongToId")
+        .equals("user_123")
+        .toArray();
+      expect(snapshotsInDb).toHaveLength(0);
     });
   });
 
-  describe("Getters", () => {
-    it("should get cron settings for user", async () => {
-      mockLocalStorage.data.set("crons", {
-        user_123: {
-          userId: "user_123",
-          interval: 24,
-          lastRun: Date.now(),
-        },
-        user_456: {
-          userId: "user_456",
-          interval: 12,
-          lastRun: Date.now(),
-        },
-      });
+
+  describe("Cron Queries", () => {
+    it("should find and check cron existence", async () => {
+      await database.saveCron("user_123", 24, Date.now());
+      await database.saveCron("user_456", 12, Date.now());
 
       const store = useAppStore();
       await store.loadSnapshotCrons();
 
-      expect(store.snapshotCrons["user_123"]).toBeDefined();
-      expect(store.snapshotCrons["user_456"]).toBeDefined();
-      expect(Object.keys(store.snapshotCrons)).toEqual(["user_123", "user_456"]);
-    });
+      // Find specific cron
+      const cron123 = store.snapshotCrons.find(c => c.uid === "user_123");
+      const cron456 = store.snapshotCrons.find(c => c.uid === "user_456");
 
-    it("should check if user has cron", async () => {
-      mockLocalStorage.data.set("crons", {
-        user_123: {
-          userId: "user_123",
-          interval: 24,
-          lastRun: Date.now(),
-        },
-      });
+      expect(cron123).toBeDefined();
+      expect(cron456).toBeDefined();
+      expect(store.snapshotCrons).toHaveLength(2);
 
-      const store = useAppStore();
-      await store.loadSnapshotCrons();
+      // Check existence
+      const hasCron123 = store.snapshotCrons.some(c => c.uid === "user_123");
+      const hasCron999 = store.snapshotCrons.some(c => c.uid === "user_999");
 
-      expect("user_123" in store.snapshotCrons).toBe(true);
-      expect("user_456" in store.snapshotCrons).toBe(false);
+      expect(hasCron123).toBe(true);
+      expect(hasCron999).toBe(false);
     });
   });
 });

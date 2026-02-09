@@ -2,19 +2,12 @@
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { HistoryEntry } from "../types/etc";
-import type { GlobalUserMap, UserSnapshotMeta } from "../types/storage";
-import {
-  getFollowersHistory,
-  getFollowingHistory,
-  getFullFollowersList,
-  getFullFollowingList,
-  getGlobalUserMap,
-  getUserSnapshotMeta,
-} from "../utils/storage";
+import { database } from "../utils/database";
 import SnapshotHistory from "./components/SnapshotHistory.vue";
 import UserDetailsHeader from "./components/UserDetailsHeader.vue";
 import UserStatsGrid from "./components/UserStatsGrid.vue";
 import { createLogger } from "../utils/logger";
+
 interface Props {
   userId: string;
 }
@@ -26,8 +19,9 @@ const emit = defineEmits<{
   back: [];
 }>();
 
-const meta = ref<UserSnapshotMeta | null>(null);
-const userInfo = ref<GlobalUserMap[string] | null>(null);
+const snapshotCount = ref(0);
+const checkpointCount = ref(0);
+const userInfo = ref<UserMetadata | null>(null);
 const loading = ref(true);
 const activeTab = ref<"overview" | "followers" | "following">("overview");
 
@@ -49,17 +43,26 @@ onMounted(async () => {
 const loadData = async () => {
   loading.value = true;
   try {
-    meta.value = await getUserSnapshotMeta(props.userId);
-    const userMap = await getGlobalUserMap();
-    userInfo.value = userMap[props.userId];
+    userInfo.value = await database.userMetadata.get(props.userId) || null;
+    
+    const snapshots = await database.snapshots
+      .where("belongToId")
+      .equals(props.userId)
+      .toArray();
+    
+    snapshotCount.value = snapshots.length;
+    checkpointCount.value = snapshots.filter(s => s.isCheckpoint).length;
+    
     history.value = {
-      followers: await getFollowersHistory(props.userId),
-      following: await getFollowingHistory(props.userId),
+      followers: await database.getSnapshotHistory(props.userId, true),
+      following: await database.getSnapshotHistory(props.userId, false),
     };
 
-    if (meta.value) {
-      currentFollowers.value = await getFullFollowersList(props.userId);
-      currentFollowing.value = await getFullFollowingList(props.userId);
+    if (snapshotCount.value > 0) {
+      const followersSet = await database.getFullList(props.userId, undefined, true);
+      const followingSet = await database.getFullList(props.userId, undefined, false);
+      currentFollowers.value = Array.from(followersSet);
+      currentFollowing.value = Array.from(followingSet);
     }
   } catch (err) {
     logger.error("Failed to load user details:", err);
@@ -68,8 +71,8 @@ const loadData = async () => {
   }
 };
 
-const totalSnapshots = computed(() => meta.value?.logTimeline.length || 0);
-const checkpointCount = computed(() => meta.value?.checkpoints.length || 0);
+const totalSnapshots = computed(() => snapshotCount.value);
+const totalCheckpoints = computed(() => checkpointCount.value);
 
 const openInstagramProfile = () => {
   if (userInfo.value) {
@@ -180,7 +183,7 @@ const combinedTimeline = computed(() => {
         ></div>
       </div>
 
-      <div v-else-if="userInfo && meta">
+      <div v-else-if="userInfo">
         <UserDetailsHeader
           :user-info="userInfo"
           :user-id="userId"
@@ -189,7 +192,7 @@ const combinedTimeline = computed(() => {
 
         <UserStatsGrid
           :total-snapshots="totalSnapshots"
-          :checkpoint-count="checkpointCount"
+          :checkpoint-count="totalCheckpoints"
           :current-followers-count="currentFollowers.length"
           :current-following-count="currentFollowing.length"
         />

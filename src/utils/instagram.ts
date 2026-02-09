@@ -4,15 +4,10 @@ import {
   Edge,
   InstagramAPIHeader,
   InstagramRequestType,
-  Node,
+  UserNode,
 } from "../types/instapi";
 import { createLogger, Logger } from "./logger";
-import {
-  getGlobalUserMap,
-  saveCompleteSnapshot,
-  saveFollowersSnapshot,
-  saveFollowingSnapshot,
-} from "./storage";
+import { database } from "./database";
 
 const IGGraphQLBase = "https://www.instagram.com/graphql/query";
 const MAX_USERS_PER_REQUEST = 50;
@@ -207,14 +202,14 @@ async function fetchUsers(
   wwwClaim: string,
   logger?: Logger,
   store?: ReturnType<typeof useUIStore>,
-): Promise<Node[] | false> {
+): Promise<UserNode[] | false> {
   const buildEndpoint =
     rqtype === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
   const edgeKey = rqtype === "followers" ? "edge_followed_by" : "edge_follow";
 
   logger?.info(`Fetching ${rqtype} using GraphQL API...`);
 
-  const users: Node[] = [];
+  const users: UserNode[] = [];
   let after: string | null = null;
   let hasMore = true;
 
@@ -244,7 +239,7 @@ async function fetchUsers(
     const edgeData = (data.data.user as any)[edgeKey];
     const edges = edgeData.edges || [];
 
-    const batchUsers: Node[] = edges.map((edge: Edge) => ({
+    const batchUsers: UserNode[] = edges.map((edge: Edge) => ({
       id: edge.node.id || "",
       username: edge.node.username || "",
       full_name: edge.node.full_name || "",
@@ -342,7 +337,7 @@ async function retrieveUserFollowersAndFollowing(
 
   const fetchBoth = !options?.followersOnly && !options?.followingOnly;
 
-  let followers: Node[] = [];
+  let followers: UserNode[] = [];
   if (fetchBoth || options?.followersOnly) {
     logger?.info("Fetching followers...");
     const result = await fetchUsers(
@@ -360,7 +355,7 @@ async function retrieveUserFollowersAndFollowing(
     followers = result;
   }
 
-  let following: Node[] = [];
+  let following: UserNode[] = [];
   if (fetchBoth || options?.followingOnly) {
     logger?.info("Fetching following...");
     const result = await fetchUsers(
@@ -379,16 +374,13 @@ async function retrieveUserFollowersAndFollowing(
   }
 
   try {
-    if (fetchBoth) {
-      await saveCompleteSnapshot(userId, followers, following, logger);
-      logger?.info("Successfully saved complete snapshot");
-    } else if (options?.followersOnly) {
-      await saveFollowersSnapshot(userId, followers, logger);
-      logger?.info("Successfully saved followers snapshot");
-    } else if (options?.followingOnly) {
-      await saveFollowingSnapshot(userId, following, logger);
-      logger?.info("Successfully saved following snapshot");
-    }
+    await database.bulkUpsertUserMetadata([...followers, ...following]);
+    const timestamp = Date.now();
+    const followerIds = followers.map((u) => u.id);
+    const followingIds = following.map((u) => u.id);
+    
+    await database.saveSnapshot(userId, timestamp, followerIds, followingIds);
+    logger?.info("Successfully saved snapshot");
   } catch (error) {
     logger?.error("Failed to save snapshot:", error);
     return false;
@@ -419,8 +411,6 @@ async function saveUserInfo(
     logger.error("Failed to retrieve Instagram User ID.");
     return;
   }
-
-  const globalUserMap = await getGlobalUserMap();
   let retry = 0;
   logger.info("Saving user info with UID =", userId);
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -482,17 +472,16 @@ async function saveUserInfo(
 
   const profile_pic_url = img_elem ? img_elem.src : img_elems[1].src;
   const userData = {
+    id: userId,
     username,
-    profile_pic_url,
-    full_name: fullname,
-    last_updated: Date.now(),
+    avatarURL: profile_pic_url,
+    fullName: fullname,
+    updatedAt: Date.now(),
   };
 
   logger.info("Retrieved user data:", userData);
-  globalUserMap[userId] = userData;
-
-  await chrome.storage.local.set({ users_metadata: globalUserMap });
-  logger.info("Saved user info to storage:", globalUserMap[userId]);
+  await database.userMetadata.put(userData);
+  logger.info("Saved user info to IndexedDB:", userData);
 }
 
 function sendAppDataToBg() {

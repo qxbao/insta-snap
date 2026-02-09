@@ -37,6 +37,22 @@ export const EnglishLocale = {
         refreshing: "Refreshing...",
         refresh: "Refresh",
       },
+      migration: {
+        checking: "Checking for migration...",
+        title_complete: "Migration Complete!",
+        title_available: "Data Migration Available",
+        checking_message: "Checking if data migration is needed...",
+        description: "Old snapshot data detected in chrome.storage. Migrate to IndexedDB for better performance and reliability.",
+        start_button: "Start Migration",
+        migrating_button: "Migrating...",
+        success: "Migration completed successfully!",
+        stats: {
+          users: "Migrated {count} user profiles",
+          snapshots: "Migrated {count} snapshots",
+          crons: "Migrated {count} scheduled jobs",
+        },
+        errors: "Migration completed with errors:",
+      },
       no_snapshots: "No snapshots yet",
       no_snapshots_desc:
         "Start tracking Instagram profiles to see snapshots here.",

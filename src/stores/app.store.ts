@@ -1,19 +1,13 @@
 import { defineStore } from "pinia";
-import { getAllTrackedUsers, deleteUserData } from "../utils/storage";
+import { database } from "../utils/database";
 import { GlobalUserMap } from "../types/storage";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("AppStore");
 
-export interface SnapshotCron {
-  userId: string;
-  interval: number;
-  lastRun: number;
-}
-
 export type StorageSchema = {
   locks: Record<string, number>;
-  crons: Record<string, SnapshotCron>;
+  crons: SnapshotCron[];
   users_metadata: GlobalUserMap;
   appId: string;
   csrfToken: string;
@@ -35,7 +29,7 @@ export type StorageKey = keyof StorageSchema;
 interface AppState {
   activeLocks: Record<string, number>;
   locksLoaded: boolean;
-  snapshotCrons: Record<string, SnapshotCron>;
+  snapshotCrons: SnapshotCron[];
   scLoaded: boolean;
   trackedUsers: TrackedUser[];
   trackedUsersLoaded: boolean;
@@ -46,7 +40,7 @@ const LOCK_TIMEOUT = 10 * 60 * 1000; // 10m
 export const useAppStore = defineStore("app", {
   state: (): AppState => ({
     activeLocks: {},
-    snapshotCrons: {},
+    snapshotCrons: [],
     locksLoaded: false,
     scLoaded: false,
     trackedUsers: [],
@@ -92,13 +86,12 @@ export const useAppStore = defineStore("app", {
     },
 
     async loadSnapshotCrons() {
-      const res = await chrome.storage.local.get("crons");
-      if (!res.crons) {
-        await chrome.storage.local.set({ crons: {} });
-        this.snapshotCrons = {};
+      try {
+        this.snapshotCrons = await database.getAllCrons();
         this.scLoaded = true;
-      } else {
-        this.snapshotCrons = (res.crons as Record<string, SnapshotCron>) || {};
+      } catch (error) {
+        logger.error("Failed to load crons:", error);
+        this.snapshotCrons = [];
         this.scLoaded = true;
       }
     },
@@ -106,24 +99,19 @@ export const useAppStore = defineStore("app", {
     async addUserSnapshotCron(userId: string, interval: number) {
       if (!this.scLoaded) await this.loadSnapshotCrons();
       if (interval <= 0) return;
-      this.snapshotCrons[userId] = {
-        userId,
-        interval,
-        lastRun: 0,
-      };
-      await chrome.storage.local.set({ crons: this.snapshotCrons });
+      await database.saveCron(userId, interval, 0);
+      this.loadSnapshotCrons();
     },
 
     async removeUserSnapshotCron(userId: string) {
-      if (!(userId in this.snapshotCrons)) return;
       if (!this.scLoaded) await this.loadSnapshotCrons();
-      delete this.snapshotCrons[userId];
-      await chrome.storage.local.set({ crons: this.snapshotCrons });
+      await database.deleteCron(userId);
+      this.snapshotCrons = this.snapshotCrons.filter((cron) => cron.uid !== userId);
     },
 
     async loadTrackedUsers() {
       try {
-        this.trackedUsers = await getAllTrackedUsers();
+        this.trackedUsers = await database.getAllTrackedUsersWithMetadata();
         this.trackedUsersLoaded = true;
       } catch (error) {
         logger.error("Failed to load tracked users:", error);
@@ -136,7 +124,7 @@ export const useAppStore = defineStore("app", {
     },
 
     async deleteTrackedUser(userId: string) {
-      await deleteUserData(userId);
+      await database.deleteUserData(userId);
       this.trackedUsers = this.trackedUsers.filter(
         (user) => user.userId !== userId,
       );

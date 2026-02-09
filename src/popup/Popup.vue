@@ -92,7 +92,9 @@ const handleCronChange = async (event: Event) => {
       await appStore.removeUserSnapshotCron(userId.value);
       cronSetting.value.enabled = false;
     }
-    target.checked = userId.value in appStore.snapshotCrons;
+    target.checked = appStore.snapshotCrons.some(
+      (cron) => cron.uid === userId.value,
+    );
   }
 };
 
@@ -112,7 +114,7 @@ const isProcessing = computed(
 const cronSettingForUser = computed(() => {
   if (!userId.value || !appStore.scLoaded) return null;
 
-  const cron = appStore.snapshotCrons[userId.value];
+  const cron = appStore.snapshotCrons.find((c) => c.uid === userId.value);
   return cron
     ? { interval: cron.interval, enabled: true }
     : { interval: 24, enabled: false };
@@ -126,11 +128,15 @@ watchEffect(() => {
 
 const currentUserData = computed(() => {
   if (!userId.value) return null;
-  return appStore.trackedUsers.find(user => user.userId === userId.value);
+  return appStore.trackedUsers.find((user) => user.userId === userId.value);
 });
 
-const snapshotCount = computed(() => currentUserData.value?.snapshotCount ?? -1);
-const lastSnapshotTime = computed(() => currentUserData.value?.lastSnapshot ?? null);
+const snapshotCount = computed(
+  () => currentUserData.value?.snapshotCount ?? -1,
+);
+const lastSnapshotTime = computed(
+  () => currentUserData.value?.lastSnapshot ?? null,
+);
 </script>
 
 <template>
