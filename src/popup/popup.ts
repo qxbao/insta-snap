@@ -22,9 +22,9 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
 })
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local") {
+  if (areaName === "session") {
     for (const key in changes) {
-      if (key.startsWith("meta_")) {
+      if (key == "lastsync") {
         appStore.loadTrackedUsers();
         break;
       }

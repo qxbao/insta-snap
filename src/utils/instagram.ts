@@ -7,7 +7,6 @@ import {
   UserNode,
 } from "../types/instapi";
 import { createLogger, Logger } from "./logger";
-import { database } from "./database";
 
 const IGGraphQLBase = "https://www.instagram.com/graphql/query";
 const MAX_USERS_PER_REQUEST = 50;
@@ -374,12 +373,24 @@ async function retrieveUserFollowersAndFollowing(
   }
 
   try {
-    await database.bulkUpsertUserMetadata([...followers, ...following]);
+    await chrome.runtime.sendMessage({
+      type: ActionType.BULK_UPSERT_USER_METADATA,
+      payload: [...followers, ...following],
+    } satisfies ExtensionMessage);
     const timestamp = Date.now();
     const followerIds = followers.map((u) => u.id);
     const followingIds = following.map((u) => u.id);
     
-    await database.saveSnapshot(userId, timestamp, followerIds, followingIds);
+    await chrome.runtime.sendMessage({
+      type: ActionType.SAVE_SNAPSHOT,
+      payload: {
+        userId,
+        timestamp,
+        followerIds,
+        followingIds,
+      },
+    } satisfies ExtensionMessage);
+
     logger?.info("Successfully saved snapshot");
   } catch (error) {
     logger?.error("Failed to save snapshot:", error);
@@ -480,7 +491,10 @@ async function saveUserInfo(
   };
 
   logger.info("Retrieved user data:", userData);
-  await database.userMetadata.put(userData);
+  await chrome.runtime.sendMessage({
+    type: ActionType.SAVE_USER_METADATA,
+    payload: userData,
+  } satisfies ExtensionMessage);
   logger.info("Saved user info to IndexedDB:", userData);
 }
 

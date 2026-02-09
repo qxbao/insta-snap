@@ -55,15 +55,16 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
   switch (message.type) {
     case ActionType.NOTIFY_SNAPSHOT_COMPLETE:
-      const userId = message.payload;
+      const uid = message.payload;
       chrome.storage.session
         .get("locks")
         .then((res) => {
           const locks = { ...(res.locks || {}) } as Record<string, number>;
-          if (userId in locks) {
-            delete locks[userId];
+          if (uid in locks) {
+            delete locks[uid];
             chrome.storage.session.set({ locks });
           }
+          chrome.storage.session.set({ lastsync: Date.now() });
         })
         .catch((error) => {
           logger.error("Failed to update locks:", error);
@@ -76,6 +77,16 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
         newData[key] = message.payload[key];
       }
       chrome.storage.local.set(newData);
+      break;
+    case ActionType.SAVE_USER_METADATA:
+      database.userMetadata.put(message.payload);
+      break;
+    case ActionType.BULK_UPSERT_USER_METADATA:
+      database.bulkUpsertUserMetadata(message.payload);
+      break;
+    case ActionType.SAVE_SNAPSHOT:
+      const { userId, timestamp, followerIds, followingIds } = message.payload;
+      database.saveSnapshot(userId, timestamp, followerIds, followingIds);
       break;
     default:
       return;
