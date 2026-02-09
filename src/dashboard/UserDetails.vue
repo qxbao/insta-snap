@@ -8,13 +8,6 @@ import UserDetailsHeader from "./components/UserDetailsHeader.vue";
 import UserStatsGrid from "./components/UserStatsGrid.vue";
 import { createLogger } from "../utils/logger";
 
-interface UserMetadata {
-  id: string;
-  username: string;
-  fullName: string;
-  avatarURL: string;
-  updatedAt: number;
-}
 interface Props {
   userId: string;
 }

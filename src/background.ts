@@ -121,7 +121,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
       const crons = await database.getAllCrons();
 
-      if (!crons || Object.keys(crons).length === 0) {
+      if (crons.length === 0) {
         logger.info("No crons found, skipping...");
         return;
       }
