@@ -51,10 +51,10 @@ export interface PageInfo {
 }
 
 export interface Edge {
-  node: Node
+  node: UserNode
 }
 
-export interface Node {
+export interface UserNode {
   id: string
   username: string
   full_name: string

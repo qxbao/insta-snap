@@ -1,21 +1,34 @@
 import { ActionType } from "./constants/actions";
 import { ExtensionRules } from "./constants/rules";
-import { typedStorage } from "./stores/app.store";
-import { Node } from "./types/instapi";
+import { UserNode } from "./types/instapi";
 import { getJitter } from "./utils/alarms";
 import { fetchUsers } from "./utils/instagram";
 import { createLogger } from "./utils/logger";
-import { saveCompleteSnapshot } from "./utils/storage";
+import { database } from "./utils/database";
+import { runMigrationWithCleanup } from "./utils/migrate";
 
 const logger = createLogger("Background");
 
 let isAlarmProcessing = false;
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   chrome.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: ExtensionRules.map((rule) => rule.id),
     addRules: ExtensionRules,
   });
+
+  // Run migration on install or update
+  if (details.reason === "install" || details.reason === "update") {
+    try {
+      logger.info("Checking for data migration...");
+      const stats = await runMigrationWithCleanup();
+      if (stats.usersMetadata > 0 || stats.snapshots > 0 || stats.crons > 0) {
+        logger.info("Migration completed:", stats);
+      }
+    } catch (error) {
+      logger.error("Migration failed:", error);
+    }
+  }
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -106,23 +119,22 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         return;
       }
 
-      const crons = await typedStorage.get("crons");
+      const crons = await database.getAllCrons();
 
-      if (!crons) {
-        await chrome.storage.local.set({ crons: {} });
+      if (!crons || Object.keys(crons).length === 0) {
+        logger.info("No crons found, skipping...");
         return;
       }
 
       const now = Date.now();
-      for (const userId in crons) {
-        logger.info(`Processing snapshot cron for user: ${userId}`);
+      for (const cron of crons) {
+        logger.info(`Processing snapshot cron for user: ${cron.uid}`);
         // TODO: Follower/following only opt
-        const cron = crons[userId];
         if (now - cron.lastRun >= cron.interval * 60 * 60 * 1000) {
-          let followers: Node[] = [];
+          let followers: UserNode[] = [];
           logger?.info("Fetching followers...");
           const flwerRes = await fetchUsers(
-            userId,
+            cron.uid,
             "followers",
             appId,
             csrfToken,
@@ -134,10 +146,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
           }
           followers = flwerRes;
 
-          let following: Node[] = [];
+          let following: UserNode[] = [];
           logger?.info("Fetching following...");
           const flwingRes = await fetchUsers(
-            userId,
+            cron.uid,
             "following",
             appId,
             csrfToken,
@@ -147,15 +159,21 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
           if (flwingRes === false) return false;
 
           following = flwingRes;
-          await saveCompleteSnapshot(userId, followers, following, logger);
+          await database.bulkUpsertUserMetadata([...followers, ...following]);
+          const timestamp = Date.now();
+          await database.saveSnapshot(
+            cron.uid,
+            timestamp,
+            followers.map((f) => f.id),
+            following.map((f) => f.id),
+          );
           // TODO: Magic numbers
           await new Promise((resolve) =>
             setTimeout(resolve, getJitter(5000, 15000)),
           );
-          crons[userId].lastRun = now;
+          await database.saveCron(cron.uid, cron.interval, now);
         }
       }
-      await chrome.storage.local.set({ crons });
     } finally {
       isAlarmProcessing = false;
       logger.info("Alarm execution completed");

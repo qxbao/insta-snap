@@ -75,10 +75,21 @@ const loadSnapshotDetails = async (timestamp: number) => {
   loadingDetails.value.add(timestamp);
 
   try {
-    const { getSnapshotRecord, getGlobalUserMap } =
-      await import("../../utils/storage");
-    const record = await getSnapshotRecord(props.userId, timestamp);
-    const userMap = await getGlobalUserMap();
+    const { database } = await import("../../utils/database");
+    const record = await database.snapshots
+      .where("[belongToId+timestamp]")
+      .equals([props.userId, timestamp])
+      .first();
+    const allUsers = await database.userMetadata.toArray();
+    const userMap: GlobalUserMap = allUsers.reduce((acc, user) => {
+      acc[user.id] = {
+        username: user.username,
+        full_name: user.fullName,
+        profile_pic_url: user.avatarURL,
+        last_updated: user.updatedAt,
+      };
+      return acc;
+    }, {} as GlobalUserMap);
 
     if (record) {
       if (snapshotDetails.value.size >= MAX_CACHED_SNAPSHOTS) {

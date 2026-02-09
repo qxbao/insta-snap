@@ -3,6 +3,7 @@ import { config } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
 import { EnglishLocale } from "../i18n/locales/en";
 import { VietnameseLocale } from "../i18n/locales/vi";
+import "fake-indexeddb/auto";
 
 const i18n = createI18n({
   legacy: false,

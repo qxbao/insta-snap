@@ -7,6 +7,7 @@ import UserCard from "./components/UserCard.vue";
 import Pagination from "./components/Pagination.vue";
 import ScheduledSnapshots from "./components/ScheduledSnapshots.vue";
 import CronModal from "./components/CronModal.vue";
+import MigrationPanel from "./components/MigrationPanel.vue";
 import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left";
 import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open";
 import { createLogger } from "../utils/logger";
@@ -105,7 +106,7 @@ const handleDeleteUserData = async (uid: string) => {
 const openCronModal = (userId: string | null = null) => {
 	if (userId) {
 		cronUserId.value = userId;
-		const existingCron = snapshotCrons.value[userId];
+		const existingCron = snapshotCrons.value.find((cron) => cron.uid === userId);
 		if (existingCron) {
 			cronInterval.value = existingCron.interval;
 			editingCron.value = true;
@@ -184,6 +185,7 @@ const deleteCron = async (userId: string) => {
 		<main
 			class="max-w-7xl flex flex-col gap-10 mx-auto px-4 sm:px-6 lg:px-8 py-8"
 		>
+			<MigrationPanel />
 			<StatsCard v-if="trackedUsers.length > 0" :tracked-users="trackedUsers" :t="t" />
 
 			<div v-if="loading" class="flex justify-center items-center py-12">

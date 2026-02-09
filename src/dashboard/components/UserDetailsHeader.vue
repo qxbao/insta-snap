@@ -4,8 +4,8 @@ import { useI18n } from "vue-i18n";
 interface Props {
 	userInfo: {
 		username: string;
-		full_name?: string;
-		profile_pic_url: string;
+		fullName?: string;
+		avatarURL: string;
 	};
 	userId: string;
 }
@@ -23,14 +23,14 @@ const { t } = useI18n();
 	<div class="card mb-6">
 		<div class="flex items-center gap-6">
 			<img
-				:src="userInfo.profile_pic_url"
+				:src="userInfo.avatarURL"
 				:alt="userInfo.username"
 				referrerpolicy="no-referrer"
 				class="w-24 h-24 rounded-full object-cover border-2 border-emerald-500"
 			/>
 			<div class="flex-1">
 				<h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-					{{ userInfo.full_name || userInfo.username }}
+					{{ userInfo.fullName || userInfo.username }}
 				</h2>
 				<p class="text-gray-600 dark:text-gray-400">
 					@{{ userInfo.username }}

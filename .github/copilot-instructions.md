@@ -3,7 +3,7 @@
 ## Project Overview
 InstaSnap is a Chrome extension for tracking Instagram follower/following lists using **differential storage** architecture. It takes periodic snapshots and efficiently stores only deltas between snapshots (every 20th is a full checkpoint).
 
-**Tech Stack**: Vue 3 + TypeScript, Vite + @crxjs/vite-plugin, Pinia stores, Vitest, Tailwind CSS 4, pnpm
+**Tech Stack**: Vue 3 + TypeScript, Vite + @crxjs/vite-plugin, Pinia stores, Vitest, Tailwind CSS 4, IndexedDB (Dexie), pnpm
 
 ## Architecture & Key Patterns
 
@@ -15,12 +15,23 @@ The extension has 4 execution contexts that communicate via `chrome.runtime.send
 4. **Dashboard** ([src/dashboard/Dashboard.vue](../src/dashboard/Dashboard.vue)) - Full-page analytics UI
 
 ### Storage Architecture (CRITICAL)
-**Differential checkpoint system** in [src/utils/storage.ts](../src/utils/storage.ts):
+**IndexedDB with Dexie.js** in [src/utils/database.ts](../src/utils/database.ts):
 - Every **20 snapshots** creates a **checkpoint** (full follower/following lists)
 - Intermediate snapshots store only **deltas** (`add`/`rem` arrays)
-- Storage keys: `meta_{userId}` (metadata), `data_{userId}_{timestamp}` (snapshot records)
-- Uses `AsyncLock` class to prevent race conditions during concurrent snapshot operations
-- **Always** use `saveCompleteSnapshot()` wrapper - it handles checkpoint vs delta logic
+- Three main tables: `userMetadata`, `snapshots`, `crons`
+- Compound indexes for efficient queries: `[belongToId+timestamp]`, `[belongToId+isCheckpoint+timestamp]`
+- **Always** use `database.saveSnapshot()` - it handles checkpoint vs delta logic automatically
+
+**Key Database Methods**:
+- `saveSnapshot(uid, timestamp, followerIds, followingIds)` - Auto checkpointing
+- `getFullList(uid, upToTimestamp?, isFollowers)` - Rebuild full list from checkpoint + deltas
+- `getSnapshotHistory(uid, isFollowers)` - Get history timeline
+- `getAllTrackedUsersWithMetadata()` - Dashboard data
+- `saveCron(uid, interval, lastRun)` / `getCron(uid)` / `deleteCron(uid)` - Cron management
+
+chrome.storage is **only used for**:
+- `chrome.storage.session` for user locks (prevent duplicate snapshots)
+- `chrome.storage.local` for: `appId`, `csrfToken`, `wwwClaim` (Instagram API credentials)
 
 ### Instagram Data Collection
 [src/utils/instagram.ts](../src/utils/instagram.ts) uses Instagram's private GraphQL API:
@@ -61,10 +72,11 @@ pnpm lint:fix     # Auto-fix ESLint issues
 
 ## Common Tasks
 
-### Adding New Storage Fields
-1. Update `StorageSchema` type in [src/stores/app.store.ts](../src/stores/app.store.ts)
-2. Add migration logic if needed (extension updates)
-3. Use `typedStorage.get(key)` helper for type safety
+### Adding New IndexedDB Tables/Fields
+1. Update schema in [src/types/database.d.ts](../src/types/database.d.ts)
+2. Increment version number in `database.ts` constructor
+3. Add migration logic if needed: `this.version(2).stores({...})`
+4. Use Dexie compound indexes for query optimization
 
 ### Creating Message Actions
 1. Add action type to [src/constants/actions.ts](../src/constants/actions.ts)
@@ -75,15 +87,17 @@ pnpm lint:fix     # Auto-fix ESLint issues
 - Load `dist/` folder as unpacked extension after `pnpm build`
 - Background logs: Extensions → InstaSnap → Service Worker → Console
 - Content script logs: Instagram page → DevTools Console
+- IndexedDB: DevTools → Application → IndexedDB → InstaSnapDB
 - Use `createLogger(context)` for structured logging
 
 ## Project-Specific Rules
 
 1. **Never bypass storage lock**: Always use `appStore.tryLockUser()` before snapshots
-2. **Path aliases**: Use `@/` for absolute imports (resolves to `src/`)
-3. **Unused vars**: Prefix with `_` (e.g., `_sender`) - enforced by ESLint
-4. **No `console.*` in production**: Use `logger.info/warn/error` from [src/utils/logger.ts](../src/utils/logger.ts)
-5. **Chrome API types**: Import from `@types/chrome`, not `chrome-types`
+2. **Use IndexedDB for data**: chrome.storage is **only** for locks and Instagram API tokens
+3. **Path aliases**: Use `@/` for absolute imports (resolves to `src/`)
+4. **Unused vars**: Prefix with `_` (e.g., `_sender`) - enforced by ESLint
+5. **No `console.*` in production**: Use `logger.info/warn/error` from [src/utils/logger.ts](../src/utils/logger.ts)
+6. **Chrome API types**: Import from `@types/chrome`, not `chrome-types`
 
 ## Integration Points
 
