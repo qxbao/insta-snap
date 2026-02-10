@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { TrackedUser } from "../../stores/app.store";
 
 interface Props {
 	trackedUsers: TrackedUser[];

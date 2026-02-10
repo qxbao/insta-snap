@@ -3,10 +3,10 @@ import { onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
-import { GlobalUserMap } from "../../types/storage";
 import { createLogger } from "../../utils/logger";
 import { useTimeFormat } from "../../utils/time";
 import UserChangesList from "./UserChangesList.vue";
+import { LRUCache } from "../../utils/lru-cache";
 
 interface HistoryEntry {
   timestamp: number;
@@ -23,6 +23,18 @@ interface HistoryEntry {
   };
 }
 
+interface SnapshotData {
+  followers: {
+    added: string[];
+    removed: string[];
+  };
+  following: {
+    added: string[];
+    removed: string[];
+  };
+  userMap: Record<string, UserMetadata>;
+}
+
 interface Props {
   entries: HistoryEntry[];
   userId: string;
@@ -37,19 +49,11 @@ const props = withDefaults(defineProps<Props>(), {
 const logger = createLogger("SnapshotHistory");
 const { t } = useI18n();
 const expandedItems = ref<Set<number>>(new Set());
-const snapshotDetails = ref<
-  Map<
-    number,
-    {
-      followers: { added: string[]; removed: string[] };
-      following: { added: string[]; removed: string[] };
-      userMap: GlobalUserMap;
-    }
-  >
->(new Map());
-const loadingDetails = ref<Set<number>>(new Set());
-
 const MAX_CACHED_SNAPSHOTS = 50;
+const snapshotDetails = ref(
+  new LRUCache<number, SnapshotData>(MAX_CACHED_SNAPSHOTS),
+);
+const loadingDetails = ref<Set<number>>(new Set());
 
 const { formatDate, formatRelativeTime } = useTimeFormat();
 
@@ -81,15 +85,19 @@ const loadSnapshotDetails = async (timestamp: number) => {
       .equals([props.userId, timestamp])
       .first();
     const allUsers = await database.userMetadata.toArray();
-    const userMap: GlobalUserMap = allUsers.reduce((acc, user) => {
-      acc[user.id] = {
-        username: user.username,
-        full_name: user.fullName,
-        profile_pic_url: user.avatarURL,
-        last_updated: user.updatedAt,
-      };
-      return acc;
-    }, {} as GlobalUserMap);
+    const userMap: Record<string, UserMetadata> = allUsers.reduce(
+      (acc, user) => {
+        acc[user.id] = {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          avatarURL: user.avatarURL,
+          updatedAt: user.updatedAt,
+        };
+        return acc;
+      },
+      {} as Record<string, UserMetadata>,
+    );
 
     if (record) {
       if (snapshotDetails.value.size >= MAX_CACHED_SNAPSHOTS) {
@@ -121,8 +129,10 @@ const loadSnapshotDetails = async (timestamp: number) => {
 
 const getTitle = () => {
   if (props.title) return props.title;
-  if (props.mode === "followers") return t("dashboard.details.history.followers_changes");
-  if (props.mode === "following") return t("dashboard.details.history.following_changes");
+  if (props.mode === "followers")
+    return t("dashboard.details.history.followers_changes");
+  if (props.mode === "following")
+    return t("dashboard.details.history.following_changes");
   return t("dashboard.details.history.snapshot_timeline");
 };
 
@@ -164,7 +174,11 @@ const shouldShowSection = (section: "followers" | "following") => {
             ></div>
             <div>
               <p class="font-medium text-gray-900 dark:text-white">
-                {{ entry.isCheckpoint ? t("dashboard.details.history.checkpoint") : t("dashboard.details.history.delta") }}
+                {{
+                  entry.isCheckpoint
+                    ? t("dashboard.details.history.checkpoint")
+                    : t("dashboard.details.history.delta")
+                }}
               </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ formatDate(entry.timestamp) }}

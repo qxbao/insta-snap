@@ -162,17 +162,20 @@ async function fetchWithRetry(
 
       if (response.status === 429) {
         const retryAfter = response.headers.get("Retry-After");
-        const delay = retryAfter
-          ? parseInt(retryAfter) * 1000
-          : retryDelay * Math.pow(2, attempt);
+        // Exponential backoff with jitter
+        const baseDelay = retryAfter ? parseInt(retryAfter) * 1000 : retryDelay;
+        const exponentialDelay = baseDelay * Math.pow(2, attempt);
+        const jitter = Math.random() * 1000;
+        const delay = Math.min(exponentialDelay + jitter, 60000); // Max 60s
 
         if (attempt < maxRetries - 1) {
+          logger.info(`Rate limited, retrying after ${delay}ms`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
       }
 
-      if (!response.ok) {
+      if (!response.ok && response.status >= 500) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 

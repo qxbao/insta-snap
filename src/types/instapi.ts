@@ -91,10 +91,3 @@ export interface Node2 {
   followed_by_viewer: boolean
   requested_by_viewer: boolean
 }
-
-export interface Owner2 {
-  __typename: string
-  id: string
-  profile_pic_url: string
-  username: string
-}

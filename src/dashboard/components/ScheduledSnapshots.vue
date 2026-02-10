@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { TrackedUser } from "../../stores/app.store";
 import Fa6SolidClock from "~icons/fa6-solid/clock";
 import Fa6SolidPlus from "~icons/fa6-solid/plus";
 import Fa6SolidPenToSquare from "~icons/fa6-solid/pen-to-square";
@@ -23,12 +22,12 @@ const emit = defineEmits<Emits>();
 const { t } = useI18n();
 
 const getUsernameById = (uid: string, trackedUsers: TrackedUser[]) => {
-  const user = trackedUsers.find((u) => u.userId === uid);
+  const user = trackedUsers.find((u) => u.id === uid);
   return user ? user.username : uid;
 };
 
 const getUserById = (uid: string, trackedUsers: TrackedUser[]) => {
-  return trackedUsers.find((u) => u.userId === uid);
+  return trackedUsers.find((u) => u.id === uid);
 };
 
 const formatLastRun = (timestamp: number) => {
@@ -90,7 +89,7 @@ const formatLastRun = (timestamp: number) => {
           <div class="flex items-center gap-3 flex-1">
             <img
               :src="
-                getUserById(cron.uid, trackedUsers)?.profile_pic_url ||
+                getUserById(cron.uid, trackedUsers)?.avatarURL ||
                 '/images/user_avatar.png'
               "
               :alt="getUsernameById(cron.uid, trackedUsers)"
@@ -105,7 +104,7 @@ const formatLastRun = (timestamp: number) => {
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 dark:text-white truncate">
                 {{
-                  getUserById(cron.uid, trackedUsers)?.full_name ||
+                  getUserById(cron.uid, trackedUsers)?.fullName ||
                   getUsernameById(cron.uid, trackedUsers)
                 }}
               </h3>

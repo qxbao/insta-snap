@@ -179,14 +179,14 @@ describe("useAppStore", () => {
 
       expect(store.trackedUsersLoaded).toBe(true);
       expect(store.trackedUsers).toHaveLength(2);
-      expect(store.trackedUsers[0].userId).toBe("user_123");
+      expect(store.trackedUsers[0].id).toBe("user_123");
       expect(store.trackedUsers[0].username).toBe("testuser");
 
       // Delete one user
       await store.deleteTrackedUser("user_123");
 
       expect(store.trackedUsers).toHaveLength(1);
-      expect(store.trackedUsers[0].userId).toBe("user_456");
+      expect(store.trackedUsers[0].id).toBe("user_456");
 
       // Verify data was deleted from database
       const snapshotsInDb = await database.snapshots

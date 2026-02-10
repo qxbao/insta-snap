@@ -1,6 +1,6 @@
 import { createLogger } from "./logger";
 import { database } from "./database";
-import { GlobalUserMap, UserSnapshotMeta, SnapshotRecord } from "../types/storage";
+import { GlobalUserMap, UserSnapshotMeta, SnapshotRecord } from "../types/z_deprecated_storage";
 
 const logger = createLogger("Migration");
 

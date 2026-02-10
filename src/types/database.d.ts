@@ -12,12 +12,12 @@ interface SnapshotData {
   isCheckpoint: number;
   timestamp: number;
   followers: {
-    add?: string[];
-    rem?: string[];
+    add: string[];
+    rem: string[];
   };
   following: {
-    add?: string[];
-    rem?: string[];
+    add: string[];
+    rem: string[];
   };
 }
 

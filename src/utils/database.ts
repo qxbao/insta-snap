@@ -37,6 +37,14 @@ class Database extends Dexie {
     this.crons = this.table("crons");
   }
 
+  /**
+   * Save a snapshot of followers and following for a user at a specific timestamp.
+   * @param uid The user ID to whom the snapshot belongs.
+   * @param timestamp The timestamp of the snapshot.
+   * @param followerIds Array of follower IDs.
+   * @param followingIds Array of following IDs.
+   * @returns Promise<number> The ID of the inserted snapshot record
+   */
   async saveSnapshot(
     uid: string,
     timestamp: number,
@@ -44,49 +52,73 @@ class Database extends Dexie {
     followingIds: string[],
   ): Promise<number> {
     return this.transaction("rw", this.snapshots, async () => {
-      const lastSnapshot = await this.snapshots
-        .where("[belongToId+timestamp]")
-        .between([uid, Dexie.minKey], [uid, Dexie.maxKey])
+      const lastCheckpoint = await this.snapshots
+        .where("[belongToId+isCheckpoint+timestamp]")
+        .between([uid, 1, Dexie.minKey], [uid, 1, timestamp])
         .last();
 
-      const snapshotsCount = await this.snapshots
-        .where("belongToId")
-        .equals(uid)
+      const snapshotsSinceCheckpoint = await this.snapshots
+        .where("[belongToId+timestamp]")
+        .between(
+          [uid, lastCheckpoint ? lastCheckpoint.timestamp : Dexie.minKey],
+          [uid, timestamp],
+          false, // include upper bound
+          true, // include lower bound
+        )
         .count();
 
-      const isCheckpoint = snapshotsCount % CHECKPOINT_INTERVAL === 0;
+      const isNewCheckpoint =
+        snapshotsSinceCheckpoint >= CHECKPOINT_INTERVAL || !lastCheckpoint;
 
-      // First snapshot or checkpoint: store complete data
-      if (isCheckpoint || !lastSnapshot) {
+      if (isNewCheckpoint) {
         return this.snapshots.add({
           belongToId: uid,
-          isCheckpoint: 1,
           timestamp,
+          isCheckpoint: 1,
           followers: { add: followerIds, rem: [] },
           following: { add: followingIds, rem: [] },
         });
       }
 
-      // Else, store delta - diff
-      const lastFollowers = new Set(lastSnapshot.followers.add || []);
-      const currentFollowers = new Set(followerIds);
+      const relevantSnapshots = await this.snapshots
+        .where("[belongToId+timestamp]")
+        .between([uid, lastCheckpoint.timestamp], [uid, timestamp], true, true)
+        .sortBy("timestamp");
 
-      const record: SnapshotData = {
+      const previousFollowers = new Set<string>();
+      const previousFollowing = new Set<string>();
+
+      for (const s of relevantSnapshots) {
+        if (s.isCheckpoint) {
+          previousFollowers.clear();
+          previousFollowing.clear();
+          s.followers.add.forEach((id) => previousFollowers.add(id));
+          s.following.add.forEach((id) => previousFollowing.add(id));
+        } else {
+          s.followers.add?.forEach((id) => previousFollowers.add(id));
+          s.followers.rem?.forEach((id) => previousFollowers.delete(id));
+          s.following.add?.forEach((id) => previousFollowing.add(id));
+          s.following.rem?.forEach((id) => previousFollowing.delete(id));
+        }
+      }
+
+      const currentFollowers = new Set(followerIds);
+      const currentFollowing = new Set(followingIds);
+
+      const record = {
         belongToId: uid,
         timestamp,
         isCheckpoint: 0,
         followers: {
-          add: followerIds.filter((id) => !lastFollowers.has(id)),
-          rem: Array.from(lastFollowers).filter(
+          add: followerIds.filter((id) => !previousFollowers.has(id)),
+          rem: Array.from(previousFollowers).filter(
             (id) => !currentFollowers.has(id),
           ),
         },
         following: {
-          add: followingIds.filter(
-            (id) => !new Set(lastSnapshot.following.add).has(id),
-          ),
-          rem: (lastSnapshot.following.add || []).filter(
-            (id) => !new Set(followingIds).has(id),
+          add: followingIds.filter((id) => !previousFollowing.has(id)),
+          rem: Array.from(previousFollowing).filter(
+            (id) => !currentFollowing.has(id),
           ),
         },
       };
@@ -159,17 +191,7 @@ class Database extends Dexie {
     return users as Array<string>;
   }
 
-  async getAllTrackedUsersWithMetadata(): Promise<
-    Array<{
-      userId: string;
-      username: string;
-      full_name: string;
-      profile_pic_url: string;
-      snapshotCount: number;
-      lastSnapshot: number | null;
-      last_updated: number;
-    }>
-  > {
+  async getAllTrackedUsersWithMetadata(): Promise<Array<TrackedUser>> {
     const userIds = (await this.snapshots
       .orderBy("belongToId")
       .uniqueKeys()) as string[];
@@ -189,14 +211,14 @@ class Database extends Dexie {
           .last();
 
         return {
-          userId,
+          id: userId,
           username: metadata?.username || "Unknown",
-          full_name: metadata?.fullName || "",
-          profile_pic_url: metadata?.avatarURL || "",
+          fullName: metadata?.fullName || "",
+          avatarURL: metadata?.avatarURL || "",
           snapshotCount,
           lastSnapshot: lastSnapshotRecord?.timestamp || null,
-          last_updated: metadata?.updatedAt || 0,
-        };
+          updatedAt: metadata?.updatedAt || 0,
+        } satisfies TrackedUser;
       }),
     );
   }
@@ -225,7 +247,8 @@ class Database extends Dexie {
         isCheckpoint: snapshot.isCheckpoint == 1,
         addedCount: data.add?.length || 0,
         removedCount: data.rem?.length || 0,
-        totalCount: snapshot.isCheckpoint == 1 ? data.add?.length || 0 : undefined,
+        totalCount:
+          snapshot.isCheckpoint == 1 ? data.add?.length || 0 : undefined,
       };
     });
   }

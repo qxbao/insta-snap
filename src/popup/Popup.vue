@@ -128,7 +128,7 @@ watchEffect(() => {
 
 const currentUserData = computed(() => {
   if (!userId.value) return null;
-  return appStore.trackedUsers.find((user) => user.userId === userId.value);
+  return appStore.trackedUsers.find((user) => user.id === userId.value);
 });
 
 const snapshotCount = computed(

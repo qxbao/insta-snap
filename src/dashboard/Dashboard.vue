@@ -214,7 +214,7 @@ const deleteCron = async (userId: string) => {
 			<div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 				<UserCard
 					v-for="user in paginatedUsers"
-					:key="user.userId"
+					:key="user.id"
 					:user="user"
 					@view-details="showUserDetails"
 					@open-profile="openInstagramProfile"

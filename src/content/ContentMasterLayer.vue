@@ -45,7 +45,12 @@ const { t } = useI18n();
               v-if="ui.progress.target"
               class="text-[13px] font-semibold text-gray-200 mt-4 pt-4 border-t border-black/8 dark:border-white/8"
             >
-              {{ t("content.snapshot.progress", { loaded: ui.progress.loaded, target: ui.progress.target }) }}
+              {{
+                t("content.snapshot.progress", {
+                  loaded: ui.progress.loaded,
+                  target: ui.progress.target,
+                })
+              }}
             </p>
           </div>
         </div>
@@ -61,7 +66,7 @@ const { t } = useI18n();
         class="fixed top-6 left-1/2 pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2),inset_0_0_0_1px_rgba(255,255,255,0.2)] backdrop-blur-xl font-semibold text-[15px] text-white max-w-125 animate-[float_3s_ease-in-out_infinite]"
         style="transform: translateX(-50%)"
         :class="{
-          'bg-linear-to-r from-theme/95 to-theme/80':
+          'bg-linear-to-r from-emerald-600/95 to-emerald-700/80':
             ui.notifyType === 'success',
           'bg-linear-to-r from-red-600/95 to-red-700/95':
             ui.notifyType === 'error',

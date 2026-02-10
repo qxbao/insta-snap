@@ -99,17 +99,20 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+let alarmAbortController: AbortController | null = null;
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  logger.info(`Alarm triggered: ${alarm.name}`);
   if (alarm.name === ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS) {
     if (isAlarmProcessing) {
-      logger.info("Previous alarm execution still in progress, skipping...");
-      return;
+      logger.info("Cancelling previous alarm execution");
+      alarmAbortController?.abort();
     }
 
+    alarmAbortController = new AbortController();
     isAlarmProcessing = true;
 
     try {
+      if (alarmAbortController.signal.aborted) return;
       const appId = (await chrome.storage.local.get("appId")).appId as
         | undefined
         | string;
@@ -187,7 +190,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       }
     } finally {
       isAlarmProcessing = false;
-      logger.info("Alarm execution completed");
+      alarmAbortController = null;
     }
   }
 });

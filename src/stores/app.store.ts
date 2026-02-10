@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { database } from "../utils/database";
-import { GlobalUserMap } from "../types/storage";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("AppStore");
@@ -8,21 +7,11 @@ const logger = createLogger("AppStore");
 export type StorageSchema = {
   locks: Record<string, number>;
   crons: SnapshotCron[];
-  users_metadata: GlobalUserMap;
+  users_metadata: Record<string, UserMetadata>;
   appId: string;
   csrfToken: string;
   wwwClaim: string;
 };
-
-export interface TrackedUser {
-  userId: string;
-  username: string;
-  full_name: string;
-  profile_pic_url: string;
-  snapshotCount: number;
-  lastSnapshot: number | null;
-  last_updated: number;
-}
 
 export type StorageKey = keyof StorageSchema;
 
@@ -126,7 +115,7 @@ export const useAppStore = defineStore("app", {
     async deleteTrackedUser(userId: string) {
       await database.deleteUserData(userId);
       this.trackedUsers = this.trackedUsers.filter(
-        (user) => user.userId !== userId,
+        (user) => user.id !== userId,
       );
     },
   },

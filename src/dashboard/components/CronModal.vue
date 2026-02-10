@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import type { TrackedUser } from "../../stores/app.store";
 import Fa6SolidXmark from "~icons/fa6-solid/xmark";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import { useTimeFormat } from "../../utils/time";
@@ -30,7 +29,7 @@ const localInterval = ref(props.cronInterval);
 const dropdownOpen = ref(false);
 
 const selectedUser = computed(() => {
-  return props.trackedUsers.find((u) => u.userId === localUserId.value);
+  return props.trackedUsers.find((u) => u.id === localUserId.value);
 });
 
 watch(
@@ -71,9 +70,7 @@ const isValid = computed(
 
 const handleSave = () => {
   if (!isValid.value) {
-    alert(
-      intervalError.value || t("dashboard.main.cronjob.select_user_er"),
-    );
+    alert(intervalError.value || t("dashboard.main.cronjob.select_user_er"));
     return;
   }
   emit("save", { userId: localUserId.value!, interval: localInterval.value });
@@ -121,7 +118,7 @@ const selectUser = (userId: string) => {
               class="input-theme rounded-lg px-3 py-2 border w-full text-left flex items-center justify-between"
             >
               <span v-if="selectedUser">
-                {{ selectedUser.full_name || selectedUser.username }} (@{{
+                {{ selectedUser.fullName || selectedUser.username }} (@{{
                   selectedUser.username
                 }})
               </span>
@@ -140,15 +137,15 @@ const selectUser = (userId: string) => {
             >
               <div
                 v-for="user in trackedUsers"
-                :key="user.userId"
-                @click="selectUser(user.userId)"
+                :key="user.id"
+                @click="selectUser(user.id)"
                 class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors duration-150"
                 :class="{
                   'bg-emerald-50 dark:bg-emerald-900/20':
-                    user.userId === localUserId,
+                    user.id === localUserId,
                 }"
               >
-                {{ user.full_name || user.username }} (@{{ user.username }})
+                {{ user.fullName || user.username }} (@{{ user.username }})
               </div>
             </div>
           </div>
