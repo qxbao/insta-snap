@@ -1,17 +1,16 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import UserCard from "../../dashboard/components/UserCard.vue";
-import { TrackedUser } from "../../stores/app.store";
 
 describe("UserCard.vue", () => {
   const mockUser: TrackedUser = {
-    userId: "12345",
+    id: "12345",
     username: "testuser",
-    full_name: "Test User",
-    profile_pic_url: "https://example.com/pic.jpg",
+    fullName: "Test User",
+    avatarURL: "https://example.com/pic.jpg",
     snapshotCount: 5,
     lastSnapshot: Date.now() - 3600000, // 1 hour ago
-    last_updated: Date.now(),
+    updatedAt: Date.now(),
   };
 
   it("should render user information", () => {
@@ -22,7 +21,7 @@ describe("UserCard.vue", () => {
     });
 
     expect(wrapper.text()).toContain(mockUser.username);
-    expect(wrapper.text()).toContain(mockUser.full_name);
+    expect(wrapper.text()).toContain(mockUser.fullName);
   });
 
   it("should display snapshot count", () => {
@@ -44,7 +43,7 @@ describe("UserCard.vue", () => {
 
     const img = wrapper.find("img");
     expect(img.exists()).toBe(true);
-    expect(img.attributes("src")).toBe(mockUser.profile_pic_url);
+    expect(img.attributes("src")).toBe(mockUser.avatarURL);
   });
 
   it("should emit view-details event when clicked", async () => {

@@ -49,7 +49,7 @@ const { list, containerProps, wrapperProps } = useVirtualList(
   {
     itemHeight: 56,
     overscan: 5,
-  }
+  },
 );
 </script>
 
@@ -61,7 +61,7 @@ const { list, containerProps, wrapperProps } = useVirtualList(
     <div v-bind="containerProps" style="max-height: 400px; overflow-y: auto">
       <div v-bind="wrapperProps">
         <div
-          v-for="{ index, data: userId } in list"
+          v-for="{ data: userId } in list"
           :key="userId"
           class="flex items-center gap-2 py-2 px-4 bg-lighter/5 rounded"
         >
@@ -76,7 +76,9 @@ const { list, containerProps, wrapperProps } = useVirtualList(
             "
           />
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <p
+              class="text-sm font-medium text-gray-900 dark:text-white truncate"
+            >
               {{ getUserInfo(userId).fullName || getUserInfo(userId).username }}
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
