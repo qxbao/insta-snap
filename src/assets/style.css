@@ -3,7 +3,6 @@
 
 @source "../**/*.{vue,ts,html}";
 
-
 :root {
 	--isnap-theme: #f90431;
 	--isnap-lighter: #6b6b6b;
@@ -31,6 +30,7 @@
 }
 
 @theme {
+	--color-txt: var(--isnap-text);
 	--color-theme: var(--isnap-theme);
 	--color-contrast: var(--isnap-contrast);
 	--color-nocontrast: var(--isnap-nocontrast);
@@ -68,9 +68,9 @@
 	}
 
 	.theme-btn {
-		@apply bg-theme hover:brightness-90 active:scale-95 text-contrast/90 duration-500 transition-all;
+		@apply bg-theme hover:brightness-90 active:scale-95 text-txt/90 duration-500 transition-all;
 		border: 1px solid var(--isnap-popup-border);
-		font-weight: 600;
+		font-weight: 400;
 		cursor: pointer;
 	}
 

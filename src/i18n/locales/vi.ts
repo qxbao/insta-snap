@@ -85,10 +85,16 @@ export const VietnameseLocale = {
     details: {
       title: "Thông tin hồ sơ",
       subtitle: "Xem lịch sử snapshot và phân tích",
+      show_charts: "Hiển thị biểu đồ",
       tabs: {
         overview: "Tổng quan",
         followers_history: "Người theo dõi",
         following_history: "Đang theo dõi",
+      },
+      chart: {
+        followers_label: "Người theo dõi",
+        following_label: "Đang theo dõi",
+        no_data: "Không có dữ liệu để hiển thị biểu đồ",
       },
       failed_to_load: "Không thể tải thông tin người dùng",
       header: {
@@ -106,6 +112,7 @@ export const VietnameseLocale = {
         followers_changes: "Lịch sử followers",
         following_changes: "Lịch sử following",
         checkpoint: "Checkpoint",
+        analyze: "Phân tích",
         delta: "Delta",
         total: "Tổng",
         no_changes: "Không có thay đổi trong snapshot này",
@@ -117,6 +124,14 @@ export const VietnameseLocale = {
         following_gone: "Đã huỷ follow",
         load_more: "Tải thêm",
         load_all: "Tải tất cả",
+      },
+      analysis: {
+        title: "Phân tích Snapshot",
+        subtitle: "Trạng thái mối quan hệ tại thời điểm snapshot này",
+        followers_not_followed_back: "Người theo dõi bạn chưa follow lại",
+        following_not_following_back: "Người bạn đang follow chưa follow lại bạn",
+        no_data: "Tất cả mối quan hệ đều tương hỗ tại snapshot này",
+        close: "Đóng",
       },
     },
   },

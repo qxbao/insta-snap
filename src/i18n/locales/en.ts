@@ -86,10 +86,16 @@ export const EnglishLocale = {
     details: {
       title: "User Details",
       subtitle: "View snapshot history and analytics",
+      show_charts: "Include chart",
       tabs: {
         overview: "Overview",
         followers_history: "Followers History",
         following_history: "Following History",
+      },
+      chart: {
+        followers_label: "Followers",
+        following_label: "Following",
+        no_data: "No data available for chart",
       },
       failed_to_load: "Failed to load user details",
       header: {
@@ -107,6 +113,7 @@ export const EnglishLocale = {
         followers_changes: "Followers changes",
         following_changes: "Following changes",
         checkpoint: "Checkpoint",
+        analyze: "Analyze",
         delta: "Delta",
         total: "Total",
         no_changes: "No changes in this snapshot",
@@ -118,6 +125,14 @@ export const EnglishLocale = {
         following_gone: "Following gone",
         load_more: "Load more",
         load_all: "Load all",
+      },
+      analysis: {
+        title: "Snapshot Analysis",
+        subtitle: "Relationship status as of this snapshot",
+        followers_not_followed_back: "Followers you haven't followed back",
+        following_not_following_back: "Following who don't follow you back",
+        no_data: "All relationships are mutual at this snapshot",
+        close: "Close",
       },
     },
   },

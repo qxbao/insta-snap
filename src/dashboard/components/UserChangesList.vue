@@ -59,7 +59,7 @@ const { list, containerProps, wrapperProps } = useVirtualList(
       {{ title }} ({{ users.length }})
     </h4>
     <div v-bind="containerProps" style="max-height: 400px; overflow-y: auto">
-      <div v-bind="wrapperProps">
+      <div v-bind="wrapperProps" class="flex flex-col gap-1">
         <div
           v-for="{ data: userId } in list"
           :key="userId"
