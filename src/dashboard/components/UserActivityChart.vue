@@ -1,8 +1,23 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { VueUiXy, VueUiXyConfig, VueUiXyDatasetItem } from "vue-data-ui";
-import "vue-data-ui/style.css";
+import { use, init, type EChartsType } from "echarts/core";
+import { LineChart } from "echarts/charts";
+import {
+	GridComponent,
+	TooltipComponent,
+	LegendComponent,
+} from "echarts/components";
+import { CanvasRenderer } from "echarts/renderers";
+import type { EChartsOption } from "echarts";
+
+use([
+	LineChart,
+	GridComponent,
+	TooltipComponent,
+	LegendComponent,
+	CanvasRenderer,
+]);
 
 interface TimelineEntry {
 	timestamp: number;
@@ -26,6 +41,8 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useI18n();
+const chartRef = ref<HTMLDivElement>();
+let chartInstance: EChartsType | null = null;
 
 const calculateRunningTotals = (
 	data: Array<{
@@ -49,20 +66,41 @@ const calculateRunningTotals = (
 	return runningTotals;
 };
 
-const chartData = computed<VueUiXyDatasetItem[]>(() => {
+const chartData = computed(() => {
 	const reversedTimeline = [...props.timeline].reverse();
-	const result = [];
+	const series = [];
 
 	if (props.mode === "overview" || props.mode === "followers") {
 		const followersTotals = calculateRunningTotals(
 			reversedTimeline.map((e) => e.followers),
 		);
-		result.push({
+		series.push({
 			name: t("dashboard.details.chart.followers_label"),
-			series: followersTotals,
-			type: "line" as const,
-			useArea: true,
-			color: "#F98A76",
+			data: followersTotals,
+			type: "line",
+			smooth: true,
+			symbol: "circle",
+			symbolSize: 6,
+			lineStyle: {
+				width: 2,
+			},
+			areaStyle: {
+				opacity: 0.15,
+				color: {
+					type: "linear",
+					x: 0,
+					y: 0,
+					x2: 0,
+					y2: 1,
+					colorStops: [
+						{ offset: 0, color: "#F98A76" },
+						{ offset: 1, color: "rgba(249, 138, 118, 0.1)" },
+					],
+				},
+			},
+			itemStyle: {
+				color: "#F98A76",
+			},
 		});
 	}
 
@@ -70,16 +108,37 @@ const chartData = computed<VueUiXyDatasetItem[]>(() => {
 		const followingTotals = calculateRunningTotals(
 			reversedTimeline.map((e) => e.following),
 		);
-		result.push({
+		series.push({
 			name: t("dashboard.details.chart.following_label"),
-			series: followingTotals,
-			type: "line" as const,
-			useArea: true,
-			color: "#207878",
+			data: followingTotals,
+			type: "line",
+			smooth: true,
+			symbol: "circle",
+			symbolSize: 6,
+			lineStyle: {
+				width: 2,
+			},
+			areaStyle: {
+				opacity: 0.15,
+				color: {
+					type: "linear",
+					x: 0,
+					y: 0,
+					x2: 0,
+					y2: 1,
+					colorStops: [
+						{ offset: 0, color: "#207878" },
+						{ offset: 1, color: "rgba(32, 120, 120, 0.1)" },
+					],
+				},
+			},
+			itemStyle: {
+				color: "#207878",
+			},
 		});
 	}
 
-	return result;
+	return series;
 });
 
 const chartLabels = computed(() => {
@@ -94,85 +153,169 @@ const chartLabels = computed(() => {
 	);
 });
 
-const chartConfig = computed<VueUiXyConfig>(() => {
-	const allValues = chartData.value.flatMap(
-		(dataset) => dataset.series as number[],
-	);
+const chartOption = computed<EChartsOption>(() => {
+	const allValues = chartData.value.flatMap((series) => series.data as number[]);
 	const minValue = Math.min(...allValues);
 	const maxValue = Math.max(...allValues);
 	const range = maxValue - minValue;
 	const padding = range * 0.12;
 
 	return {
-		chart: {
-			backgroundColor: "transparent",
-			fontFamily: "inherit",
-			height: 420,
-			padding: {
-				top: 5,
-				right: 5,
-				bottom: 5,
-				left: 5,
-			},
-			legend: {
-				show: chartData.value.length > 1,
-				fontSize: 14,
+		backgroundColor: "transparent",
+		grid: {
+			left: "5%",
+			right: "5%",
+			top: chartData.value.length > 1 ? "15%" : "10%",
+			bottom: "15%",
+			containLabel: true,
+		},
+		legend: {
+			show: chartData.value.length > 1,
+			top: 10,
+			textStyle: {
 				color: "#6b7280",
+				fontSize: 14,
+				fontFamily: "inherit",
 			},
-			grid: {
-				stroke: "rgba(107, 114, 128, 0.4)",
-				strokeWidth: 44,
-				showVerticalLines: false,
-				showHorizontalLines: false,
-				position: "start",
-				labels: {
-					show: true,
-					color: "#a8adb5",
-					fontSize: 13,
-					yAxis: {
-						showCrosshairs: false,
-						scaleMin: Math.floor(minValue - padding),
-						scaleMax: Math.ceil(maxValue + padding),
-						commonScaleSteps: 6,
-						showBaseline: true,
-					},
-					xAxis: {
-						showCrosshairs: false,
-						showBaseline: true,
-					},
-					xAxisLabels: {
-						show: true,
-						color: "#a8adb5",
-						fontSize: 12,
-						values: chartLabels.value,
-						yOffset: 32,
-					},
+		},
+		tooltip: {
+			trigger: "axis",
+			backgroundColor: "rgba(31, 41, 55, 0.95)",
+			borderColor: "#374151",
+			borderWidth: 1,
+			borderRadius: 8,
+			textStyle: {
+				color: "#f9fafb",
+				fontSize: 13,
+				fontFamily: "inherit",
+			},
+			axisPointer: {
+				type: "line",
+				lineStyle: {
+					color: "rgba(107, 114, 128, 0.4)",
+					width: 1,
+					type: "solid",
 				},
 			},
-			userOptions: {
+		},
+		xAxis: {
+			type: "category",
+			data: chartLabels.value,
+			boundaryGap: false,
+			axisLine: {
+				lineStyle: {
+					color: "rgba(107, 114, 128, 0.4)",
+				},
+			},
+			axisLabel: {
+				color: "#a8adb5",
+				fontSize: 12,
+				fontFamily: "inherit",
+				rotate: 0,
+				margin: 15,
+			},
+			axisTick: {
 				show: false,
 			},
-			tooltip: {
+			splitLine: {
+				show: false,
+			},
+		},
+		yAxis: {
+			type: "value",
+			min: Math.floor(minValue - padding),
+			max: Math.ceil(maxValue + padding),
+			splitNumber: 5,
+			axisLine: {
 				show: true,
-				backgroundColor: "#1f2937",
-				backgroundOpacity: 95,
-				color: "#f9fafb",
-				borderColor: "#374151",
-				borderWidth: 1,
-				borderRadius: 8,
+				lineStyle: {
+					color: "rgba(107, 114, 128, 0.4)",
+				},
+			},
+			axisLabel: {
+				color: "#a8adb5",
 				fontSize: 13,
+				fontFamily: "inherit",
+			},
+			splitLine: {
+				show: false,
 			},
 		},
-		line: {
-			showTransition: true,
-			strokeWidth: 2,
-			useGradient: true,
-			area: {
-				useGradient: true,
-				opacity: 15,
+		series: chartData.value.map((series) => ({
+			name: series.name,
+			data: series.data,
+			type: "line" as const,
+			smooth: true,
+			symbol: "circle",
+			symbolSize: 6,
+			lineStyle: {
+				width: 2,
 			},
-		},
-	} as VueUiXyConfig;
+			areaStyle: {
+				opacity: 0.3,
+				color: {
+					type: "linear",
+					x: 0,
+					y: 0,
+					x2: 0,
+					y2: 1,
+					colorStops: [
+						{ offset: 0, color: series.itemStyle.color },
+						{ offset: 1, color: "transparent" },
+					],
+				},
+			},
+			itemStyle: {
+				color: series.itemStyle.color,
+			},
+		})),
+	};
+});
+
+const initChart = () => {
+	if (!chartRef.value) return;
+
+	if (chartInstance) {
+		chartInstance.dispose();
+	}
+
+	chartInstance = init(chartRef.value);
+	chartInstance?.setOption(chartOption.value);
+
+	const handleResize = () => {
+		chartInstance?.resize();
+	};
+
+	window.addEventListener("resize", handleResize);
+
+	return () => {
+		window.removeEventListener("resize", handleResize);
+		chartInstance?.dispose();
+		chartInstance = null;
+	};
+};
+
+watch(
+	() => [props.timeline, props.mode],
+	() => {
+		if (chartInstance && props.timeline.length > 0) {
+			chartInstance.setOption(chartOption.value);
+		}
+	},
+	{ deep: true },
+);
+
+onMounted(() => {
+	if (props.timeline.length > 0) {
+		initChart();
+	}
+});
+
+onBeforeUnmount(() => {
+	if (chartInstance) {
+		chartInstance.dispose();
+		chartInstance = null;
+	}
 });
 </script>
 
@@ -184,7 +327,7 @@ const chartConfig = computed<VueUiXyConfig>(() => {
 			</p>
 		</div>
 		<div v-else class="chart-container">
-			<VueUiXy :dataset="chartData" :config="chartConfig" />
+			<div ref="chartRef" class="chart-wrapper"></div>
 		</div>
 	</div>
 </template>
@@ -198,17 +341,26 @@ const chartConfig = computed<VueUiXyConfig>(() => {
 .chart-container {
 	background: linear-gradient(
 		135deg,
-		rgba(255, 255, 255, 0.02) 0%,
-		rgba(255, 255, 255, 0) 100%
+		rgba(16, 185, 129, 0.05) 0%,
+		rgba(59, 130, 246, 0.05) 100%
 	);
 	border-radius: 12px;
 	padding: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-wrapper {
+	width: 100%;
+	height: 420px;
 }
 
 .empty-state {
-	min-height: 300px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+	background: linear-gradient(
+		135deg,
+		rgba(16, 185, 129, 0.05) 0%,
+		rgba(59, 130, 246, 0.05) 100%
+	);
+	border-radius: 12px;
+	padding: 16px;
 }
 </style>

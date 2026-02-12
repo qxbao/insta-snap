@@ -38,6 +38,7 @@
     "happy-dom": "^20.5.0",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
+    "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.18",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
@@ -52,9 +53,9 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "dexie": "^4.3.0",
+    "echarts": "^6.0.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
-    "vue-data-ui": "^3.14.10",
     "vue-i18n": "^11.2.8"
   }
 }
