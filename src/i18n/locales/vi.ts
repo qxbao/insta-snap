@@ -67,6 +67,7 @@ export const VietnameseLocale = {
         desc: "Tự động chụp snapshot theo khoảng thời gian định sẵn",
         interval: "Khoảng thời gian",
         interval_w_unit: "Khoảng thời gian (đơn vị: giờ)",
+        interval_placeholder: "Nhập khoảng thời gian (đơn vị: giờ)",
         last_run: "Lần chạy cuối",
         add_schedule: "Thêm tác vụ",
         no_cron_recommend: "Chưa có tác vụ tự động nào. Nhấn \"Thêm tác vụ\" để tạo mới.",
@@ -80,6 +81,8 @@ export const VietnameseLocale = {
         interval_max: "Tối đa: 168 giờ",
         interval_note:
           "Snapshot sẽ được tự động chụp mỗi {time} nếu tiện ích hoạt động.",
+        cancel: "Đóng",
+        save: "Lưu",
       },
     },
     details: {

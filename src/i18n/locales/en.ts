@@ -42,7 +42,8 @@ export const EnglishLocale = {
         title_complete: "Migration Complete!",
         title_available: "Data Migration Available",
         checking_message: "Checking if data migration is needed...",
-        description: "Old snapshot data detected in chrome.storage. Migrate to IndexedDB for better performance and reliability.",
+        description:
+          "Old snapshot data detected in chrome.storage. Migrate to IndexedDB for better performance and reliability.",
         start_button: "Start Migration",
         migrating_button: "Migrating...",
         success: "Migration completed successfully!",
@@ -67,6 +68,7 @@ export const EnglishLocale = {
         desc: "Automatically capture snapshots at regular intervals",
         interval: "Interval",
         interval_w_unit: "Interval (in hours)",
+        interval_placeholder: "Enter interval in hours",
         last_run: "Last run",
         add_schedule: "Add schedule",
         no_cron_recommend:
@@ -81,6 +83,8 @@ export const EnglishLocale = {
         interval_max: "Maximum: 168 hours",
         interval_note:
           "Snapshots will be automatically captured automatically every {time} when the extension is active.",
+        cancel: "Cancel",
+        save: "Save",
       },
     },
     details: {

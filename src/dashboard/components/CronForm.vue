@@ -147,7 +147,7 @@ const handleClose = () => {
           min="1"
           max="168"
           class="input-theme rounded-lg px-3 py-2 border"
-          placeholder="Enter interval in hours"
+          :placeholder="t('dashboard.main.cronjob.interval_placeholder')"
         />
         <div class="text-lighter flex flex-col gap-1 mt-1">
           <p class="mt-1 text-xs">
@@ -179,13 +179,13 @@ const handleClose = () => {
         @click="handleClose"
         class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 font-medium cursor-pointer"
       >
-        Cancel
+        {{ t("dashboard.main.cronjob.cancel") }}
       </button>
       <button
         @click="handleSave"
         class="flex-1 px-4 py-2 theme-btn rounded-lg transition-colors duration-200 font-semibold cursor-pointer"
       >
-        Save
+        {{ t("dashboard.main.cronjob.save") }}
       </button>
     </div>
   </div>

@@ -156,7 +156,7 @@ class Database extends Dexie {
     return await this.transaction("r", [this.snapshots], async () => {
       const lastCheckpoint = await this.snapshots
         .where("[belongToId+isCheckpoint+timestamp]")
-        .between([uid, 1, Dexie.minKey], [uid, 1, maxTimestamp], false, true)
+        .between([uid, 1, Dexie.minKey], [uid, 1, maxTimestamp], false, true) // Point to the checkpoint timestamp
         .last();
 
       if (!lastCheckpoint) return new Set();
