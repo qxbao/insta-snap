@@ -128,9 +128,9 @@ export const VietnameseLocale = {
       analysis: {
         title: "Phân tích Snapshot",
         subtitle: "Trạng thái mối quan hệ tại thời điểm snapshot này",
-        followers_not_followed_back: "Người theo dõi bạn chưa follow lại",
-        following_not_following_back: "Người bạn đang follow chưa follow lại bạn",
-        no_data: "Tất cả mối quan hệ đều tương hỗ tại snapshot này",
+        followers_not_followed_back: "Follower đơn phương",
+        following_not_following_back: "Following đơn phương",
+        no_data: "Không có dữ liệu phân tích",
         close: "Đóng",
       },
     },

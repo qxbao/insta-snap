@@ -47,11 +47,6 @@ const props = withDefaults(defineProps<Props>(), {
 	mode: "both",
 });
 
-const emit = defineEmits<{
-	analyze: [timestamp: number];
-}>();
-
-
 const { analyzeSnapshot } = useAnalysis();
 const logger = createLogger("SnapshotHistory");
 const { t } = useI18n();
@@ -257,8 +252,7 @@ const shouldShowSection = (section: "followers" | "following") => {
 					</div>
 					<button
 						class="theme-btn font-bold px-4 py-2 rounded ms-5"
-						@click.stop
-						@click="analyzeSnapshot(userId, entry.timestamp)"
+						@click.stop="analyzeSnapshot(props.userId, entry.timestamp)"
 					>
 						{{ t("dashboard.details.history.analyze") }}
 					</button>

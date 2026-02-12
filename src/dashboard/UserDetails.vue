@@ -8,7 +8,6 @@ import UserActivityChart from "./components/UserActivityChart.vue";
 import UserDetailsHeader from "./components/UserDetailsHeader.vue";
 import UserStatsGrid from "./components/UserStatsGrid.vue";
 import { createLogger } from "../utils/logger";
-import AnalysisModal from "./components/AnalysisModal.vue";
 
 interface Props {
 	userId: string;
@@ -292,6 +291,7 @@ const combinedTimeline = computed(() => {
 			</div>
 		</main>
 	</div>
+	<Modal />
 </template>
 
 <style scoped></style>

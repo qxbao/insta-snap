@@ -1,29 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useAppStore } from "../stores/app.store";
 import UserDetails from "./UserDetails.vue";
 import StatsCard from "./components/StatsCard.vue";
 import UserCard from "./components/UserCard.vue";
 import Pagination from "./components/Pagination.vue";
 import ScheduledSnapshots from "./components/ScheduledSnapshots.vue";
-import CronModal from "./components/CronModal.vue";
+import CronForm from "./components/CronForm.vue";
 import MigrationPanel from "./components/MigrationPanel.vue";
+import Modal from "../components/Modal.vue";
 import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left";
 import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open";
 import { createLogger } from "../utils/logger";
 import { useI18n } from "vue-i18n";
+import { useModalStore } from "../stores/modal.store";
 
 const appStore = useAppStore();
+const modalStore = useModalStore();
 const loading = ref(true);
 const error = ref<string | null>(null);
 const currentView = ref<"dashboard" | "details">("dashboard");
 const selectedUserId = ref<string | null>(null);
 const currentPage = ref(1);
 const usersPerPage = 6;
-const showCronModal = ref(false);
-const cronUserId = ref<string | null>(null);
-const cronInterval = ref(24);
-const editingCron = ref(false);
 const logger = createLogger("Dashboard");
 const { t } = useI18n(); 
 
@@ -55,6 +54,23 @@ onMounted(async () => {
 		loading.value = false;
 	}
 });
+
+watch(
+	() => modalStore.actionData,
+	async (data) => {
+		if (data && modalStore.actionId) {
+			switch (modalStore.actionId) {
+				case "saveCron":
+					await saveCron(data);
+					modalStore.closeModal();
+					break;
+				default:
+					logger.error("Unknown modal action:", modalStore.actionId);
+			}
+		}
+	},
+	{ deep: true }
+);
 
 const openInstagramProfile = (username: string) => {
 	window.open(`https://www.instagram.com/${username}`, "_blank");
@@ -104,35 +120,34 @@ const handleDeleteUserData = async (uid: string) => {
 };
 
 const openCronModal = (userId: string | null = null) => {
+	const cronUserId = userId;
+	let cronInterval = 24;
+	let editingCron = false;
+
 	if (userId) {
-		cronUserId.value = userId;
 		const existingCron = snapshotCrons.value.find((cron) => cron.uid === userId);
 		if (existingCron) {
-			cronInterval.value = existingCron.interval;
-			editingCron.value = true;
-		} else {
-			cronInterval.value = 24;
-			editingCron.value = false;
+			cronInterval = existingCron.interval;
+			editingCron = true;
 		}
-	} else {
-		cronUserId.value = null;
-		cronInterval.value = 24;
-		editingCron.value = false;
 	}
-	showCronModal.value = true;
-};
 
-const closeCronModal = () => {
-	showCronModal.value = false;
-	cronUserId.value = null;
-	cronInterval.value = 24;
-	editingCron.value = false;
+	modalStore.openModal(
+		CronForm,
+		{
+			cronUserId,
+			cronInterval,
+			editingCron,
+			trackedUsers: trackedUsers.value,
+		},
+		"saveCron",
+		null
+	);
 };
 
 const saveCron = async (data: { userId: string; interval: number }) => {
 	try {
 		await appStore.addUserSnapshotCron(data.userId, data.interval);
-		closeCronModal();
 	} catch (err) {
 		logger.error("Failed to save cron:", err);
 		alert("Failed to save cron job");
@@ -237,17 +252,7 @@ const deleteCron = async (userId: string) => {
 			/>
 		</main>
 
-		<CronModal
-			:show="showCronModal"
-			:cron-user-id="cronUserId"
-			:cron-interval="cronInterval"
-			:editing-cron="editingCron"
-			:tracked-users="trackedUsers"
-			@update:cron-user-id="cronUserId = $event"
-			@update:cron-interval="cronInterval = $event"
-			@close="closeCronModal"
-			@save="saveCron"
-		/>
+		<Modal />
 	</div>
 </template>
 

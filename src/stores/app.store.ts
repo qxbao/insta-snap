@@ -95,7 +95,9 @@ export const useAppStore = defineStore("app", {
     async removeUserSnapshotCron(userId: string) {
       if (!this.scLoaded) await this.loadSnapshotCrons();
       await database.deleteCron(userId);
-      this.snapshotCrons = this.snapshotCrons.filter((cron) => cron.uid !== userId);
+      this.snapshotCrons = this.snapshotCrons.filter(
+        (cron) => cron.uid !== userId,
+      );
     },
 
     async loadTrackedUsers() {
@@ -120,37 +122,3 @@ export const useAppStore = defineStore("app", {
     },
   },
 });
-
-class TypedStorage {
-  async get<K extends StorageKey>(
-    key: K,
-    area: "local" | "session" = "local",
-  ): Promise<StorageSchema[K] | undefined> {
-    const storage =
-      area === "local" ? chrome.storage.local : chrome.storage.session;
-    const result = await storage.get(key);
-    return result[key] as StorageSchema[K] | undefined;
-  }
-
-  async set<K extends StorageKey>(
-    key: K,
-    value: StorageSchema[K],
-    area: "local" | "session" = "local",
-  ): Promise<void> {
-    const storage =
-      area === "local" ? chrome.storage.local : chrome.storage.session;
-    await storage.set({ [key]: value });
-  }
-
-  async update<K extends StorageKey>(
-    key: K,
-    updater: (current: StorageSchema[K] | undefined) => StorageSchema[K],
-    area: "local" | "session" = "local",
-  ): Promise<void> {
-    const current = await this.get(key, area);
-    const updated = updater(current);
-    await this.set(key, updated, area);
-  }
-}
-
-export const typedStorage = new TypedStorage();
