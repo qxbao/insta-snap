@@ -92,6 +92,7 @@ const handleCronChange = async (event: Event) => {
       await appStore.removeUserSnapshotCron(userId.value);
       cronSetting.value.enabled = false;
     }
+    await appStore.loadSnapshotCrons()
     target.checked = appStore.snapshotCrons.some(
       (cron) => cron.uid === userId.value,
     );
