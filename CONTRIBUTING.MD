@@ -41,3 +41,14 @@ To set up a local development environment, follow these steps:
    ```bash
    pnpm dev
    ```
+
+
+## Localization Contribution
+To contribute to localization, please follow these steps:
+1. Create new messages.json file in `public/_locales/{locale}` directory, where {locale} is the language code (e.g., `en`, `vi`, etc.).
+
+2. The messages.json file should contain key-value pairs of localized strings (follow `public/_locales/en/messages.json` as an example).
+
+3. Create {locale}.ts file in `src/i18n/locales` directory
+
+4. The {locale}.ts file should export a locale object that maps the keys from EnglishLocale object. Your locale object must satisfy `EnglishLocale` (follow `src/i18n/locales/vi.ts` as an example).

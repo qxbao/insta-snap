@@ -30,6 +30,10 @@ export class Logger {
       console.debug(`%c${this.format('debug', message)}`, 'color: #8b5cf6', ...args);
     }
   }
+
+  warn(message: string, ...args: any[]) {
+    console.warn(`%c${this.format('warn', message)}`, 'color: #f59e0b; font-weight: bold', ...args);
+  }
 }
 
 export const createLogger = (scope: string) => new Logger(scope);

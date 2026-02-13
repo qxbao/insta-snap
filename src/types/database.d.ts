@@ -26,3 +26,10 @@ interface SnapshotCron {
   interval: number;
   lastRun: number;
 }
+
+type EncryptedData = { encrypted: ArrayBuffer; iv: Uint8Array<ArrayBufferLike> }
+
+interface InternalConfig {
+  key: string;
+  value: string | number | boolean | CryptoKey | EncryptedData;
+}
