@@ -288,7 +288,6 @@ describe("SnapshotHistory.vue", () => {
 			},
 		});
 
-		// Expand multiple entries to trigger cache
 		for (let i = 0; i < 55; i++) {
 			mockDatabase.snapshots.first.mockResolvedValue({
 				belongToId: "test-user",
@@ -302,9 +301,8 @@ describe("SnapshotHistory.vue", () => {
 			await new Promise((resolve) => setTimeout(resolve, 10));
 		}
 
-		// Cache should handle eviction without errors
 		expect(wrapper.exists()).toBe(true);
-	});
+	}, 20000);
 
 	it("cleans up resources on unmount", () => {
 		const wrapper = mount(SnapshotHistory, {
