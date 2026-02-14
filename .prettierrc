@@ -4,6 +4,7 @@
   "tabWidth": 2,
   "doubleQuote": true,
   "printWidth": 100,
+  "useTabs": false,
   "trailingComma": "all",
   "endOfLine": "auto"
 }

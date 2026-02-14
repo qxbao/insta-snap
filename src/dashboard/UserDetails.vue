@@ -266,6 +266,7 @@ const combinedTimeline = computed(() => {
 							:entries="combinedTimeline"
 							mode="both"
 							:user-id="userId"
+							@snapshot-deleted="loadData"
 						/>
 
 						<SnapshotHistory
@@ -273,6 +274,7 @@ const combinedTimeline = computed(() => {
 							:entries="combinedTimeline"
 							mode="followers"
 							:user-id="userId"
+							@snapshot-deleted="loadData"
 						/>
 
 						<SnapshotHistory
@@ -280,6 +282,7 @@ const combinedTimeline = computed(() => {
 							:entries="combinedTimeline"
 							mode="following"
 							:user-id="userId"
+							@snapshot-deleted="loadData"
 						/>
 					</div>
 				</div>

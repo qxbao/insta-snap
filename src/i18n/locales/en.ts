@@ -122,6 +122,10 @@ export const EnglishLocale = {
         total: "Total",
         no_changes: "No changes in this snapshot",
         no_data: "Data not available (collapsed and reopened to reload)",
+        delete_tooltip: "Delete this snapshot ({count} record(s) will be removed)",
+        confirm_delete_single: "Are you sure you want to delete this snapshot? This action cannot be undone.",
+        confirm_delete_multiple: "Are you sure you want to delete this snapshot and {count} dependent records? This action cannot be undone.",
+        delete_error: "Failed to delete snapshot. Please try again.",
       },
       changes: {
         new_followers: "New followers",

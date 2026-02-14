@@ -120,6 +120,10 @@ export const VietnameseLocale = {
         total: "Tổng",
         no_changes: "Không có thay đổi trong snapshot này",
         no_data: "Dữ liệu không khả dụng (thu gọn và mở lại để tải lại)",
+        delete_tooltip: "Xóa snapshot này ({count} bản ghi sẽ bị xóa)",
+        confirm_delete_single: "Bạn có chắc muốn xóa snapshot này? Hành động này không thể hoàn tác.",
+        confirm_delete_multiple: "Bạn có chắc muốn xóa snapshot này và {count} bản ghi phụ thuộc? Hành động này không thể hoàn tác.",
+        delete_error: "Không thể xóa snapshot. Vui lòng thử lại.",
       },
       changes: {
         new_followers: "Followers mới",
