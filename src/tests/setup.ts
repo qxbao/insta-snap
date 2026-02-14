@@ -1,18 +1,6 @@
 import { vi } from "vitest";
 import { config } from "@vue/test-utils";
-import { createI18n } from "vue-i18n";
-import { EnglishLocale } from "../i18n/locales/en";
-import { VietnameseLocale } from "../i18n/locales/vi";
 import "fake-indexeddb/auto";
-
-const i18n = createI18n({
-  legacy: false,
-  locale: "en",
-  messages: {
-    en: EnglishLocale,
-    vi: VietnameseLocale
-  },
-});
 
 // Mock Chrome API (types from @types/chrome)
 (globalThis as any).chrome = {
@@ -61,4 +49,15 @@ config.global.stubs = {
   teleport: true,
 };
 
-config.global.plugins = [i18n];
+// Suppress Vue i18n registration warnings in tests
+config.global.config = {
+  warnHandler: (msg: string) => {
+    // Suppress i18n component registration warnings
+    if (msg.includes('has already been registered')) {
+      return;
+    }
+    console.warn(msg);
+  },
+};
+
+// Don't set global i18n plugin - each test file creates its own instance

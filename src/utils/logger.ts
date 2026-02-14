@@ -12,7 +12,7 @@ export class Logger {
 
   private format(level: LogLevel, message: string) {
     const timestamp = new Date().toLocaleTimeString();
-    return `${this.prefix} [${timestamp}] ${message}`;
+    return `${this.prefix} - ${level.toUpperCase()} [${timestamp}] ${message}`;
   }
 
   info(message: string, ...args: any[]) {

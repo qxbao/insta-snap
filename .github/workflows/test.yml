@@ -28,15 +28,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Run lint
+        run: pnpm lint
+
       - name: Run tests
         run: pnpm test:run
 
       - name: Generate coverage
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: pnpm test:coverage
 
+      - name: Build extension
+        run: pnpm build
+
       - name: Upload coverage
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage/coverage-final.json
