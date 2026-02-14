@@ -61,7 +61,7 @@ export const EnglishLocale = {
       heading: {
         tracked_profiles: "Tracked Profiles",
         total_snapshot: "Total Snapshots",
-        active_today: "Active Today",
+        storage_used: "Storage Used",
       },
       cronjob: {
         title: "Scheduled Snapshots",
@@ -121,6 +121,7 @@ export const EnglishLocale = {
         delta: "Delta",
         total: "Total",
         no_changes: "No changes in this snapshot",
+        no_data: "Data not available (collapsed and reopened to reload)",
       },
       changes: {
         new_followers: "New followers",

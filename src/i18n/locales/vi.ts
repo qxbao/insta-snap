@@ -60,7 +60,7 @@ export const VietnameseLocale = {
       heading: {
         tracked_profiles: "Hồ sơ theo dõi",
         total_snapshot: "Snapshot đã lưu",
-        active_today: "Hoạt động hôm nay",
+        storage_used: "Bộ nhớ đã dùng",
       },
       cronjob: {
         title: "Snapshot tự động",
@@ -119,6 +119,7 @@ export const VietnameseLocale = {
         delta: "Delta",
         total: "Tổng",
         no_changes: "Không có thay đổi trong snapshot này",
+        no_data: "Dữ liệu không khả dụng (thu gọn và mở lại để tải lại)",
       },
       changes: {
         new_followers: "Followers mới",

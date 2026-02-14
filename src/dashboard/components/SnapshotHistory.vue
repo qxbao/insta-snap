@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from "vue";
+import { onBeforeUnmount, shallowRef, triggerRef } from "vue";
 import { useI18n } from "vue-i18n";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
@@ -50,12 +50,12 @@ const props = withDefaults(defineProps<Props>(), {
 const { analyzeSnapshot } = useAnalysis();
 const logger = createLogger("SnapshotHistory");
 const { t } = useI18n();
-const expandedItems = ref<Set<number>>(new Set());
+const expandedItems = shallowRef<Set<number>>(new Set());
 const MAX_CACHED_SNAPSHOTS = 50;
-const snapshotDetails = ref(
+const snapshotDetails = shallowRef(
 	new LRUCache<number, SnapshotData>(MAX_CACHED_SNAPSHOTS),
 );
-const loadingDetails = ref<Set<number>>(new Set());
+const loadingDetails = shallowRef<Set<number>>(new Set());
 
 const { formatDate, formatRelativeTime } = useTimeFormat();
 
@@ -68,8 +68,10 @@ onBeforeUnmount(() => {
 const toggleExpand = async (timestamp: number) => {
 	if (expandedItems.value.has(timestamp)) {
 		expandedItems.value.delete(timestamp);
+		triggerRef(expandedItems);
 	} else {
 		expandedItems.value.add(timestamp);
+		triggerRef(expandedItems);
 
 		if (!snapshotDetails.value.has(timestamp)) {
 			await loadSnapshotDetails(timestamp);
@@ -79,6 +81,7 @@ const toggleExpand = async (timestamp: number) => {
 
 const loadSnapshotDetails = async (timestamp: number) => {
 	loadingDetails.value.add(timestamp);
+	triggerRef(loadingDetails);
 
 	try {
 		const { database } = await import("../../utils/database");
@@ -106,7 +109,8 @@ const loadSnapshotDetails = async (timestamp: number) => {
 				const firstKey = snapshotDetails.value.keys().next().value;
 				if (firstKey !== undefined) {
 					snapshotDetails.value.delete(firstKey);
-					expandedItems.value.delete(firstKey);
+					// Don't modify expandedItems here to avoid recursive updates
+					// The item will just reload data if expanded again
 				}
 			}
 
@@ -121,11 +125,13 @@ const loadSnapshotDetails = async (timestamp: number) => {
 				},
 				userMap,
 			});
+			triggerRef(snapshotDetails);
 		}
 	} catch (err) {
 		logger.error("Failed to load snapshot details:", err);
 	} finally {
 		loadingDetails.value.delete(timestamp);
+		triggerRef(loadingDetails);
 	}
 };
 
@@ -330,6 +336,13 @@ const shouldShowSection = (section: "followers" | "following") => {
 						>
 							{{ t("dashboard.details.history.no_changes") }}
 						</div>
+					</div>
+
+					<div
+						v-else
+						class="text-center py-4 text-gray-500 dark:text-gray-400"
+					>
+						{{ t("dashboard.details.history.no_data") }}
 					</div>
 				</div>
 			</div>
