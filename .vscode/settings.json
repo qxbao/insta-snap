@@ -1,4 +1,6 @@
 {
   "css.lint.unknownAtRules": "ignore",
+  "snyk.advanced.organization": "a970df69-8628-4527-9291-b11a228c4e58",
+  "snyk.advanced.autoSelectOrganization": true,
   
 }
