@@ -53,6 +53,7 @@ describe("StatsCard.vue", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: null,
 				t: mockT,
 			},
 			global: {
@@ -68,6 +69,7 @@ describe("StatsCard.vue", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: null,
 				t: mockT,
 			},
 			global: {
@@ -80,10 +82,11 @@ describe("StatsCard.vue", () => {
 		expect(wrapper.text()).toContain("Total Snapshots");
 	});
 
-	it("displays storage usage placeholder before mount", () => {
+	it("displays storage usage placeholder when metadata is null", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: null,
 				t: mockT,
 			},
 			global: {
@@ -91,26 +94,18 @@ describe("StatsCard.vue", () => {
 			},
 		});
 
-		// Initially shows placeholder
 		expect(wrapper.text()).toContain("--");
+		expect(wrapper.text()).toContain("Storage Used");
 	});
 
-	it("estimates storage on mount when API available", async () => {
-		const mockEstimate = vi.fn().mockResolvedValue({
-			usage: 1024 * 1024 * 2.5, // 2.5 MB
-			quota: 1024 * 1024 * 1024,
-		});
-
-		Object.defineProperty(navigator, "storage", {
-			value: {
-				estimate: mockEstimate,
-			},
-			configurable: true,
-		});
-
+	it("displays storage in MB when available", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: {
+					usage: 1024 * 1024 * 2.5, // 2.5 MB
+					quota: 1024 * 1024 * 1024,
+				},
 				t: mockT,
 			},
 			global: {
@@ -118,49 +113,35 @@ describe("StatsCard.vue", () => {
 			},
 		});
 
-		await new Promise((resolve) => setTimeout(resolve, 50));
-
-		expect(mockEstimate).toHaveBeenCalled();
 		expect(wrapper.text()).toContain("2.50 MB");
 	});
 
-	it("formats storage in KB when less than 1 MB", async () => {
-		const mockEstimate = vi.fn().mockResolvedValue({
-			usage: 1024 * 500, // 500 KB
-			quota: 1024 * 1024 * 1024,
-		});
-
-		Object.defineProperty(navigator, "storage", {
-			value: {
-				estimate: mockEstimate,
-			},
-			configurable: true,
-		});
-
+	it("formats storage in KB when less than 1 MB", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: {
+					usage: 1024 * 500, // 500 KB
+					quota: 1024 * 1024 * 1024,
+				},
 				t: mockT,
 			},
 			global: {
 				plugins: [i18n],
 			},
 		});
-
-		await new Promise((resolve) => setTimeout(resolve, 50));
 
 		expect(wrapper.text()).toContain("500.0 KB");
 	});
 
-	it("handles missing storage API gracefully", async () => {
-		Object.defineProperty(navigator, "storage", {
-			value: undefined,
-			configurable: true,
-		});
-
+	it("displays placeholder when usage is zero", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: {
+					usage: 0,
+					quota: 1024 * 1024 * 1024,
+				},
 				t: mockT,
 			},
 			global: {
@@ -168,9 +149,6 @@ describe("StatsCard.vue", () => {
 			},
 		});
 
-		await new Promise((resolve) => setTimeout(resolve, 50));
-
-		// Should keep placeholder
 		expect(wrapper.text()).toContain("--");
 	});
 
@@ -178,6 +156,7 @@ describe("StatsCard.vue", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: [],
+				storageMetadata: null,
 				t: mockT,
 			},
 			global: {
@@ -194,6 +173,7 @@ describe("StatsCard.vue", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: null,
 				t: mockT,
 			},
 			global: {
@@ -211,6 +191,7 @@ describe("StatsCard.vue", () => {
 		const wrapper = mount(StatsCard, {
 			props: {
 				trackedUsers: mockTrackedUsers,
+				storageMetadata: null,
 				t: mockT,
 			},
 			global: {

@@ -1,27 +1,26 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { ref, onMounted } from "vue";
+import { computed } from "vue";
 
 interface Props {
 	trackedUsers: TrackedUser[];
+	storageMetadata: StorageEstimate | null;
 	t: ReturnType<typeof useI18n>["t"];
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
-const storageUsed = ref<string>("--");
-
-onMounted(async () => {
-	if (navigator.storage && navigator.storage.estimate) {
-		const estimate = await navigator.storage.estimate();
-		const usedMB = (estimate.usage || 0) / (1024 * 1024);
-		
-		if (usedMB < 1) {
-			storageUsed.value = `${(usedMB * 1024).toFixed(1)} KB`;
-		} else {
-			storageUsed.value = `${usedMB.toFixed(2)} MB`;
-		}
+const storageUsed = computed(() => {
+	if (!props.storageMetadata || !props.storageMetadata.usage) {
+		return "--";
 	}
+	
+	const usedMB = props.storageMetadata.usage / (1024 * 1024);
+	
+	if (usedMB < 1) {
+		return `${(usedMB * 1024).toFixed(1)} KB`;
+	}
+	return `${usedMB.toFixed(2)} MB`;
 });
 </script>
 

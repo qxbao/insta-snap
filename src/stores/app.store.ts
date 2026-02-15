@@ -22,6 +22,7 @@ interface AppState {
   scLoaded: boolean;
   trackedUsers: TrackedUser[];
   trackedUsersLoaded: boolean;
+  storageMetadata: StorageEstimate | null;
 }
 
 const LOCK_TIMEOUT = 10 * 60 * 1000; // 10m
@@ -34,12 +35,23 @@ export const useAppStore = defineStore("app", {
     scLoaded: false,
     trackedUsers: [],
     trackedUsersLoaded: false,
+    storageMetadata: null,
   }),
   actions: {
     async loadLocks() {
       const res = await chrome.storage.session.get("locks");
       this.activeLocks = (res.locks as Record<string, number>) || {};
       this.locksLoaded = true;
+    },
+
+    async loadStorageMetadata(): Promise<void> {
+      try {
+        const estimation = await navigator.storage.estimate();
+        this.storageMetadata = { usage: estimation.usage || 0, quota: estimation.quota || 0 };
+      } catch (error) {
+        logger.error("Failed to load storage metadata:", error);
+        this.storageMetadata = null;
+      }
     },
 
     async tryLockUser(userId: string): Promise<boolean> {
@@ -95,9 +107,7 @@ export const useAppStore = defineStore("app", {
     async removeUserSnapshotCron(userId: string) {
       if (!this.scLoaded) await this.loadSnapshotCrons();
       await database.deleteCron(userId);
-      this.snapshotCrons = this.snapshotCrons.filter(
-        (cron) => cron.uid !== userId,
-      );
+      this.snapshotCrons = this.snapshotCrons.filter((cron) => cron.uid !== userId);
     },
 
     async loadTrackedUsers() {
@@ -116,9 +126,7 @@ export const useAppStore = defineStore("app", {
 
     async deleteTrackedUser(userId: string) {
       await database.deleteUserData(userId);
-      this.trackedUsers = this.trackedUsers.filter(
-        (user) => user.id !== userId,
-      );
+      this.trackedUsers = this.trackedUsers.filter((user) => user.id !== userId);
     },
   },
 });
