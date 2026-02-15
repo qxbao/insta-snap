@@ -390,4 +390,166 @@ describe("Popup.vue", () => {
 
 		expect(wrapper.exists()).toBe(true);
 	});
+
+	it("does not show force unlock link when not processing", async () => {
+		const wrapper = mount(Popup, {
+			global: {
+				plugins: [i18n],
+				stubs: {
+					Fa6SolidCamera: true,
+					Fa6SolidChartSimple: true,
+					Fa6SolidSpinner: true,
+					Copyright: true,
+				},
+			},
+		});
+
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		const forceUnlockLink = wrapper.find("a[href='#']");
+		expect(forceUnlockLink.exists()).toBe(false);
+	});
+
+	it("shows force unlock link when user is locked/processing", async () => {
+		const userId = "test-user-id";
+		const store = useAppStore();
+		
+		// Ensure the mock returns the expected userId
+		const { sendMessageWithRetry } = await import("../../utils/chrome");
+		vi.mocked(sendMessageWithRetry).mockResolvedValue({
+			payload: userId,
+		} as any);
+
+		const wrapper = mount(Popup, {
+			global: {
+				plugins: [i18n],
+				stubs: {
+					Fa6SolidCamera: true,
+					Fa6SolidChartSimple: true,
+					Fa6SolidSpinner: true,
+					Copyright: true,
+				},
+			},
+		});
+
+		// Wait for async getUserInfo to complete
+		await new Promise((resolve) => setTimeout(resolve, 150));
+		await wrapper.vm.$nextTick();
+		
+		// Now lock the user using proper store action
+		await store.tryLockUser(userId);
+		await wrapper.vm.$nextTick();
+
+		expect(wrapper.text()).toContain("Force unlock profile");
+	});
+
+	it("calls unlockUser when force unlock is clicked", async () => {
+		const userId = "test-user-id";
+		const store = useAppStore();
+		const unlockUserSpy = vi.spyOn(store, "unlockUser").mockResolvedValue();
+		
+		// Ensure the mock returns the expected userId
+		const { sendMessageWithRetry } = await import("../../utils/chrome");
+		vi.mocked(sendMessageWithRetry).mockResolvedValue({
+			payload: userId,
+		} as any);
+
+		const wrapper = mount(Popup, {
+			global: {
+				plugins: [i18n],
+				stubs: {
+					Fa6SolidCamera: true,
+					Fa6SolidChartSimple: true,
+					Fa6SolidSpinner: true,
+					Copyright: true,
+				},
+			},
+		});
+
+		// Wait for async getUserInfo to complete
+		await new Promise((resolve) => setTimeout(resolve, 150));
+		await wrapper.vm.$nextTick();
+		
+		// Lock the user using proper store action
+		await store.tryLockUser(userId);
+		await wrapper.vm.$nextTick();
+
+		const forceUnlockLink = wrapper.find("a.cursor-pointer");
+		expect(forceUnlockLink.exists()).toBe(true);
+		await forceUnlockLink.trigger("click");
+
+		expect(unlockUserSpy).toHaveBeenCalledWith(userId);
+	});
+
+	it("does not call unlockUser when userId is null", async () => {
+		const { sendMessageWithRetry } = await import("../../utils/chrome");
+		vi.mocked(sendMessageWithRetry).mockRejectedValue(
+			new Error("No user found"),
+		);
+
+		const store = useAppStore();
+		const unlockUserSpy = vi.spyOn(store, "unlockUser").mockResolvedValue();
+
+		const wrapper = mount(Popup, {
+			global: {
+				plugins: [i18n],
+				stubs: {
+					Fa6SolidCamera: true,
+					Fa6SolidChartSimple: true,
+					Fa6SolidSpinner: true,
+					Copyright: true,
+				},
+			},
+		});
+
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		// Force unlock should not be visible if userId is null
+		const forceUnlockLink = wrapper.find("a.cursor-pointer");
+		if (forceUnlockLink.exists()) {
+			await forceUnlockLink.trigger("click");
+		}
+
+		expect(unlockUserSpy).not.toHaveBeenCalled();
+	});
+
+	it("removes lock status after force unlock is clicked", async () => {
+		const userId = "test-user-id";
+		const store = useAppStore();
+		
+		// Ensure the mock returns the expected userId
+		const { sendMessageWithRetry } = await import("../../utils/chrome");
+		vi.mocked(sendMessageWithRetry).mockResolvedValue({
+			payload: userId,
+		} as any);
+
+		const wrapper = mount(Popup, {
+			global: {
+				plugins: [i18n],
+				stubs: {
+					Fa6SolidCamera: true,
+					Fa6SolidChartSimple: true,
+					Fa6SolidSpinner: true,
+					Copyright: true,
+				},
+			},
+		});
+
+		// Wait for async getUserInfo to complete
+		await new Promise((resolve) => setTimeout(resolve, 150));
+		await wrapper.vm.$nextTick();
+		
+		// Lock the user using proper store action
+		await store.tryLockUser(userId);
+		await wrapper.vm.$nextTick();
+
+		expect(wrapper.text()).toContain("Force unlock profile");
+		expect(store.activeLocks[userId]).toBeDefined();
+
+		const forceUnlockLink = wrapper.find("a.cursor-pointer");
+		await forceUnlockLink.trigger("click");
+		await wrapper.vm.$nextTick();
+
+		expect(store.activeLocks[userId]).toBeUndefined();
+	});
 });

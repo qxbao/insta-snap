@@ -27,6 +27,7 @@ export const VietnameseLocale = {
       automatic_snapshots: "Tự động chụp snapshot",
       interval: "Khoảng cách mỗi lần (đơn vị: giờ)",
     },
+    force_unlock: "Mở khóa hồ sơ",
   },
   dashboard: {
     main: {

@@ -78,47 +78,41 @@ const openDashboard = () => {
   chrome.runtime.openOptionsPage();
 };
 
+const forceUnlock = async () => {
+  if (userId.value) {
+    await appStore.unlockUser(userId.value);
+  }
+};
+
 const handleCronChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const checked = target.checked;
   if (userId.value) {
     if (checked) {
-      await appStore.addUserSnapshotCron(
-        userId.value,
-        cronSetting.value.interval,
-      );
+      await appStore.addUserSnapshotCron(userId.value, cronSetting.value.interval);
       cronSetting.value.enabled = true;
     } else {
       await appStore.removeUserSnapshotCron(userId.value);
       cronSetting.value.enabled = false;
     }
-    await appStore.loadSnapshotCrons()
-    target.checked = appStore.snapshotCrons.some(
-      (cron) => cron.uid === userId.value,
-    );
+    await appStore.loadSnapshotCrons();
+    target.checked = appStore.snapshotCrons.some((cron) => cron.uid === userId.value);
   }
 };
 
 const updateCronInterval = async () => {
   if (userId.value && cronSetting.value.enabled) {
-    await appStore.addUserSnapshotCron(
-      userId.value,
-      cronSetting.value.interval,
-    );
+    await appStore.addUserSnapshotCron(userId.value, cronSetting.value.interval);
   }
 };
 
-const isProcessing = computed(
-  () => userId.value && userId.value in appStore.activeLocks,
-);
+const isProcessing = computed(() => userId.value && userId.value in appStore.activeLocks);
 
 const cronSettingForUser = computed(() => {
   if (!userId.value || !appStore.scLoaded) return null;
 
   const cron = appStore.snapshotCrons.find((c) => c.uid === userId.value);
-  return cron
-    ? { interval: cron.interval, enabled: true }
-    : { interval: 24, enabled: false };
+  return cron ? { interval: cron.interval, enabled: true } : { interval: 24, enabled: false };
 });
 
 watchEffect(() => {
@@ -132,12 +126,8 @@ const currentUserData = computed(() => {
   return appStore.trackedUsers.find((user) => user.id === userId.value);
 });
 
-const snapshotCount = computed(
-  () => currentUserData.value?.snapshotCount ?? -1,
-);
-const lastSnapshotTime = computed(
-  () => currentUserData.value?.lastSnapshot ?? null,
-);
+const snapshotCount = computed(() => currentUserData.value?.snapshotCount ?? -1);
+const lastSnapshotTime = computed(() => currentUserData.value?.lastSnapshot ?? null);
 </script>
 
 <template>
@@ -145,10 +135,7 @@ const lastSnapshotTime = computed(
     <div class="p-5 mb-3 text-center card">
       <div class="flex justify-center gap-1 text-sm">
         <div>{{ t("popup.profile") }}:</div>
-        <div
-          class="font-bold"
-          :class="igUsername ? 'text-emerald-600' : 'text-theme'"
-        >
+        <div class="font-bold" :class="igUsername ? 'text-emerald-600' : 'text-theme'">
           {{ igUsername ? `@${igUsername}` : t("errors.undetected_profile") }}
         </div>
       </div>
@@ -158,7 +145,7 @@ const lastSnapshotTime = computed(
             {{ t("popup.no_profile_recommend") }}
           </p>
         </div>
-        <div class="flex justify-center" v-else>
+        <div class="flex flex-col items-center" v-else>
           <button
             class="flex justify-center items-center gap-2 mt-3 px-8 py-2 theme-btn cursor-pointer font-semibold text-lg rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
             @click="sendSnapshotSignal"
@@ -174,13 +161,14 @@ const lastSnapshotTime = computed(
                   : t("popup.status.syncing")
             }}
           </button>
+          <div class="mt-2" v-if="isProcessing">
+            <a class="text-xs text-theme underline font-semibold cursor-pointer" @click="forceUnlock">
+              {{ t("popup.force_unlock") }}
+            </a>
+          </div>
         </div>
       </div>
-      <div
-        id="snapshot-info"
-        class="flex flex-col gap-1 mb-3 text-center"
-        v-if="igUsername"
-      >
+      <div id="snapshot-info" class="flex flex-col gap-1 mb-3 text-center" v-if="igUsername">
         <p class="mb-1 text-sm font-bold text-gray-800 dark:text-gray-300">
           {{ t("popup.metadata.title") }}
         </p>
@@ -234,9 +222,7 @@ const lastSnapshotTime = computed(
       </div>
       <div v-if="cronSetting.enabled" class="mt-4 p-3 card rounded-lg">
         <div class="flex items-center justify-between">
-          <label
-            for="interval"
-            class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+          <label for="interval" class="text-sm font-semibold text-gray-700 dark:text-gray-300"
             >{{ t("popup.configurations.interval") }}
           </label>
           <input
@@ -253,9 +239,7 @@ const lastSnapshotTime = computed(
     </div>
     <hr class="mb-3" />
     <div id="copyright">
-      <p
-        class="flex justify-center gap-1 text-xs text-center text-lighter font-semibold"
-      >
+      <p class="flex justify-center gap-1 text-xs text-center text-lighter font-semibold">
         <Copyright /> {{ new Date().getFullYear() }} qxbao (InstaSnap)
       </p>
     </div>

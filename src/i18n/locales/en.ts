@@ -25,6 +25,7 @@ export const EnglishLocale = {
       syncing: "Syncing",
       ready: "Take snapshot",
     },
+    force_unlock: "Force unlock profile",
   },
   dashboard: {
     main: {

@@ -61,6 +61,9 @@ export default defineConfig({
     hmr: {
       port: 5173,
     },
+    watch: {
+      ignored: ["**/node_modules/**", "**/coverage/**"],
+    },
     cors: {
       origin: [
         "chrome-extension://lkhdgfhpbplamljkpcpiblkjpdfjfhaa",
