@@ -407,13 +407,16 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
     return;
   }
   logger.info("Saving user info with UID =", userId);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  profileObserver = new MutationObserver(async (_, observer) => {
+  profileObserver = new MutationObserver((_, observer) => {
     const imgElem: HTMLImageElement | null =
       document.querySelector(`header img[alt*='${username}']`) ||
       document.querySelector("header img[crossorigin='anonymous'][draggable='false']");
     const usernameElem = document.querySelector("header h2");
+    if (usernameElem?.textContent?.trim() !== username) {
+      logger.warn("Username element found but text does not match. Retrying...");
+      return;
+    }
     const fullnameElem = usernameElem
       ? usernameElem
           .closest("div")
