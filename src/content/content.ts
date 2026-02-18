@@ -1,107 +1,109 @@
-import { ActionType, ExtensionMessage } from "../constants/actions";
-import { ExtensionMessageResponse, Status } from "../constants/status";
+import { ActionType, ExtensionMessage } from "../constants/actions"
+import { ExtensionMessageResponse, Status } from "../constants/status"
 import {
   retrieveUserFollowersAndFollowing,
   saveUserInfo,
   sendAppDataToBg,
-} from "../utils/instagram";
-import { findUserId } from "../utils/instagram";
-import { createLogger } from "../utils/logger";
-import { setupVueApp } from "./injector";
+} from "../utils/instagram"
+import { findUserId } from "../utils/instagram"
+import { createLogger } from "../utils/logger"
+import { setupVueApp } from "./injector"
 
-const logger = createLogger("ContentScript");
-const locks = {} as Record<string, number>;
-const uiStore = setupVueApp();
+const logger = createLogger("ContentScript")
+const locks = {} as Record<string, number>
+const uiStore = setupVueApp()
 
 let userdataCache: null | {
-  userId: string;
-  username: string;
-} = null;
+  userId: string
+  username: string
+} = null
 
 function registerMessages(
   message: ExtensionMessage,
   _sender: chrome.runtime.MessageSender,
   sendResponse: (response: ExtensionMessageResponse) => void,
 ): boolean | void {
-  logger.debug("Received message:", message);
-  const username = window.location.pathname.split("/").filter(Boolean)[0];
+  logger.debug("Received message:", message)
+  const username = window.location.pathname.split("/").filter(Boolean)[0]
 
   switch (message.type) {
     case ActionType.TAKE_SNAPSHOT:
       if (locks[username]) {
-        logger.info("Snapshot already in progress for user:", username);
+        logger.info("Snapshot already in progress for user:", username)
         sendResponse({
           status: Status.InProgress,
           payload: null,
-        } satisfies ExtensionMessageResponse);
-        return;
+        } satisfies ExtensionMessageResponse)
+        return
       }
       if (uiStore) {
-        retrieveUserFollowersAndFollowing(username, logger, uiStore);
-      } else {
-        logger.error("UI Store is not initialized.");
+        retrieveUserFollowersAndFollowing(username, logger, uiStore)
       }
-      break;
+      else {
+        logger.error("UI Store is not initialized.")
+      }
+      break
     case ActionType.GET_USER_INFO:
       (async function () {
         if (userdataCache && userdataCache.username === message.payload) {
           sendResponse({
             status: Status.Done,
             payload: userdataCache.userId,
-          } satisfies ExtensionMessageResponse);
-        } else {
-          const userId = await findUserId(username);
+          } satisfies ExtensionMessageResponse)
+        }
+        else {
+          const userId = await findUserId(username)
           if (!userId) {
-            logger.error("Failed to find user ID for username:", username);
-            return;
+            logger.error("Failed to find user ID for username:", username)
+            return
           }
-          userdataCache = { userId, username };
-          logger.info("Retrieved User ID:", userId);
+          userdataCache = { userId, username }
+          logger.info("Retrieved User ID:", userId)
 
           sendResponse({
             status: Status.Done,
             payload: userId,
-          } satisfies ExtensionMessageResponse);
+          } satisfies ExtensionMessageResponse)
         }
-      })();
-      return true;
+      })()
+      return true
     default:
-      return false;
+      return false
   }
 }
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session" && changes.locks) {
-    const newLocks =
-      changes["locks"].newValue == undefined
+    const newLocks
+      = changes["locks"].newValue == undefined
         ? {}
-        : (changes["locks"].newValue as Record<string, number>);
-    Object.assign(locks, newLocks);
-    logger.info("Locks updated from storage:", locks);
+        : (changes["locks"].newValue as Record<string, number>)
+    Object.assign(locks, newLocks)
+    logger.info("Locks updated from storage:", locks)
   }
-});
+})
 
-let lastUrl = location.href;
+let lastUrl = location.href
 
 const observer = new MutationObserver(async () => {
   if (location.href !== lastUrl) {
-    lastUrl = location.href;
-    const igpattern = /^https?:\/\/(www\.)?instagram\.com\/([^\/]+)\/?$/;
+    lastUrl = location.href
+    const igpattern = /^https?:\/\/(www\.)?instagram\.com\/([^\/]+)\/?$/
     if (!igpattern.test(location.href)) {
-      return;
+      return
     }
 
-    const username = window.location.pathname.split("/").filter(Boolean)[0];
-    await saveUserInfo(username, logger);
+    const username = window.location.pathname.split("/").filter(Boolean)[0]
+    await saveUserInfo(username, logger)
   }
-});
+})
 
 async function init() {
-  const username = window.location.pathname.split("/").filter(Boolean)[0];
-  await saveUserInfo(username, logger);
-  observer.observe(document, { subtree: true, childList: true, characterData: true });
-  chrome.runtime.onMessage.addListener(registerMessages);
-  sendAppDataToBg();
+  const username = window.location.pathname.split("/").filter(Boolean)[0]
+  await saveUserInfo(username, logger)
+  observer.observe(document, { subtree: true, childList: true, characterData: true })
+  chrome.runtime.onMessage.addListener(registerMessages)
+  sendAppDataToBg()
 }
 
-init();
+init()

@@ -1,4 +1,4 @@
-import { EnglishLocale } from "./en";
+import { EnglishLocale } from "./en"
 
 export const VietnameseLocale = {
   metadata: {
@@ -162,4 +162,4 @@ export const VietnameseLocale = {
   errors: {
     undetected_profile: "Không phát hiện",
   },
-} satisfies typeof EnglishLocale;
+} satisfies typeof EnglishLocale

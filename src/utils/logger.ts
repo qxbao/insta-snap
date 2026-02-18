@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type LogLevel = "info" | "warn" | "error" | "debug";
+type LogLevel = "info" | "warn" | "error" | "debug"
 
 export class Logger {
-  private prefix: string;
-  private isDev: boolean;
+  private prefix: string
+  private isDev: boolean
 
   constructor(scope: string) {
-    this.prefix = `[InstaSnap:${scope}]`;
-    this.isDev = import.meta.env.MODE === "development";
+    this.prefix = `[InstaSnap:${scope}]`
+    this.isDev = import.meta.env.MODE === "development"
   }
 
   private format(level: LogLevel, message: string) {
-    const timestamp = new Date().toLocaleTimeString();
-    return `${this.prefix} - ${level.toUpperCase()} [${timestamp}] ${message}`;
+    const timestamp = new Date().toLocaleTimeString()
+    return `${this.prefix} - ${level.toUpperCase()} [${timestamp}] ${message}`
   }
 
   info(message: string, ...args: any[]) {
@@ -21,7 +21,7 @@ export class Logger {
         `%c${this.format("info", message)}`,
         "color: #3b82f6; font-weight: bold",
         ...args,
-      );
+      )
     }
   }
 
@@ -30,18 +30,18 @@ export class Logger {
       `%c${this.format("error", message)}`,
       "color: #ef4444; font-weight: bold",
       ...args,
-    );
+    )
   }
 
   debug(message: string, ...args: any[]) {
     if (this.isDev) {
-      console.debug(`%c${this.format("debug", message)}`, "color: #8b5cf6", ...args);
+      console.debug(`%c${this.format("debug", message)}`, "color: #8b5cf6", ...args)
     }
   }
 
   warn(message: string, ...args: any[]) {
-    console.warn(`%c${this.format("warn", message)}`, "color: #f59e0b; font-weight: bold", ...args);
+    console.warn(`%c${this.format("warn", message)}`, "color: #f59e0b; font-weight: bold", ...args)
   }
 }
 
-export const createLogger = (scope: string) => new Logger(scope);
+export const createLogger = (scope: string) => new Logger(scope)

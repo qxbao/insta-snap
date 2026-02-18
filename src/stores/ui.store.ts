@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { defineStore } from "pinia"
 
 export const useUIStore = defineStore("ui", {
   state: () => ({
@@ -12,7 +12,7 @@ export const useUIStore = defineStore("ui", {
     },
   }),
   getters: {
-    hasMessage: (state) => state.notifyMessage.length > 0,
+    hasMessage: state => state.notifyMessage.length > 0,
   },
   actions: {
     showNotification(
@@ -20,31 +20,31 @@ export const useUIStore = defineStore("ui", {
       type: "success" | "error" | "info" = "info",
       duration = 3000,
     ) {
-      this.notifyMessage = message;
-      this.notifyType = type;
-      this.isNotifyVisible = true;
+      this.notifyMessage = message
+      this.notifyType = type
+      this.isNotifyVisible = true
 
       if (duration > 0) {
         setTimeout(() => {
-          this.hideNotification();
-        }, duration);
+          this.hideNotification()
+        }, duration)
       }
     },
     hideNotification() {
-      this.isNotifyVisible = false;
-      this.notifyMessage = "";
+      this.isNotifyVisible = false
+      this.notifyMessage = ""
     },
     setLoading(isLoading: boolean) {
-      this.loading = isLoading;
+      this.loading = isLoading
       if (!isLoading) {
-        this.progress.loaded = 0;
-        this.progress.target = "";
+        this.progress.loaded = 0
+        this.progress.target = ""
       }
     },
     setLoadingProgress(progress: number, target: string) {
-      this.loading = true;
-      this.progress.loaded = progress;
-      this.progress.target = target;
+      this.loading = true
+      this.progress.loaded = progress
+      this.progress.target = target
     },
   },
-});
+})

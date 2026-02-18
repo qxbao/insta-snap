@@ -13,6 +13,7 @@ export default defineConfigWithVueTs(
   },
   ...pluginVue.configs["flat/essential"],
   vueTsConfigs.recommended,
+  stylistic.configs.recommended,
   {
     rules: {
       "vue/multi-word-component-names": "off",
@@ -36,7 +37,8 @@ export default defineConfigWithVueTs(
           enforceConst: false,
         },
       ],
-      "@stylistic/quotes": ["warn", "double", { avoidEscape: true }],
+      "@stylistic/no-trailing-spaces": ["warn", { "skipBlankLines": false }],
+      "@stylistic/quotes": ["warn", "double", { "avoidEscape": true }],
       "@stylistic/indent": ["warn", 2],
     },
   },

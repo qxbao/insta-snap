@@ -7,6 +7,6 @@ export enum Status {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ExtensionMessageResponse<T = any> {
-  status: Status;
-  payload?: T;
+  status: Status
+  payload?: T
 }

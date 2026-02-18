@@ -1,42 +1,42 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from "vue";
-import Fa6SolidCamera from "~icons/fa6-solid/camera";
-import Fa6SolidChartSimple from "~icons/fa6-solid/chart-simple";
-import Fa6SolidSpinner from "~icons/fa6-solid/spinner";
-import Copyright from "~icons/mdi/copyright";
+import { computed, onMounted, ref, watchEffect } from "vue"
+import Fa6SolidCamera from "~icons/fa6-solid/camera"
+import Fa6SolidChartSimple from "~icons/fa6-solid/chart-simple"
+import Fa6SolidSpinner from "~icons/fa6-solid/spinner"
+import Copyright from "~icons/mdi/copyright"
 
-import { ActionType, ExtensionMessage } from "../constants/actions";
-import { useAppStore } from "../stores/app.store";
-import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/chrome";
-import { createLogger } from "../utils/logger";
-import { useI18n } from "vue-i18n";
+import { ActionType, ExtensionMessage } from "../constants/actions"
+import { useAppStore } from "../stores/app.store"
+import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/chrome"
+import { createLogger } from "../utils/logger"
+import { useI18n } from "vue-i18n"
 
-const logger = createLogger("Popup");
-const igUsername = ref<string | null>(null);
-const igProfilePattern = /^(https:\/\/www\.instagram\.com\/)[\w.]+[\/]?$/g;
-const appStore = useAppStore();
-const cronSetting = ref<{ interval: number; enabled: boolean }>({
+const logger = createLogger("Popup")
+const igUsername = ref<string | null>(null)
+const igProfilePattern = /^(https:\/\/www\.instagram\.com\/)[\w.]+[\/]?$/g
+const appStore = useAppStore()
+const cronSetting = ref<{ interval: number, enabled: boolean }>({
   interval: 24,
   enabled: false,
-});
-const userId = ref<string | null>(null);
-const { t } = useI18n();
+})
+const userId = ref<string | null>(null)
+const { t } = useI18n()
 
-appStore.loadSnapshotCrons();
-appStore.loadTrackedUsers();
+appStore.loadSnapshotCrons()
+appStore.loadTrackedUsers()
 
 onMounted(async () => {
-  await appStore.loadLocks();
+  await appStore.loadLocks()
   try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const activeTab = tabs[0];
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    const activeTab = tabs[0]
 
     if (activeTab && activeTab.url) {
-      const url = new URL(activeTab.url);
+      const url = new URL(activeTab.url)
       if (igProfilePattern.test(url.href)) {
-        const pathSegments = url.pathname.split("/").filter(Boolean);
+        const pathSegments = url.pathname.split("/").filter(Boolean)
         if (pathSegments.length > 0) {
-          igUsername.value = pathSegments[0];
+          igUsername.value = pathSegments[0]
         }
 
         try {
@@ -50,84 +50,87 @@ onMounted(async () => {
               retryDelay: 1000,
               timeout: 5000,
             },
-          );
+          )
 
-          logger.debug("User info response:", response);
-          const uid = response?.payload;
-          userId.value = uid || null;
-        } catch (error) {
-          logger.error("Failed to get user info after retries:", error);
-          userId.value = null;
+          logger.debug("User info response:", response)
+          const uid = response?.payload
+          userId.value = uid || null
+        }
+        catch (error) {
+          logger.error("Failed to get user info after retries:", error)
+          userId.value = null
         }
       }
     }
-  } catch (error) {
-    logger.error("Error fetching active tab:", error);
   }
-});
+  catch (error) {
+    logger.error("Error fetching active tab:", error)
+  }
+})
 
 const sendSnapshotSignal = async () => {
-  await appStore.tryLockUser(userId.value || "");
+  await appStore.tryLockUser(userId.value || "")
   sendMessageToActiveTab({
     type: ActionType.TAKE_SNAPSHOT,
     payload: { username: igUsername.value },
-  } satisfies ExtensionMessage);
-};
+  } satisfies ExtensionMessage)
+}
 
 const openDashboard = () => {
-  chrome.runtime.openOptionsPage();
-};
+  chrome.runtime.openOptionsPage()
+}
 
 const forceUnlock = async () => {
   if (userId.value) {
-    await appStore.unlockUser(userId.value);
+    await appStore.unlockUser(userId.value)
   }
-};
+}
 
 const handleCronChange = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const checked = target.checked;
+  const target = event.target as HTMLInputElement
+  const checked = target.checked
   if (userId.value) {
     if (checked) {
-      await appStore.addUserSnapshotCron(userId.value, cronSetting.value.interval);
-      cronSetting.value.enabled = true;
-    } else {
-      await appStore.removeUserSnapshotCron(userId.value);
-      cronSetting.value.enabled = false;
+      await appStore.addUserSnapshotCron(userId.value, cronSetting.value.interval)
+      cronSetting.value.enabled = true
     }
-    await appStore.loadSnapshotCrons();
-    target.checked = appStore.snapshotCrons.some((cron) => cron.uid === userId.value);
+    else {
+      await appStore.removeUserSnapshotCron(userId.value)
+      cronSetting.value.enabled = false
+    }
+    await appStore.loadSnapshotCrons()
+    target.checked = appStore.snapshotCrons.some(cron => cron.uid === userId.value)
   }
-};
+}
 
 const updateCronInterval = async () => {
   if (userId.value && cronSetting.value.enabled) {
-    await appStore.addUserSnapshotCron(userId.value, cronSetting.value.interval);
+    await appStore.addUserSnapshotCron(userId.value, cronSetting.value.interval)
   }
-};
+}
 
-const isProcessing = computed(() => userId.value && userId.value in appStore.activeLocks);
+const isProcessing = computed(() => userId.value && userId.value in appStore.activeLocks)
 
 const cronSettingForUser = computed(() => {
-  if (!userId.value || !appStore.scLoaded) return null;
+  if (!userId.value || !appStore.scLoaded) return null
 
-  const cron = appStore.snapshotCrons.find((c) => c.uid === userId.value);
-  return cron ? { interval: cron.interval, enabled: true } : { interval: 24, enabled: false };
-});
+  const cron = appStore.snapshotCrons.find(c => c.uid === userId.value)
+  return cron ? { interval: cron.interval, enabled: true } : { interval: 24, enabled: false }
+})
 
 watchEffect(() => {
   if (cronSettingForUser.value) {
-    cronSetting.value = { ...cronSettingForUser.value };
+    cronSetting.value = { ...cronSettingForUser.value }
   }
-});
+})
 
 const currentUserData = computed(() => {
-  if (!userId.value) return null;
-  return appStore.trackedUsers.find((user) => user.id === userId.value);
-});
+  if (!userId.value) return null
+  return appStore.trackedUsers.find(user => user.id === userId.value)
+})
 
-const snapshotCount = computed(() => currentUserData.value?.snapshotCount ?? -1);
-const lastSnapshotTime = computed(() => currentUserData.value?.lastSnapshot ?? null);
+const snapshotCount = computed(() => currentUserData.value?.snapshotCount ?? -1)
+const lastSnapshotTime = computed(() => currentUserData.value?.lastSnapshot ?? null)
 </script>
 
 <template>

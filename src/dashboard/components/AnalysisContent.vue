@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useI18n } from "vue-i18n";
-import UserChangesList from "./UserChangesList.vue";
-import { useModalStore } from "../../stores/modal.store";
+import { computed } from "vue"
+import { useI18n } from "vue-i18n"
+import UserChangesList from "./UserChangesList.vue"
+import { useModalStore } from "../../stores/modal.store"
 
 interface Props {
-  loading?: boolean;
-  followersNotFollowedBack: string[];
-  followingNotFollowingBack: string[];
-  userMap: Record<string, UserMetadata>;
-  timestamp: number;
+  loading?: boolean
+  followersNotFollowedBack: string[]
+  followingNotFollowingBack: string[]
+  userMap: Record<string, UserMetadata>
+  timestamp: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
-});
+})
 
-const { t } = useI18n();
-const modalStore = useModalStore();
+const { t } = useI18n()
+const modalStore = useModalStore()
 
 const hasData = computed(() => {
-  return props.followersNotFollowedBack.length > 0 || props.followingNotFollowingBack.length > 0;
-});
+  return props.followersNotFollowedBack.length > 0 || props.followingNotFollowingBack.length > 0
+})
 </script>
 
 <template>

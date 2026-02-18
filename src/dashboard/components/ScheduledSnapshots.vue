@@ -1,34 +1,34 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
-import Fa6SolidClock from "~icons/fa6-solid/clock";
-import Fa6SolidPenToSquare from "~icons/fa6-solid/pen-to-square";
-import Fa6SolidPlus from "~icons/fa6-solid/plus";
-import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can";
-import { useTimeFormat } from "../../utils/time";
+import { useI18n } from "vue-i18n"
+import Fa6SolidClock from "~icons/fa6-solid/clock"
+import Fa6SolidPenToSquare from "~icons/fa6-solid/pen-to-square"
+import Fa6SolidPlus from "~icons/fa6-solid/plus"
+import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can"
+import { useTimeFormat } from "../../utils/time"
 
 interface Props {
-  snapshotCrons: SnapshotCron[];
-  trackedUsers: TrackedUser[];
+  snapshotCrons: SnapshotCron[]
+  trackedUsers: TrackedUser[]
 }
 
 interface Emits {
-  (e: "open-cron-modal", uid: string | null): void;
-  (e: "delete-cron", uid: string): void;
+  (e: "open-cron-modal", uid: string | null): void
+  (e: "delete-cron", uid: string): void
 }
 
-defineProps<Props>();
-const { formatIntervalTime, formatRelativeTime } = useTimeFormat();
-const emit = defineEmits<Emits>();
-const { t } = useI18n();
+defineProps<Props>()
+const { formatIntervalTime, formatRelativeTime } = useTimeFormat()
+const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const getUsernameById = (uid: string, trackedUsers: TrackedUser[]) => {
-  const user = trackedUsers.find((u) => u.id === uid);
-  return user ? user.username : uid;
-};
+  const user = trackedUsers.find(u => u.id === uid)
+  return user ? user.username : uid
+}
 
 const getUserById = (uid: string, trackedUsers: TrackedUser[]) => {
-  return trackedUsers.find((u) => u.id === uid);
-};
+  return trackedUsers.find(u => u.id === uid)
+}
 </script>
 
 <template>

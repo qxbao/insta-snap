@@ -1,59 +1,62 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
-import { useAppStore } from "../stores/app.store";
-import UserDetails from "./UserDetails.vue";
-import StatsCard from "./components/StatsCard.vue";
-import UserCard from "./components/UserCard.vue";
-import Pagination from "./components/Pagination.vue";
-import ScheduledSnapshots from "./components/ScheduledSnapshots.vue";
-import CronForm from "./components/CronForm.vue";
-import MigrationPanel from "./components/MigrationPanel.vue";
-import Modal from "../components/Modal.vue";
-import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left";
-import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open";
-import { createLogger } from "../utils/logger";
-import { useI18n } from "vue-i18n";
-import { useModalStore } from "../stores/modal.store";
+import { ref, onMounted, computed, watch } from "vue"
+import { useAppStore } from "../stores/app.store"
+import UserDetails from "./UserDetails.vue"
+import StatsCard from "./components/StatsCard.vue"
+import UserCard from "./components/UserCard.vue"
+import Pagination from "./components/Pagination.vue"
+import ScheduledSnapshots from "./components/ScheduledSnapshots.vue"
+import CronForm from "./components/CronForm.vue"
+import MigrationPanel from "./components/MigrationPanel.vue"
+import Modal from "../components/Modal.vue"
+import Fa6SolidRotateLeft from "~icons/fa6-solid/rotate-left"
+import Fa6SolidFolderOpen from "~icons/fa6-solid/folder-open"
+import { createLogger } from "../utils/logger"
+import { useI18n } from "vue-i18n"
+import { useModalStore } from "../stores/modal.store"
 
-const appStore = useAppStore();
-const modalStore = useModalStore();
-const loading = ref(true);
-const error = ref<string | null>(null);
-const currentView = ref<"dashboard" | "details">("dashboard");
-const selectedUserId = ref<string | null>(null);
-const currentPage = ref(1);
-const usersPerPage = 6;
-const logger = createLogger("Dashboard");
-const { t } = useI18n();
+const appStore = useAppStore()
+const modalStore = useModalStore()
+const loading = ref(true)
+const error = ref<string | null>(null)
+const currentView = ref<"dashboard" | "details">("dashboard")
+const selectedUserId = ref<string | null>(null)
+const currentPage = ref(1)
+const usersPerPage = 6
+const logger = createLogger("Dashboard")
+const { t } = useI18n()
 
-const trackedUsers = computed(() => appStore.trackedUsers);
-const snapshotCrons = computed(() => appStore.snapshotCrons);
-const storageMetadata = computed(() => appStore.storageMetadata);
+const trackedUsers = computed(() => appStore.trackedUsers)
+const snapshotCrons = computed(() => appStore.snapshotCrons)
+const storageMetadata = computed(() => appStore.storageMetadata)
 
-const totalPages = computed(() => Math.ceil(trackedUsers.value.length / usersPerPage));
+const totalPages = computed(() => Math.ceil(trackedUsers.value.length / usersPerPage))
 const paginatedUsers = computed(() => {
-  const start = (currentPage.value - 1) * usersPerPage;
-  const end = start + usersPerPage;
-  return trackedUsers.value.slice(start, end);
-});
+  const start = (currentPage.value - 1) * usersPerPage
+  const end = start + usersPerPage
+  return trackedUsers.value.slice(start, end)
+})
 
 onMounted(async () => {
   try {
-    loading.value = true;
-    await appStore.loadTrackedUsers();
-    await appStore.loadSnapshotCrons();
-    await appStore.loadStorageMetadata();
-  } catch (err) {
-    if (err instanceof Error) {
-      error.value = err.message;
-    } else {
-      error.value = "An unknown error occurred";
-    }
-    logger.error("Failed to load dashboard data:", err);
-  } finally {
-    loading.value = false;
+    loading.value = true
+    await appStore.loadTrackedUsers()
+    await appStore.loadSnapshotCrons()
+    await appStore.loadStorageMetadata()
   }
-});
+  catch (err) {
+    if (err instanceof Error) {
+      error.value = err.message
+    }
+    else {
+      error.value = "An unknown error occurred"
+    }
+    logger.error("Failed to load dashboard data:", err)
+  }
+  finally {
+    loading.value = false
+  }
+})
 
 watch(
   () => modalStore.actionData,
@@ -61,71 +64,73 @@ watch(
     if (data && modalStore.actionId) {
       switch (modalStore.actionId) {
         case "saveCron":
-          await saveCron(data);
-          modalStore.closeModal();
-          break;
+          await saveCron(data)
+          modalStore.closeModal()
+          break
         default:
-          logger.error("Unknown modal action:", modalStore.actionId);
+          logger.error("Unknown modal action:", modalStore.actionId)
       }
     }
   },
   { deep: true },
-);
+)
 
 const openInstagramProfile = (username: string) => {
-  window.open(`https://www.instagram.com/${username}`, "_blank");
-};
+  window.open(`https://www.instagram.com/${username}`, "_blank")
+}
 
 const refreshData = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    await appStore.refreshTrackedUsers();
-    await appStore.loadStorageMetadata();
-    currentPage.value = 1;
-  } catch (err) {
-    error.value = "Failed to refresh data";
-    logger.error("Failed to refresh data:", err);
-  } finally {
-    loading.value = false;
+    await appStore.refreshTrackedUsers()
+    await appStore.loadStorageMetadata()
+    currentPage.value = 1
   }
-};
+  catch (err) {
+    error.value = "Failed to refresh data"
+    logger.error("Failed to refresh data:", err)
+  }
+  finally {
+    loading.value = false
+  }
+}
 
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
+    currentPage.value = page
   }
-};
+}
 
 const showUserDetails = (userId: string) => {
-  selectedUserId.value = userId;
-  currentView.value = "details";
-};
+  selectedUserId.value = userId
+  currentView.value = "details"
+}
 
 const backToDashboard = () => {
-  currentView.value = "dashboard";
-  selectedUserId.value = null;
-  refreshData();
-};
+  currentView.value = "dashboard"
+  selectedUserId.value = null
+  refreshData()
+}
 
 const handleDeleteUserData = async (uid: string) => {
   if (confirm(t("dashboard.main.confirm.delete_snapshot"))) {
-    await appStore.deleteTrackedUser(uid);
+    await appStore.deleteTrackedUser(uid)
     if (selectedUserId.value === uid && currentView.value === "details") {
-      backToDashboard();
+      backToDashboard()
     }
   }
-};
+}
 
 const openCronModal = (userId: string | null = null) => {
-  const cronUserId = userId;
-  let cronInterval = 24;
-  let editingCron = false;
+  const cronUserId = userId
+  let cronInterval = 24
+  let editingCron = false
 
   if (userId) {
-    const existingCron = snapshotCrons.value.find((cron) => cron.uid === userId);
+    const existingCron = snapshotCrons.value.find(cron => cron.uid === userId)
     if (existingCron) {
-      cronInterval = existingCron.interval;
-      editingCron = true;
+      cronInterval = existingCron.interval
+      editingCron = true
     }
   }
 
@@ -139,23 +144,24 @@ const openCronModal = (userId: string | null = null) => {
     },
     "saveCron",
     null,
-  );
-};
+  )
+}
 
-const saveCron = async (data: { userId: string; interval: number }) => {
+const saveCron = async (data: { userId: string, interval: number }) => {
   try {
-    await appStore.addUserSnapshotCron(data.userId, data.interval);
-  } catch (err) {
-    logger.error("Failed to save cron:", err);
-    alert("Failed to save cron job");
+    await appStore.addUserSnapshotCron(data.userId, data.interval)
   }
-};
+  catch (err) {
+    logger.error("Failed to save cron:", err)
+    alert("Failed to save cron job")
+  }
+}
 
 const deleteCron = async (userId: string) => {
   if (confirm(t("dashboard.main.confirm.delete_cron"))) {
-    await appStore.removeUserSnapshotCron(userId);
+    await appStore.removeUserSnapshotCron(userId)
   }
-};
+}
 </script>
 
 <template>

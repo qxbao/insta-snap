@@ -1,15 +1,15 @@
-import { Component, ComponentOptions, createVNode, render } from "vue";
-import { createLogger } from "./logger";
+import { Component, ComponentOptions, createVNode, render } from "vue"
+import { createLogger } from "./logger"
 
-const logger = createLogger("ErrorBoundary");
+const logger = createLogger("ErrorBoundary")
 
 export function withErrorBoundary<T extends Component>(component: T): ComponentOptions {
   return {
     ...component,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorCaptured(err: unknown, instance: any, info: string) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      logger.error("Component error:", error, info);
+      const error = err instanceof Error ? err : new Error(String(err))
+      logger.error("Component error:", error, info)
       if (instance.$el) {
         const fallback = createVNode(
           "div",
@@ -27,12 +27,12 @@ export function withErrorBoundary<T extends Component>(component: T): ComponentO
               "Reload",
             ),
           ],
-        );
+        )
 
-        render(fallback, instance.$el);
+        render(fallback, instance.$el)
       }
 
-      return false;
+      return false
     },
-  } as ComponentOptions;
+  } as ComponentOptions
 }

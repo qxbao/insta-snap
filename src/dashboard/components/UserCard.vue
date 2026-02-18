@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import Fa6SolidArrowUpRightFromSquare from "~icons/fa6-solid/arrow-up-right-from-square";
-import Fa6SolidMagnifyingGlassChart from "~icons/fa6-solid/magnifying-glass-chart";
-import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can";
-import { useTimeFormat } from "../../utils/time";
-import { useI18n } from "vue-i18n";
+import Fa6SolidArrowUpRightFromSquare from "~icons/fa6-solid/arrow-up-right-from-square"
+import Fa6SolidMagnifyingGlassChart from "~icons/fa6-solid/magnifying-glass-chart"
+import Fa6SolidTrashCan from "~icons/fa6-solid/trash-can"
+import { useTimeFormat } from "../../utils/time"
+import { useI18n } from "vue-i18n"
 
-const { formatRelativeTime } = useTimeFormat();
-const { t } = useI18n();
+const { formatRelativeTime } = useTimeFormat()
+const { t } = useI18n()
 
 interface Props {
-  user: TrackedUser;
+  user: TrackedUser
 }
 
 interface Emits {
-  (e: "view-details", userId: string): void;
-  (e: "open-profile", username: string): void;
-  (e: "delete", userId: string): void;
+  (e: "view-details", userId: string): void
+  (e: "open-profile", username: string): void
+  (e: "delete", userId: string): void
 }
 
-defineProps<Props>();
-const emit = defineEmits<Emits>();
+defineProps<Props>()
+const emit = defineEmits<Emits>()
 </script>
 
 <template>

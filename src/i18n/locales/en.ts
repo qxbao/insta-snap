@@ -162,4 +162,4 @@ export const EnglishLocale = {
   errors: {
     undetected_profile: "Undetected",
   },
-};
+}

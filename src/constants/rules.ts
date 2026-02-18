@@ -1,4 +1,4 @@
-const EXTENSION_ORIGIN = chrome.runtime.getURL("").slice(0, -1);
+const EXTENSION_ORIGIN = chrome.runtime.getURL("").slice(0, -1)
 
 export const ExtensionRules: chrome.declarativeNetRequest.Rule[] = [
   {
@@ -86,4 +86,4 @@ export const ExtensionRules: chrome.declarativeNetRequest.Rule[] = [
       resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
     },
   },
-];
+]

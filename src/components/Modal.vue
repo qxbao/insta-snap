@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { useModalStore } from "../stores/modal.store";
-import Fa6SolidXmark from "~icons/fa6-solid/xmark";
-import Fa6SolidSpinner from "~icons/fa6-solid/spinner";
+import { useModalStore } from "../stores/modal.store"
+import Fa6SolidXmark from "~icons/fa6-solid/xmark"
+import Fa6SolidSpinner from "~icons/fa6-solid/spinner"
 
-const modalStore = useModalStore();
+const modalStore = useModalStore()
 
 const handleClose = () => {
   if (!modalStore.isLoading) {
-    modalStore.closeModal();
+    modalStore.closeModal()
   }
-};
+}
 </script>
 
 <template>

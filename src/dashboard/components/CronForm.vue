@@ -1,80 +1,80 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
-import { useTimeFormat } from "../../utils/time";
-import { useI18n } from "vue-i18n";
-import { useModalStore } from "../../stores/modal.store";
-import { MaxCronInterval, MinCronInterval } from "../../constants/time";
+import { ref, watch, computed } from "vue"
+import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down"
+import { useTimeFormat } from "../../utils/time"
+import { useI18n } from "vue-i18n"
+import { useModalStore } from "../../stores/modal.store"
+import { MaxCronInterval, MinCronInterval } from "../../constants/time"
 
 interface Props {
-  cronUserId?: string | null;
-  cronInterval?: number;
-  editingCron?: boolean;
-  trackedUsers: TrackedUser[];
+  cronUserId?: string | null
+  cronInterval?: number
+  editingCron?: boolean
+  trackedUsers: TrackedUser[]
 }
 
 interface Emits {
-  (e: "close"): void;
+  (e: "close"): void
 }
 
-const { formatIntervalTime } = useTimeFormat();
+const { formatIntervalTime } = useTimeFormat()
 const props = withDefaults(defineProps<Props>(), {
   cronUserId: null,
   cronInterval: 24,
   editingCron: false,
-});
-const emit = defineEmits<Emits>();
-const { t } = useI18n();
-const modalStore = useModalStore();
+})
+const emit = defineEmits<Emits>()
+const { t } = useI18n()
+const modalStore = useModalStore()
 
-const localUserId = ref(props.cronUserId);
-const localInterval = ref(props.cronInterval);
-const dropdownOpen = ref(false);
+const localUserId = ref(props.cronUserId)
+const localInterval = ref(props.cronInterval)
+const dropdownOpen = ref(false)
 
 const selectedUser = computed(() => {
-  return props.trackedUsers.find((u) => u.id === localUserId.value);
-});
+  return props.trackedUsers.find(u => u.id === localUserId.value)
+})
 
 watch(
   () => props.cronUserId,
   (newVal) => {
-    localUserId.value = newVal;
+    localUserId.value = newVal
   },
-);
+)
 
 watch(
   () => props.cronInterval,
   (newVal) => {
-    localInterval.value = newVal;
+    localInterval.value = newVal
   },
-);
+)
 
 const intervalError = computed(() => {
-  if (!localInterval.value) return t("dashboard.main.cronjob.interval_required");
-  if (localInterval.value < MinCronInterval) return t("dashboard.main.cronjob.interval_min_er");
-  if (localInterval.value > MaxCronInterval) return t("dashboard.main.cronjob.interval_max_er");
-  return null;
-});
+  if (!localInterval.value) return t("dashboard.main.cronjob.interval_required")
+  if (localInterval.value < MinCronInterval) return t("dashboard.main.cronjob.interval_min_er")
+  if (localInterval.value > MaxCronInterval) return t("dashboard.main.cronjob.interval_max_er")
+  return null
+})
 
-const isValid = computed(() => !intervalError.value && localUserId.value !== null);
+const isValid = computed(() => !intervalError.value && localUserId.value !== null)
 
 const handleSave = () => {
   if (!isValid.value) {
-    alert(intervalError.value || t("dashboard.main.cronjob.select_user_er"));
-    return;
+    alert(intervalError.value || t("dashboard.main.cronjob.select_user_er"))
+    return
   }
-  modalStore.submitAction({ userId: localUserId.value!, interval: localInterval.value });
-};
+  modalStore.submitAction({ userId: localUserId.value!, interval: localInterval.value })
+}
 
 const selectUser = (userId: string) => {
-  localUserId.value = userId;
-  dropdownOpen.value = false;
-};
+  localUserId.value = userId
+  dropdownOpen.value = false
+}
 
 const handleClose = () => {
-  emit("close");
-  modalStore.closeModal();
-};
+  emit("close")
+  modalStore.closeModal()
+}
 </script>
 
 <template>

@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
+import { useI18n } from "vue-i18n"
 
 interface Props {
   userInfo: {
-    username: string;
-    fullName?: string;
-    avatarURL: string;
-  };
-  userId: string;
+    username: string
+    fullName?: string
+    avatarURL: string
+  }
+  userId: string
 }
 
 interface Emits {
-  (e: "open-profile"): void;
+  (e: "open-profile"): void
 }
 
-defineProps<Props>();
-const emit = defineEmits<Emits>();
-const { t } = useI18n();
+defineProps<Props>()
+const emit = defineEmits<Emits>()
+const { t } = useI18n()
 </script>
 
 <template>

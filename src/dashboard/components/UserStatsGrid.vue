@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
+import { useI18n } from "vue-i18n"
 
 interface Props {
-  totalSnapshots: number;
-  checkpointCount: number;
-  currentFollowersCount: number;
-  currentFollowingCount: number;
+  totalSnapshots: number
+  checkpointCount: number
+  currentFollowersCount: number
+  currentFollowingCount: number
 }
 
-defineProps<Props>();
-const { t } = useI18n();
+defineProps<Props>()
+const { t } = useI18n()
 </script>
 
 <template>

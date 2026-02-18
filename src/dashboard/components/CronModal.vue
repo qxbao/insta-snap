@@ -1,81 +1,81 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import Fa6SolidXmark from "~icons/fa6-solid/xmark";
-import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
-import { useTimeFormat } from "../../utils/time";
-import { useI18n } from "vue-i18n";
-import { MaxCronInterval, MinCronInterval } from "../../constants/time";
+import { ref, watch, computed } from "vue"
+import Fa6SolidXmark from "~icons/fa6-solid/xmark"
+import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down"
+import { useTimeFormat } from "../../utils/time"
+import { useI18n } from "vue-i18n"
+import { MaxCronInterval, MinCronInterval } from "../../constants/time"
 
 interface Props {
-  show: boolean;
-  cronUserId: string | null;
-  cronInterval: number;
-  editingCron: boolean;
-  trackedUsers: TrackedUser[];
+  show: boolean
+  cronUserId: string | null
+  cronInterval: number
+  editingCron: boolean
+  trackedUsers: TrackedUser[]
 }
 
 interface Emits {
-  (e: "close"): void;
-  (e: "save", data: { userId: string; interval: number }): void;
-  (e: "update:cronUserId", value: string | null): void;
-  (e: "update:cronInterval", value: number): void;
+  (e: "close"): void
+  (e: "save", data: { userId: string, interval: number }): void
+  (e: "update:cronUserId", value: string | null): void
+  (e: "update:cronInterval", value: number): void
 }
 
-const { formatIntervalTime } = useTimeFormat();
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
-const { t } = useI18n();
-const localUserId = ref(props.cronUserId);
-const localInterval = ref(props.cronInterval);
-const dropdownOpen = ref(false);
+const { formatIntervalTime } = useTimeFormat()
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
+const { t } = useI18n()
+const localUserId = ref(props.cronUserId)
+const localInterval = ref(props.cronInterval)
+const dropdownOpen = ref(false)
 
 const selectedUser = computed(() => {
-  return props.trackedUsers.find((u) => u.id === localUserId.value);
-});
+  return props.trackedUsers.find(u => u.id === localUserId.value)
+})
 
 watch(
   () => props.cronUserId,
   (newVal) => {
-    localUserId.value = newVal;
+    localUserId.value = newVal
   },
-);
+)
 
 watch(
   () => props.cronInterval,
   (newVal) => {
-    localInterval.value = newVal;
+    localInterval.value = newVal
   },
-);
+)
 
 watch(localUserId, (newVal) => {
-  emit("update:cronUserId", newVal);
-});
+  emit("update:cronUserId", newVal)
+})
 
 watch(localInterval, (newVal) => {
-  emit("update:cronInterval", newVal);
-});
+  emit("update:cronInterval", newVal)
+})
 
 const intervalError = computed(() => {
-  if (!localInterval.value) return t("dashboard.main.cronjob.interval_required");
-  if (localInterval.value < MinCronInterval) return t("dashboard.main.cronjob.interval_min_er");
-  if (localInterval.value > MaxCronInterval) return t("dashboard.main.cronjob.interval_max_er");
-  return null;
-});
+  if (!localInterval.value) return t("dashboard.main.cronjob.interval_required")
+  if (localInterval.value < MinCronInterval) return t("dashboard.main.cronjob.interval_min_er")
+  if (localInterval.value > MaxCronInterval) return t("dashboard.main.cronjob.interval_max_er")
+  return null
+})
 
-const isValid = computed(() => !intervalError.value && localUserId.value !== null);
+const isValid = computed(() => !intervalError.value && localUserId.value !== null)
 
 const handleSave = () => {
   if (!isValid.value) {
-    alert(intervalError.value || t("dashboard.main.cronjob.select_user_er"));
-    return;
+    alert(intervalError.value || t("dashboard.main.cronjob.select_user_er"))
+    return
   }
-  emit("save", { userId: localUserId.value!, interval: localInterval.value });
-};
+  emit("save", { userId: localUserId.value!, interval: localInterval.value })
+}
 
 const selectUser = (userId: string) => {
-  localUserId.value = userId;
-  dropdownOpen.value = false;
-};
+  localUserId.value = userId
+  dropdownOpen.value = false
+}
 </script>
 
 <template>

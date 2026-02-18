@@ -1,15 +1,15 @@
-import { ActionType, ExtensionMessage } from "../constants/actions";
-import { ErrorBoundary, HTTPStatus } from "../constants/http";
-import { Minute, Second } from "../constants/time";
-import { useUIStore } from "../stores/ui.store";
-import { Edge, InstagramAPIHeader, InstagramRequestType, UserNode } from "../types/instapi";
-import { createLogger, Logger } from "./logger";
+import { ActionType, ExtensionMessage } from "../constants/actions"
+import { ErrorBoundary, HTTPStatus } from "../constants/http"
+import { Minute, Second } from "../constants/time"
+import { useUIStore } from "../stores/ui.store"
+import { Edge, InstagramAPIHeader, InstagramRequestType, UserNode } from "../types/instapi"
+import { createLogger, Logger } from "./logger"
 
-const IGGraphQLBase = "https://www.instagram.com/graphql/query";
-const MAX_USERS_PER_REQUEST = 50;
-const FOLLOWERS_QUERY_HASH = "c76146de99bb02f6415203be841dd25a";
-const FOLLOWING_QUERY_HASH = "d04b0a864b4b54837c0d870b0e77e076";
-const logger = createLogger("InstaSnap:Instagram");
+const IGGraphQLBase = "https://www.instagram.com/graphql/query"
+const MAX_USERS_PER_REQUEST = 50
+const FOLLOWERS_QUERY_HASH = "c76146de99bb02f6415203be841dd25a"
+const FOLLOWING_QUERY_HASH = "d04b0a864b4b54837c0d870b0e77e076"
+const logger = createLogger("InstaSnap:Instagram")
 
 function buildFollowersEndpoint(uid: string, after?: string | null): string {
   const variables = {
@@ -18,8 +18,8 @@ function buildFollowersEndpoint(uid: string, after?: string | null): string {
     fetch_mutual: true,
     first: MAX_USERS_PER_REQUEST,
     after: after,
-  };
-  return `${IGGraphQLBase}/?query_hash=${FOLLOWERS_QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`;
+  }
+  return `${IGGraphQLBase}/?query_hash=${FOLLOWERS_QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`
 }
 
 function buildFollowingEndpoint(uid: string, after?: string | null): string {
@@ -29,14 +29,14 @@ function buildFollowingEndpoint(uid: string, after?: string | null): string {
     fetch_mutual: true,
     first: MAX_USERS_PER_REQUEST,
     after: after,
-  };
-  return `${IGGraphQLBase}/?query_hash=${FOLLOWING_QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`;
+  }
+  return `${IGGraphQLBase}/?query_hash=${FOLLOWING_QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`
 }
 
 function findAppId(): string {
-  const bodyContent = document.querySelector("body")?.innerHTML;
-  const appIdMatch = bodyContent?.match(/"APP_ID":"(\d+)"/);
-  return appIdMatch ? appIdMatch[1] : "";
+  const bodyContent = document.querySelector("body")?.innerHTML
+  const appIdMatch = bodyContent?.match(/"APP_ID":"(\d+)"/)
+  return appIdMatch ? appIdMatch[1] : ""
 }
 
 async function findUserId(username: string): Promise<string | null> {
@@ -49,22 +49,23 @@ async function findUserId(username: string): Promise<string | null> {
         retryDelay: 1000,
         timeout: 10000,
       },
-    );
+    )
     if (!response.ok) {
-      return null;
+      return null
     }
-    const text = await response.text();
-    const userId = text?.match(/"profile_id":"(\d+)"/);
-    return userId ? userId[1] : "";
-  } catch (error) {
-    logger.error("Failed to find user ID:", error);
-    return null;
+    const text = await response.text()
+    const userId = text?.match(/"profile_id":"(\d+)"/)
+    return userId ? userId[1] : ""
+  }
+  catch (error) {
+    logger.error("Failed to find user ID:", error)
+    return null
   }
 }
 
 function exportCSRFToken(): string {
-  const match = document.cookie.match(/csrftoken=([^;]+)/);
-  return match ? match[1] : "";
+  const match = document.cookie.match(/csrftoken=([^;]+)/)
+  return match ? match[1] : ""
 }
 
 /**
@@ -73,20 +74,20 @@ function exportCSRFToken(): string {
  * @return InstagramAPIHeader Headers object
  * */
 function buildHeaders(appId: string, csrfToken: string, wwwClaim: string): InstagramAPIHeader {
-  const headers: InstagramAPIHeader = {} as InstagramAPIHeader;
+  const headers: InstagramAPIHeader = {} as InstagramAPIHeader
 
   // Fixed values
-  headers["accept"] = "*/*";
-  headers["accept-language"] = "vi,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6";
-  headers["sec-fetch-dest"] = "empty";
-  headers["sec-fetch-mode"] = "cors";
-  headers["sec-fetch-site"] = "same-origin";
+  headers["accept"] = "*/*"
+  headers["accept-language"] = "vi,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6"
+  headers["sec-fetch-dest"] = "empty"
+  headers["sec-fetch-mode"] = "cors"
+  headers["sec-fetch-site"] = "same-origin"
 
   // Dynamic values
-  headers["x-ig-www-claim"] = wwwClaim;
-  headers["x-ig-app-id"] = appId;
-  headers["x-csrftoken"] = csrfToken;
-  return headers;
+  headers["x-ig-www-claim"] = wwwClaim
+  headers["x-ig-app-id"] = appId
+  headers["x-csrftoken"] = csrfToken
+  return headers
 }
 
 /**
@@ -103,8 +104,8 @@ function IGFetch(
   wwwClaim: string,
   init?: RequestInit,
 ): Promise<Response> {
-  const url =
-    typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  const url
+    = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
 
   return fetchWithRetry(
     url,
@@ -121,13 +122,13 @@ function IGFetch(
       retryDelay: 2000,
       timeout: 15000,
     },
-  );
+  )
 }
 
 interface FetchOptions {
-  maxRetries?: number;
-  retryDelay?: number;
-  timeout?: number;
+  maxRetries?: number
+  retryDelay?: number
+  timeout?: number
 }
 
 async function fetchWithRetry(
@@ -135,52 +136,53 @@ async function fetchWithRetry(
   options: RequestInit,
   fetchOptions: FetchOptions = {},
 ): Promise<Response> {
-  const { maxRetries = 3, retryDelay = 1000, timeout = 10000 } = fetchOptions;
+  const { maxRetries = 3, retryDelay = 1000, timeout = 10000 } = fetchOptions
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
 
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
-      });
+      })
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       if (response.status === HTTPStatus.TooManyRequests) {
-        const retryAfter = response.headers.get("Retry-After");
-        const baseDelay = retryAfter ? parseInt(retryAfter) * Second : retryDelay;
+        const retryAfter = response.headers.get("Retry-After")
+        const baseDelay = retryAfter ? parseInt(retryAfter) * Second : retryDelay
         // eslint-disable-next-line no-magic-numbers
-        const exponentialDelay = baseDelay * Math.pow(2, attempt);
-        const jitter = Math.random() * Second;
-        const delay = Math.min(exponentialDelay + jitter, Minute); // Max 60s
+        const exponentialDelay = baseDelay * Math.pow(2, attempt)
+        const jitter = Math.random() * Second
+        const delay = Math.min(exponentialDelay + jitter, Minute) // Max 60s
 
         if (attempt < maxRetries - 1) {
-          logger.info(`Rate limited, retrying after ${delay}ms`);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
+          logger.info(`Rate limited, retrying after ${delay}ms`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
         }
       }
 
       if (!response.ok && response.status >= ErrorBoundary) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      return response;
-    } catch (error) {
-      if (attempt === maxRetries - 1) throw error;
+      return response
+    }
+    catch (error) {
+      if (attempt === maxRetries - 1) throw error
 
       if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("Request timeout");
+        throw new Error("Request timeout")
       }
       // eslint-disable-next-line no-magic-numbers
-      await new Promise((resolve) => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
+      await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)))
     }
   }
 
-  throw new Error("Max retries exceeded");
+  throw new Error("Max retries exceeded")
 }
 
 async function fetchUsers(
@@ -192,58 +194,59 @@ async function fetchUsers(
   logger?: Logger,
   store?: ReturnType<typeof useUIStore>,
 ): Promise<UserNode[] | false> {
-  const buildEndpoint = rqtype === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint;
-  const edgeKey = rqtype === "followers" ? "edge_followed_by" : "edge_follow";
+  const buildEndpoint = rqtype === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint
+  const edgeKey = rqtype === "followers" ? "edge_followed_by" : "edge_follow"
 
-  logger?.info(`Fetching ${rqtype} using GraphQL API...`);
+  logger?.info(`Fetching ${rqtype} using GraphQL API...`)
 
-  const users: UserNode[] = [];
-  let after: string | null = null;
-  let hasMore = true;
+  const users: UserNode[] = []
+  let after: string | null = null
+  let hasMore = true
 
-  store?.setLoading(true);
-  store?.setLoadingProgress(0, rqtype);
+  store?.setLoading(true)
+  store?.setLoadingProgress(0, rqtype)
   while (hasMore) {
-    const apiEndpoint = buildEndpoint(userId, after);
+    const apiEndpoint = buildEndpoint(userId, after)
 
-    let response;
+    let response
 
     try {
-      response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim);
-    } catch (error) {
-      logger?.error(`Failed to fetch ${rqtype}:`, error);
-      store?.setLoading(false);
-      return false;
+      response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim)
+    }
+    catch (error) {
+      logger?.error(`Failed to fetch ${rqtype}:`, error)
+      store?.setLoading(false)
+      return false
     }
 
-    const data: InstagramRequestType<typeof rqtype> = await response.json();
+    const data: InstagramRequestType<typeof rqtype> = await response.json()
 
     if (!data.data || !data.data.user || !(edgeKey in data.data.user)) {
-      logger?.error(`Invalid GraphQL response structure for ${rqtype}`);
-      return false;
+      logger?.error(`Invalid GraphQL response structure for ${rqtype}`)
+      return false
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const edgeData = (data.data.user as any)[edgeKey];
-    const edges = edgeData.edges || [];
+    const edgeData = (data.data.user as any)[edgeKey]
+    const edges = edgeData.edges || []
 
     const batchUsers: UserNode[] = edges.map((edge: Edge) => ({
       id: edge.node.id || "",
       username: edge.node.username || "",
       full_name: edge.node.full_name || "",
       profile_pic_url: edge.node.profile_pic_url || "",
-    }));
+    }))
 
-    users.push(...batchUsers);
+    users.push(...batchUsers)
 
-    hasMore = edgeData.page_info?.has_next_page || false;
-    after = edgeData.page_info?.end_cursor || null;
+    hasMore = edgeData.page_info?.has_next_page || false
+    after = edgeData.page_info?.end_cursor || null
 
-    store?.setLoadingProgress(users.length, rqtype);
-    logger?.info(`Fetched ${batchUsers.length} ${rqtype}, total so far: ${users.length}`);
+    store?.setLoadingProgress(users.length, rqtype)
+    logger?.info(`Fetched ${batchUsers.length} ${rqtype}, total so far: ${users.length}`)
   }
 
-  return users;
+  return users
 }
 
 async function retrieveUserFollowers(
@@ -253,7 +256,7 @@ async function retrieveUserFollowers(
 ) {
   return retrieveUserFollowersAndFollowing(username, logger, store, {
     followersOnly: true,
-  });
+  })
 }
 
 async function retrieveUserFollowing(
@@ -263,52 +266,52 @@ async function retrieveUserFollowing(
 ) {
   return retrieveUserFollowersAndFollowing(username, logger, store, {
     followingOnly: true,
-  });
+  })
 }
 
 async function retrieveUserFollowersAndFollowing(
   username: string,
   logger?: Logger,
   store?: ReturnType<typeof useUIStore>,
-  options?: { followersOnly?: boolean; followingOnly?: boolean },
+  options?: { followersOnly?: boolean, followingOnly?: boolean },
 ) {
-  const appId = findAppId();
-  const NotificationDuration = 5000;
+  const appId = findAppId()
+  const NotificationDuration = 5000
   if (!appId) {
-    logger?.error("Failed to retrieve Instagram App ID.");
+    logger?.error("Failed to retrieve Instagram App ID.")
     store?.showNotification(
       "Failed to retrieve Instagram App ID. Please make sure you are on a valid profile page.",
       "error",
       NotificationDuration,
-    );
-    return false;
+    )
+    return false
   }
-  logger?.info("Instagram App ID:", appId);
+  logger?.info("Instagram App ID:", appId)
 
-  const csrfToken = exportCSRFToken();
+  const csrfToken = exportCSRFToken()
   if (!csrfToken) {
-    logger?.error("Failed to retrieve CSRF Token.");
+    logger?.error("Failed to retrieve CSRF Token.")
     store?.showNotification(
       "Failed to retrieve Instagram CSRF Token. Please make sure you are on a valid profile page.",
       "error",
       NotificationDuration,
-    );
-    return false;
+    )
+    return false
   }
-  logger?.info("CSRF Token:", csrfToken);
+  logger?.info("CSRF Token:", csrfToken)
 
-  const userId = await findUserId(username);
+  const userId = await findUserId(username)
 
-  const wwwClaim = sessionStorage.getItem("www-claim-v2") || "";
+  const wwwClaim = sessionStorage.getItem("www-claim-v2") || ""
 
   if (!userId) {
-    logger?.error("Failed to retrieve Instagram User ID.");
+    logger?.error("Failed to retrieve Instagram User ID.")
     store?.showNotification(
       "Failed to retrieve Instagram User ID. Please make sure you are on a valid profile page.",
       "error",
       NotificationDuration,
-    );
-    return false;
+    )
+    return false
   }
 
   chrome.runtime.sendMessage({
@@ -318,15 +321,15 @@ async function retrieveUserFollowersAndFollowing(
       csrfToken,
       wwwClaim,
     },
-  } satisfies ExtensionMessage);
+  } satisfies ExtensionMessage)
 
-  logger?.info("Instagram User ID:", userId);
+  logger?.info("Instagram User ID:", userId)
 
-  const fetchBoth = !options?.followersOnly && !options?.followingOnly;
+  const fetchBoth = !options?.followersOnly && !options?.followingOnly
 
-  let followers: UserNode[] = [];
+  let followers: UserNode[] = []
   if (fetchBoth || options?.followersOnly) {
-    logger?.info("Fetching followers...");
+    logger?.info("Fetching followers...")
     const result = await fetchUsers(
       userId,
       "followers",
@@ -335,16 +338,16 @@ async function retrieveUserFollowersAndFollowing(
       wwwClaim,
       logger,
       store!,
-    );
+    )
     if (result === false) {
-      return false;
+      return false
     }
-    followers = result;
+    followers = result
   }
 
-  let following: UserNode[] = [];
+  let following: UserNode[] = []
   if (fetchBoth || options?.followingOnly) {
-    logger?.info("Fetching following...");
+    logger?.info("Fetching following...")
     const result = await fetchUsers(
       userId,
       "following",
@@ -353,21 +356,21 @@ async function retrieveUserFollowersAndFollowing(
       wwwClaim,
       logger,
       store!,
-    );
+    )
     if (result === false) {
-      return false;
+      return false
     }
-    following = result;
+    following = result
   }
 
   try {
     await chrome.runtime.sendMessage({
       type: ActionType.BULK_UPSERT_USER_METADATA,
       payload: [...followers, ...following],
-    } satisfies ExtensionMessage);
-    const timestamp = Date.now();
-    const followerIds = followers.map((u) => u.id);
-    const followingIds = following.map((u) => u.id);
+    } satisfies ExtensionMessage)
+    const timestamp = Date.now()
+    const followerIds = followers.map(u => u.id)
+    const followingIds = following.map(u => u.id)
 
     await chrome.runtime.sendMessage({
       type: ActionType.SAVE_SNAPSHOT,
@@ -377,61 +380,62 @@ async function retrieveUserFollowersAndFollowing(
         followerIds,
         followingIds,
       },
-    } satisfies ExtensionMessage);
+    } satisfies ExtensionMessage)
 
-    logger?.info("Successfully saved snapshot");
-  } catch (error) {
-    logger?.error("Failed to save snapshot:", error);
-    return false;
+    logger?.info("Successfully saved snapshot")
+  }
+  catch (error) {
+    logger?.error("Failed to save snapshot:", error)
+    return false
   }
 
   chrome.runtime.sendMessage({
     type: ActionType.NOTIFY_SNAPSHOT_COMPLETE,
     payload: userId,
-  } satisfies ExtensionMessage);
+  } satisfies ExtensionMessage)
 
-  store?.setLoading(false);
+  store?.setLoading(false)
   store?.showNotification(
     `Snapshot saved for user @${username} (${followers.length} followers, ${following.length} following).`,
     "success",
     NotificationDuration,
-  );
+  )
 
-  return true;
+  return true
 }
 
-let profileObserver: MutationObserver | null = null;
+let profileObserver: MutationObserver | null = null
 
 async function saveUserInfo(username: string, logger: Logger = new Logger("InstaSnap:Instagram")) {
-  const userId = await findUserId(username);
+  const userId = await findUserId(username)
 
   if (!userId) {
-    logger.error("Failed to retrieve Instagram User ID.");
-    return;
+    logger.error("Failed to retrieve Instagram User ID.")
+    return
   }
-  logger.info("Saving user info with UID =", userId);
+  logger.info("Saving user info with UID =", userId)
 
   profileObserver = new MutationObserver((_, observer) => {
-    const imgElem: HTMLImageElement | null =
-      document.querySelector(`header img[alt*='${username}']`) ||
-      document.querySelector("header img[crossorigin='anonymous'][draggable='false']");
-    const usernameElem = document.querySelector("header h2");
+    const imgElem: HTMLImageElement | null
+      = document.querySelector(`header img[alt*='${username}']`)
+        || document.querySelector("header img[crossorigin='anonymous'][draggable='false']")
+    const usernameElem = document.querySelector("header h2")
     if (usernameElem?.textContent?.trim() !== username) {
-      logger.warn("Username element found but text does not match. Retrying...");
-      return;
+      logger.warn("Username element found but text does not match. Retrying...")
+      return
     }
     const fullnameElem = usernameElem
       ? usernameElem
         .closest("div")
         ?.parentElement?.closest("div")
         ?.nextElementSibling?.querySelector("span")
-      : null;
-    const fullname = fullnameElem?.textContent || "Failed to retrieve";
-    const avatarURL = imgElem?.src;
+      : null
+    const fullname = fullnameElem?.textContent || "Failed to retrieve"
+    const avatarURL = imgElem?.src
 
     if (fullname && avatarURL) {
-      observer.disconnect();
-      profileObserver = null;
+      observer.disconnect()
+      profileObserver = null
 
       const userData = {
         id: userId,
@@ -439,40 +443,40 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
         avatarURL,
         fullName: fullname,
         updatedAt: Date.now(),
-      };
+      }
 
-      logger.info("Captured metadata via Observer:", userData);
+      logger.info("Captured metadata via Observer:", userData)
 
       chrome.runtime.sendMessage({
         type: ActionType.SAVE_USER_METADATA,
         payload: userData,
-      } satisfies ExtensionMessage);
+      } satisfies ExtensionMessage)
 
-      logger.info("User metadata saved to IndexedDB");
+      logger.info("User metadata saved to IndexedDB")
     }
-  });
+  })
 
   profileObserver.observe(document.body, {
     childList: true,
     subtree: true,
-  });
+  })
 
   setTimeout(() => {
     if (profileObserver) {
-      profileObserver.disconnect();
-      profileObserver = null;
-      logger.warn("Observer timeout - metadata collection stopped.");
+      profileObserver.disconnect()
+      profileObserver = null
+      logger.warn("Observer timeout - metadata collection stopped.")
     }
   // eslint-disable-next-line no-magic-numbers
-  }, 10000);
+  }, 10000)
 }
 
 function sendAppDataToBg() {
-  const appId = findAppId();
-  const csrfToken = exportCSRFToken();
-  const wwwClaim = sessionStorage.getItem("www-claim-v2") || "";
+  const appId = findAppId()
+  const csrfToken = exportCSRFToken()
+  const wwwClaim = sessionStorage.getItem("www-claim-v2") || ""
   if (!appId || !csrfToken || !wwwClaim) {
-    return;
+    return
   }
 
   chrome.runtime.sendMessage({
@@ -482,7 +486,7 @@ function sendAppDataToBg() {
       csrfToken,
       wwwClaim,
     },
-  } satisfies ExtensionMessage);
+  } satisfies ExtensionMessage)
 }
 
 export {
@@ -499,4 +503,4 @@ export {
   retrieveUserFollowing,
   saveUserInfo,
   sendAppDataToBg,
-};
+}

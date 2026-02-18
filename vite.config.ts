@@ -1,13 +1,13 @@
-import { defineConfig } from "vitest/config";
-import Icons from "unplugin-icons/vite";
-import { crx, ManifestV3Export } from "@crxjs/vite-plugin";
-import manifest from "./public/manifest.json";
-import tailwindcss from "@tailwindcss/vite";
-import IconsResolver from "unplugin-icons/resolver";
-import Components from "unplugin-vue-components/vite";
-import vue from "@vitejs/plugin-vue";
-import path from "path";
-import { visualizer } from "rollup-plugin-visualizer";
+import { defineConfig } from "vitest/config"
+import Icons from "unplugin-icons/vite"
+import { crx, ManifestV3Export } from "@crxjs/vite-plugin"
+import manifest from "./public/manifest.json"
+import tailwindcss from "@tailwindcss/vite"
+import IconsResolver from "unplugin-icons/resolver"
+import Components from "unplugin-vue-components/vite"
+import vue from "@vitejs/plugin-vue"
+import path from "path"
+import { visualizer } from "rollup-plugin-visualizer"
 
 export default defineConfig({
   plugins: [
@@ -79,4 +79,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import Fa6SolidChevronLeft from "~icons/fa6-solid/chevron-left";
-import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
+import Fa6SolidChevronLeft from "~icons/fa6-solid/chevron-left"
+import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right"
 
 interface Props {
-  currentPage: number;
-  totalPages: number;
+  currentPage: number
+  totalPages: number
 }
 
 interface Emits {
-  (e: "go-to-page", page: number): void;
+  (e: "go-to-page", page: number): void
 }
 
-defineProps<Props>();
-const emit = defineEmits<Emits>();
+defineProps<Props>()
+const emit = defineEmits<Emits>()
 </script>
 
 <template>

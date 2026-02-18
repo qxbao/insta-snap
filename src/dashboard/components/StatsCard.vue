@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
-import { computed } from "vue";
-import { MegaByte, UnitStep } from "../../constants/time";
+import { useI18n } from "vue-i18n"
+import { computed } from "vue"
+import { MegaByte, UnitStep } from "../../constants/time"
 
 interface Props {
-  trackedUsers: TrackedUser[];
-  storageMetadata: StorageEstimate | null;
-  t: ReturnType<typeof useI18n>["t"];
+  trackedUsers: TrackedUser[]
+  storageMetadata: StorageEstimate | null
+  t: ReturnType<typeof useI18n>["t"]
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const MB_DECIMAL_PLACES = 2;
+const MB_DECIMAL_PLACES = 2
 
 const storageUsed = computed(() => {
   if (!props.storageMetadata || !props.storageMetadata.usage) {
-    return "--";
+    return "--"
   }
 
-  const usedMB = props.storageMetadata.usage / (MegaByte);
+  const usedMB = props.storageMetadata.usage / (MegaByte)
 
   if (usedMB < 1) {
-    return `${(usedMB * UnitStep).toFixed(1)} KB`;
+    return `${(usedMB * UnitStep).toFixed(1)} KB`
   }
-  return `${usedMB.toFixed(MB_DECIMAL_PLACES)} MB`;
-});
+  return `${usedMB.toFixed(MB_DECIMAL_PLACES)} MB`
+})
 </script>
 
 <template>

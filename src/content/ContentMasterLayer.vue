@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useUIStore } from "../stores/ui.store";
-import { useI18n } from "vue-i18n";
-import Fa6SolidCameraRetro from "~icons/fa6-solid/camera-retro";
-import Fa6SolidCheck from "~icons/fa6-solid/check";
-import Fa6SolidXmark from "~icons/fa6-solid/xmark";
-import Fa6SolidCircleInfo from "~icons/fa6-solid/circle-info";
+import { useUIStore } from "../stores/ui.store"
+import { useI18n } from "vue-i18n"
+import Fa6SolidCameraRetro from "~icons/fa6-solid/camera-retro"
+import Fa6SolidCheck from "~icons/fa6-solid/check"
+import Fa6SolidXmark from "~icons/fa6-solid/xmark"
+import Fa6SolidCircleInfo from "~icons/fa6-solid/circle-info"
 
-const ui = useUIStore();
-const { t } = useI18n();
+const ui = useUIStore()
+const { t } = useI18n()
 </script>
 
 <template>

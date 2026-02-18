@@ -1,67 +1,68 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
-import { useI18n } from "vue-i18n";
-import { use, init, type EChartsType } from "echarts/core";
-import { LineChart } from "echarts/charts";
-import { GridComponent, TooltipComponent, LegendComponent } from "echarts/components";
-import { CanvasRenderer } from "echarts/renderers";
-import type { EChartsOption } from "echarts";
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue"
+import { useI18n } from "vue-i18n"
+import { use, init, type EChartsType } from "echarts/core"
+import { LineChart } from "echarts/charts"
+import { GridComponent, TooltipComponent, LegendComponent } from "echarts/components"
+import { CanvasRenderer } from "echarts/renderers"
+import type { EChartsOption } from "echarts"
 
-use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
 interface TimelineEntry {
-  timestamp: number;
-  isCheckpoint: boolean;
+  timestamp: number
+  isCheckpoint: boolean
   followers: {
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
-  };
+    addedCount: number
+    removedCount: number
+    totalCount?: number
+  }
   following: {
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
-  };
+    addedCount: number
+    removedCount: number
+    totalCount?: number
+  }
 }
 
 interface Props {
-  timeline: TimelineEntry[];
-  mode: "overview" | "followers" | "following";
+  timeline: TimelineEntry[]
+  mode: "overview" | "followers" | "following"
 }
 
-const props = defineProps<Props>();
-const { t } = useI18n();
-const chartRef = ref<HTMLDivElement>();
-let chartInstance: EChartsType | null = null;
+const props = defineProps<Props>()
+const { t } = useI18n()
+const chartRef = ref<HTMLDivElement>()
+let chartInstance: EChartsType | null = null
 
 const calculateRunningTotals = (
   data: Array<{
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
+    addedCount: number
+    removedCount: number
+    totalCount?: number
   }>,
 ) => {
-  const runningTotals: number[] = [];
-  let currentTotal = 0;
+  const runningTotals: number[] = []
+  let currentTotal = 0
 
   for (const entry of data) {
     if (entry.totalCount !== undefined) {
-      currentTotal = entry.totalCount;
-    } else {
-      currentTotal += entry.addedCount - entry.removedCount;
+      currentTotal = entry.totalCount
     }
-    runningTotals.push(currentTotal);
+    else {
+      currentTotal += entry.addedCount - entry.removedCount
+    }
+    runningTotals.push(currentTotal)
   }
 
-  return runningTotals;
-};
+  return runningTotals
+}
 
 const chartData = computed(() => {
-  const reversedTimeline = [...props.timeline].reverse();
-  const series = [];
+  const reversedTimeline = [...props.timeline].reverse()
+  const series = []
 
   if (props.mode === "overview" || props.mode === "followers") {
-    const followersTotals = calculateRunningTotals(reversedTimeline.map((e) => e.followers));
+    const followersTotals = calculateRunningTotals(reversedTimeline.map(e => e.followers))
     series.push({
       name: t("dashboard.details.chart.followers_label"),
       data: followersTotals,
@@ -89,11 +90,11 @@ const chartData = computed(() => {
       itemStyle: {
         color: "#F98A76",
       },
-    });
+    })
   }
 
   if (props.mode === "overview" || props.mode === "following") {
-    const followingTotals = calculateRunningTotals(reversedTimeline.map((e) => e.following));
+    const followingTotals = calculateRunningTotals(reversedTimeline.map(e => e.following))
     series.push({
       name: t("dashboard.details.chart.following_label"),
       data: followingTotals,
@@ -121,31 +122,31 @@ const chartData = computed(() => {
       itemStyle: {
         color: "#207878",
       },
-    });
+    })
   }
 
-  return series;
-});
+  return series
+})
 
 const chartLabels = computed(() => {
-  const reversedTimeline = [...props.timeline].reverse();
-  return reversedTimeline.map((entry) =>
+  const reversedTimeline = [...props.timeline].reverse()
+  return reversedTimeline.map(entry =>
     new Date(entry.timestamp).toLocaleString(window.navigator.language, {
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     }),
-  );
-});
+  )
+})
 
 const chartOption = computed<EChartsOption>(() => {
-  const allValues = chartData.value.flatMap((series) => series.data as number[]);
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
-  const range = maxValue - minValue;
-  const paddingRatio = 0.12;
-  const padding = range * paddingRatio;
+  const allValues = chartData.value.flatMap(series => series.data as number[])
+  const minValue = Math.min(...allValues)
+  const maxValue = Math.max(...allValues)
+  const range = maxValue - minValue
+  const paddingRatio = 0.12
+  const padding = range * paddingRatio
 
   return {
     backgroundColor: "transparent",
@@ -228,7 +229,7 @@ const chartOption = computed<EChartsOption>(() => {
         show: false,
       },
     },
-    series: chartData.value.map((series) => ({
+    series: chartData.value.map(series => ({
       name: series.name,
       data: series.data,
       type: "line" as const,
@@ -256,54 +257,54 @@ const chartOption = computed<EChartsOption>(() => {
         color: series.itemStyle.color,
       },
     })),
-  };
-});
+  }
+})
 
 const initChart = () => {
-  if (!chartRef.value) return;
+  if (!chartRef.value) return
 
   if (chartInstance) {
-    chartInstance.dispose();
+    chartInstance.dispose()
   }
 
-  chartInstance = init(chartRef.value);
-  chartInstance?.setOption(chartOption.value);
+  chartInstance = init(chartRef.value)
+  chartInstance?.setOption(chartOption.value)
 
   const handleResize = () => {
-    chartInstance?.resize();
-  };
+    chartInstance?.resize()
+  }
 
-  window.addEventListener("resize", handleResize);
+  window.addEventListener("resize", handleResize)
 
   return () => {
-    window.removeEventListener("resize", handleResize);
-    chartInstance?.dispose();
-    chartInstance = null;
-  };
-};
+    window.removeEventListener("resize", handleResize)
+    chartInstance?.dispose()
+    chartInstance = null
+  }
+}
 
 watch(
   () => [props.timeline, props.mode],
   () => {
     if (chartInstance && props.timeline.length > 0) {
-      chartInstance.setOption(chartOption.value);
+      chartInstance.setOption(chartOption.value)
     }
   },
   { deep: true },
-);
+)
 
 onMounted(() => {
   if (props.timeline.length > 0) {
-    initChart();
+    initChart()
   }
-});
+})
 
 onBeforeUnmount(() => {
   if (chartInstance) {
-    chartInstance.dispose();
-    chartInstance = null;
+    chartInstance.dispose()
+    chartInstance = null
   }
-});
+})
 </script>
 
 <template>

@@ -1,102 +1,104 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
-import { HistoryEntry } from "../types/etc";
-import { database } from "../utils/database";
-import SnapshotHistory from "./components/SnapshotHistory.vue";
-import UserActivityChart from "./components/UserActivityChart.vue";
-import UserDetailsHeader from "./components/UserDetailsHeader.vue";
-import UserStatsGrid from "./components/UserStatsGrid.vue";
-import { createLogger } from "../utils/logger";
+import { computed, onMounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
+import { HistoryEntry } from "../types/etc"
+import { database } from "../utils/database"
+import SnapshotHistory from "./components/SnapshotHistory.vue"
+import UserActivityChart from "./components/UserActivityChart.vue"
+import UserDetailsHeader from "./components/UserDetailsHeader.vue"
+import UserStatsGrid from "./components/UserStatsGrid.vue"
+import { createLogger } from "../utils/logger"
 
 interface Props {
-  userId: string;
+  userId: string
 }
 
-const props = defineProps<Props>();
-const { t } = useI18n();
-const logger = createLogger("UserDetails");
+const props = defineProps<Props>()
+const { t } = useI18n()
+const logger = createLogger("UserDetails")
 const emit = defineEmits<{
-  back: [];
-}>();
+  back: []
+}>()
 
-const snapshotCount = ref(0);
-const checkpointCount = ref(0);
-const userInfo = ref<UserMetadata | null>(null);
-const loading = ref(true);
-const activeTab = ref<"overview" | "followers" | "following">("overview");
-const showCharts = ref(false);
+const snapshotCount = ref(0)
+const checkpointCount = ref(0)
+const userInfo = ref<UserMetadata | null>(null)
+const loading = ref(true)
+const activeTab = ref<"overview" | "followers" | "following">("overview")
+const showCharts = ref(false)
 
 const history = ref<{
-  followers: HistoryEntry[];
-  following: HistoryEntry[];
+  followers: HistoryEntry[]
+  following: HistoryEntry[]
 }>({
   followers: [],
   following: [],
-});
+})
 
-const currentFollowers = ref<string[]>([]);
-const currentFollowing = ref<string[]>([]);
+const currentFollowers = ref<string[]>([])
+const currentFollowing = ref<string[]>([])
 
 onMounted(async () => {
-  await loadData();
-});
+  await loadData()
+})
 
 const loadData = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    userInfo.value = (await database.userMetadata.get(props.userId)) || null;
+    userInfo.value = (await database.userMetadata.get(props.userId)) || null
 
-    const snapshots = await database.snapshots.where("belongToId").equals(props.userId).toArray();
+    const snapshots = await database.snapshots.where("belongToId").equals(props.userId).toArray()
 
-    snapshotCount.value = snapshots.length;
-    checkpointCount.value = snapshots.filter((s) => s.isCheckpoint).length;
+    snapshotCount.value = snapshots.length
+    checkpointCount.value = snapshots.filter(s => s.isCheckpoint).length
 
     history.value = {
       followers: await database.getSnapshotHistory(props.userId, true),
       following: await database.getSnapshotHistory(props.userId, false),
-    };
+    }
 
     if (snapshotCount.value > 0) {
-      const followersSet = await database.getFullList(props.userId, undefined, true);
-      const followingSet = await database.getFullList(props.userId, undefined, false);
-      currentFollowers.value = Array.from(followersSet);
-      currentFollowing.value = Array.from(followingSet);
+      const followersSet = await database.getFullList(props.userId, undefined, true)
+      const followingSet = await database.getFullList(props.userId, undefined, false)
+      currentFollowers.value = Array.from(followersSet)
+      currentFollowing.value = Array.from(followingSet)
     }
-  } catch (err) {
-    logger.error("Failed to load user details:", err);
-  } finally {
-    loading.value = false;
   }
-};
+  catch (err) {
+    logger.error("Failed to load user details:", err)
+  }
+  finally {
+    loading.value = false
+  }
+}
 
-const totalSnapshots = computed(() => snapshotCount.value);
-const totalCheckpoints = computed(() => checkpointCount.value);
+const totalSnapshots = computed(() => snapshotCount.value)
+const totalCheckpoints = computed(() => checkpointCount.value)
 
 const openInstagramProfile = () => {
   if (userInfo.value) {
-    window.open(`https://www.instagram.com/${userInfo.value.username}`, "_blank");
+    window.open(`https://www.instagram.com/${userInfo.value.username}`, "_blank")
   }
-};
+}
 
 const combinedTimeline = computed(() => {
   const timelineMap = new Map<
     number,
     {
-      timestamp: number;
-      isCheckpoint: boolean;
+      timestamp: number
+      isCheckpoint: boolean
       followers: {
-        addedCount: number;
-        removedCount: number;
-        totalCount?: number;
-      };
+        addedCount: number
+        removedCount: number
+        totalCount?: number
+      }
       following: {
-        addedCount: number;
-        removedCount: number;
-        totalCount?: number;
-      };
+        addedCount: number
+        removedCount: number
+        totalCount?: number
+      }
     }
-  >();
+  >()
 
   history.value.followers.forEach((entry) => {
     if (!timelineMap.has(entry.timestamp)) {
@@ -105,15 +107,15 @@ const combinedTimeline = computed(() => {
         isCheckpoint: entry.isCheckpoint,
         followers: { addedCount: 0, removedCount: 0 },
         following: { addedCount: 0, removedCount: 0 },
-      });
+      })
     }
-    const item = timelineMap.get(entry.timestamp)!;
+    const item = timelineMap.get(entry.timestamp)!
     item.followers = {
       addedCount: entry.addedCount,
       removedCount: entry.removedCount,
       totalCount: entry.totalCount,
-    };
-  });
+    }
+  })
 
   history.value.following.forEach((entry) => {
     if (!timelineMap.has(entry.timestamp)) {
@@ -122,18 +124,18 @@ const combinedTimeline = computed(() => {
         isCheckpoint: entry.isCheckpoint,
         followers: { addedCount: 0, removedCount: 0 },
         following: { addedCount: 0, removedCount: 0 },
-      });
+      })
     }
-    const item = timelineMap.get(entry.timestamp)!;
+    const item = timelineMap.get(entry.timestamp)!
     item.following = {
       addedCount: entry.addedCount,
       removedCount: entry.removedCount,
       totalCount: entry.totalCount,
-    };
-  });
+    }
+  })
 
-  return Array.from(timelineMap.values()).sort((a, b) => b.timestamp - a.timestamp);
-});
+  return Array.from(timelineMap.values()).sort((a, b) => b.timestamp - a.timestamp)
+})
 </script>
 <template>
   <div>

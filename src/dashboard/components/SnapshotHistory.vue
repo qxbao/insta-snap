@@ -1,99 +1,100 @@
 <script setup lang="ts">
-import { onBeforeUnmount, shallowRef, triggerRef } from "vue";
-import { useI18n } from "vue-i18n";
-import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
-import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right";
-import Fa6SolidTrash from "~icons/fa6-solid/trash";
-import { createLogger } from "../../utils/logger";
-import { useTimeFormat } from "../../utils/time";
-import UserChangesList from "./UserChangesList.vue";
-import { LRUCache } from "../../utils/lru-cache";
-import { useAnalysis } from "../../utils/useAnalysis";
-import { database } from "../../utils/database";
+import { onBeforeUnmount, shallowRef, triggerRef } from "vue"
+import { useI18n } from "vue-i18n"
+import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down"
+import Fa6SolidChevronRight from "~icons/fa6-solid/chevron-right"
+import Fa6SolidTrash from "~icons/fa6-solid/trash"
+import { createLogger } from "../../utils/logger"
+import { useTimeFormat } from "../../utils/time"
+import UserChangesList from "./UserChangesList.vue"
+import { LRUCache } from "../../utils/lru-cache"
+import { useAnalysis } from "../../utils/useAnalysis"
+import { database } from "../../utils/database"
 
 interface HistoryEntry {
-  timestamp: number;
-  isCheckpoint: boolean;
+  timestamp: number
+  isCheckpoint: boolean
   followers: {
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
-  };
+    addedCount: number
+    removedCount: number
+    totalCount?: number
+  }
   following: {
-    addedCount: number;
-    removedCount: number;
-    totalCount?: number;
-  };
+    addedCount: number
+    removedCount: number
+    totalCount?: number
+  }
 }
 
 interface SnapshotData {
   followers: {
-    added: string[];
-    removed: string[];
-  };
+    added: string[]
+    removed: string[]
+  }
   following: {
-    added: string[];
-    removed: string[];
-  };
-  userMap: Record<string, UserMetadata>;
+    added: string[]
+    removed: string[]
+  }
+  userMap: Record<string, UserMetadata>
 }
 
 interface Props {
-  entries: HistoryEntry[];
-  userId: string;
-  mode?: "both" | "followers" | "following";
-  title?: string;
+  entries: HistoryEntry[]
+  userId: string
+  mode?: "both" | "followers" | "following"
+  title?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   mode: "both",
-});
+})
 
-const { analyzeSnapshot } = useAnalysis();
-const logger = createLogger("SnapshotHistory");
-const { t } = useI18n();
-const expandedItems = shallowRef<Set<number>>(new Set());
-const MAX_CACHED_SNAPSHOTS = 50;
-const snapshotDetails = shallowRef(new LRUCache<number, SnapshotData>(MAX_CACHED_SNAPSHOTS));
-const loadingDetails = shallowRef<Set<number>>(new Set());
-const hoveredDeleteTimestamp = shallowRef<number | null>(null);
+const { analyzeSnapshot } = useAnalysis()
+const logger = createLogger("SnapshotHistory")
+const { t } = useI18n()
+const expandedItems = shallowRef<Set<number>>(new Set())
+const MAX_CACHED_SNAPSHOTS = 50
+const snapshotDetails = shallowRef(new LRUCache<number, SnapshotData>(MAX_CACHED_SNAPSHOTS))
+const loadingDetails = shallowRef<Set<number>>(new Set())
+const hoveredDeleteTimestamp = shallowRef<number | null>(null)
 const emit = defineEmits<{
-  snapshotDeleted: [];
-}>();
+  snapshotDeleted: []
+}>()
 
-const { formatDate, formatRelativeTime } = useTimeFormat();
+const { formatDate, formatRelativeTime } = useTimeFormat()
 
 onBeforeUnmount(() => {
-  expandedItems.value.clear();
-  snapshotDetails.value.clear();
-  loadingDetails.value.clear();
-});
+  expandedItems.value.clear()
+  snapshotDetails.value.clear()
+  loadingDetails.value.clear()
+})
 
 const toggleExpand = async (timestamp: number) => {
   if (expandedItems.value.has(timestamp)) {
-    expandedItems.value.delete(timestamp);
-    triggerRef(expandedItems);
-  } else {
-    expandedItems.value.add(timestamp);
-    triggerRef(expandedItems);
+    expandedItems.value.delete(timestamp)
+    triggerRef(expandedItems)
+  }
+  else {
+    expandedItems.value.add(timestamp)
+    triggerRef(expandedItems)
 
     if (!snapshotDetails.value.has(timestamp)) {
-      await loadSnapshotDetails(timestamp);
+      await loadSnapshotDetails(timestamp)
     }
   }
-};
+}
 
 const loadSnapshotDetails = async (timestamp: number) => {
-  loadingDetails.value.add(timestamp);
-  triggerRef(loadingDetails);
+  loadingDetails.value.add(timestamp)
+  triggerRef(loadingDetails)
 
   try {
-    const { database } = await import("../../utils/database");
+    const { database } = await import("../../utils/database")
     const record = await database.snapshots
       .where("[belongToId+timestamp]")
       .equals([props.userId, timestamp])
-      .first();
-    const allUsers = await database.userMetadata.toArray();
+      .first()
+    const allUsers = await database.userMetadata.toArray()
     const userMap: Record<string, UserMetadata> = allUsers.reduce(
       (acc, user) => {
         acc[user.id] = {
@@ -102,17 +103,17 @@ const loadSnapshotDetails = async (timestamp: number) => {
           fullName: user.fullName,
           avatarURL: user.avatarURL,
           updatedAt: user.updatedAt,
-        };
-        return acc;
+        }
+        return acc
       },
       {} as Record<string, UserMetadata>,
-    );
+    )
 
     if (record) {
       if (snapshotDetails.value.size >= MAX_CACHED_SNAPSHOTS) {
-        const firstKey = snapshotDetails.value.keys().next().value;
+        const firstKey = snapshotDetails.value.keys().next().value
         if (firstKey !== undefined) {
-          snapshotDetails.value.delete(firstKey);
+          snapshotDetails.value.delete(firstKey)
         }
       }
 
@@ -126,86 +127,89 @@ const loadSnapshotDetails = async (timestamp: number) => {
           removed: record.following.rem || [],
         },
         userMap,
-      });
-      triggerRef(snapshotDetails);
+      })
+      triggerRef(snapshotDetails)
     }
-  } catch (err) {
-    logger.error("Failed to load snapshot details:", err);
-  } finally {
-    loadingDetails.value.delete(timestamp);
-    triggerRef(loadingDetails);
   }
-};
+  catch (err) {
+    logger.error("Failed to load snapshot details:", err)
+  }
+  finally {
+    loadingDetails.value.delete(timestamp)
+    triggerRef(loadingDetails)
+  }
+}
 
 const getTitle = () => {
-  if (props.title) return props.title;
-  if (props.mode === "followers") return t("dashboard.details.history.followers_changes");
-  if (props.mode === "following") return t("dashboard.details.history.following_changes");
-  return t("dashboard.details.history.snapshot_timeline");
-};
+  if (props.title) return props.title
+  if (props.mode === "followers") return t("dashboard.details.history.followers_changes")
+  if (props.mode === "following") return t("dashboard.details.history.following_changes")
+  return t("dashboard.details.history.snapshot_timeline")
+}
 
 const shouldShowSection = (section: "followers" | "following") => {
-  return props.mode === "both" || props.mode === section;
-};
+  return props.mode === "both" || props.mode === section
+}
 
 /**
  * Calculate which timestamps would be affected if we delete the snapshot at targetTimestamp
  * Based on deleteSnapshot logic: deletes target + all subsequent non-checkpoint records until next checkpoint
  */
 const getAffectedTimestamps = (targetTimestamp: number): number[] => {
-  const targetIndex = props.entries.findIndex((e) => e.timestamp === targetTimestamp);
-  if (targetIndex === -1) return [targetTimestamp];
+  const targetIndex = props.entries.findIndex(e => e.timestamp === targetTimestamp)
+  if (targetIndex === -1) return [targetTimestamp]
 
-  const affected: number[] = [targetTimestamp];
+  const affected: number[] = [targetTimestamp]
 
   for (let i = targetIndex - 1; i >= 0; i--) {
-    const entry = props.entries[i];
+    const entry = props.entries[i]
     if (entry.isCheckpoint && entry.timestamp !== targetTimestamp) {
-      break;
+      break
     }
     if (!entry.isCheckpoint) {
-      affected.push(entry.timestamp);
+      affected.push(entry.timestamp)
     }
   }
-  return affected;
-};
+  return affected
+}
 
 const isAffectedByDelete = (timestamp: number): boolean => {
-  if (!hoveredDeleteTimestamp.value) return false;
-  return getAffectedTimestamps(hoveredDeleteTimestamp.value).includes(timestamp);
-};
+  if (!hoveredDeleteTimestamp.value) return false
+  return getAffectedTimestamps(hoveredDeleteTimestamp.value).includes(timestamp)
+}
 
 const handleDeleteHover = (timestamp: number | null) => {
-  hoveredDeleteTimestamp.value = timestamp;
-};
+  hoveredDeleteTimestamp.value = timestamp
+}
 
 const handleDelete = async (timestamp: number, event: Event) => {
-  event.stopPropagation();
+  event.stopPropagation()
 
-  const affectedCount = getAffectedTimestamps(timestamp).length;
-  const confirmMessage =
-    affectedCount > 1
+  const affectedCount = getAffectedTimestamps(timestamp).length
+  const confirmMessage
+    = affectedCount > 1
       ? t("dashboard.details.history.confirm_delete_multiple", { count: affectedCount - 1 })
-      : t("dashboard.details.history.confirm_delete_single");
+      : t("dashboard.details.history.confirm_delete_single")
 
-  if (!confirm(confirmMessage)) return;
+  if (!confirm(confirmMessage)) return
 
   try {
     const record = await database.snapshots
       .where("[belongToId+timestamp]")
       .equals([props.userId, timestamp])
-      .first();
+      .first()
 
     if (record?.id) {
-      await database.deleteSnapshot(record.id);
-      logger.info(`Deleted snapshot at ${timestamp} and ${affectedCount - 1} dependent records`);
-      emit("snapshotDeleted");
+      await database.deleteSnapshot(record.id)
+      logger.info(`Deleted snapshot at ${timestamp} and ${affectedCount - 1} dependent records`)
+      emit("snapshotDeleted")
     }
-  } catch (err) {
-    logger.error("Failed to delete snapshot:", err);
-    alert(t("dashboard.details.history.delete_error"));
   }
-};
+  catch (err) {
+    logger.error("Failed to delete snapshot:", err)
+    alert(t("dashboard.details.history.delete_error"))
+  }
+}
 </script>
 
 <template>

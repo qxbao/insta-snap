@@ -1,66 +1,70 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useI18n } from "vue-i18n";
-import Fa6SolidDatabase from "~icons/fa6-solid/database";
-import Fa6SolidSpinner from "~icons/fa6-solid/spinner";
-import Fa6SolidCheck from "~icons/fa6-solid/check";
-import Fa6SolidXmark from "~icons/fa6-solid/xmark";
-import { createLogger } from "../../utils/logger";
+import { ref, onMounted } from "vue"
+import { useI18n } from "vue-i18n"
+import Fa6SolidDatabase from "~icons/fa6-solid/database"
+import Fa6SolidSpinner from "~icons/fa6-solid/spinner"
+import Fa6SolidCheck from "~icons/fa6-solid/check"
+import Fa6SolidXmark from "~icons/fa6-solid/xmark"
+import { createLogger } from "../../utils/logger"
 
-const { t } = useI18n();
-const logger = createLogger("MigrationPanel");
+const { t } = useI18n()
+const logger = createLogger("MigrationPanel")
 
-const migrating = ref(false);
-const migrationComplete = ref(false);
-const needsMig = ref(false);
-const checking = ref(true);
+const migrating = ref(false)
+const migrationComplete = ref(false)
+const needsMig = ref(false)
+const checking = ref(true)
 const migrationStats = ref<{
-  usersMetadata: number;
-  snapshots: number;
-  crons: number;
-  errors: string[];
-} | null>(null);
+  usersMetadata: number
+  snapshots: number
+  crons: number
+  errors: string[]
+} | null>(null)
 
 onMounted(async () => {
-  await checkMigrationNeeded();
-});
+  await checkMigrationNeeded()
+})
 
 const checkMigrationNeeded = async () => {
-  checking.value = true;
+  checking.value = true
   try {
-    const { needsMigration } = await import("../../utils/migrate");
-    needsMig.value = await needsMigration();
-  } catch (error) {
-    logger.error("Failed to check migration status:", error);
-  } finally {
-    checking.value = false;
+    const { needsMigration } = await import("../../utils/migrate")
+    needsMig.value = await needsMigration()
   }
-};
+  catch (error) {
+    logger.error("Failed to check migration status:", error)
+  }
+  finally {
+    checking.value = false
+  }
+}
 
 const runMigration = async () => {
-  migrating.value = true;
-  migrationComplete.value = false;
-  migrationStats.value = null;
+  migrating.value = true
+  migrationComplete.value = false
+  migrationStats.value = null
 
   try {
-    const { runMigrationWithCleanup } = await import("../../utils/migrate");
-    const stats = await runMigrationWithCleanup();
-    migrationStats.value = stats;
-    migrationComplete.value = true;
-    needsMig.value = false;
-    logger.info("Migration completed:", stats);
-  } catch (error) {
-    logger.error("Migration failed:", error);
+    const { runMigrationWithCleanup } = await import("../../utils/migrate")
+    const stats = await runMigrationWithCleanup()
+    migrationStats.value = stats
+    migrationComplete.value = true
+    needsMig.value = false
+    logger.info("Migration completed:", stats)
+  }
+  catch (error) {
+    logger.error("Migration failed:", error)
     migrationStats.value = {
       usersMetadata: 0,
       snapshots: 0,
       crons: 0,
       errors: [String(error)],
-    };
-  } finally {
-    migrating.value = false;
+    }
   }
-};
+  finally {
+    migrating.value = false
+  }
+}
 </script>
 
 <template>

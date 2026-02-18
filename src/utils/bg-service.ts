@@ -1,21 +1,21 @@
-import { ActionType, ExtensionMessage } from "../constants/actions";
-import { database } from "./database";
-import { Encryptor } from "./encrypt";
-import { createLogger } from "./logger";
-import { fetchUsers } from "./instagram";
-import { getJitter } from "./alarms";
-import { UserNode } from "../types/instapi";
-import { Hour, Second } from "../constants/time";
+import { ActionType, ExtensionMessage } from "../constants/actions"
+import { database } from "./database"
+import { Encryptor } from "./encrypt"
+import { createLogger } from "./logger"
+import { fetchUsers } from "./instagram"
+import { getJitter } from "./alarms"
+import { UserNode } from "../types/instapi"
+import { Hour, Second } from "../constants/time"
 
 export class BackgroundService {
-  private logger = createLogger("BackgroundService");
-  private encryptor?: Encryptor;
-  private initPromise: Promise<void>;
-  private isAlarmProcessing = false;
-  private alarmAbortController: AbortController | null = null;
+  private logger = createLogger("BackgroundService")
+  private encryptor?: Encryptor
+  private initPromise: Promise<void>
+  private isAlarmProcessing = false
+  private alarmAbortController: AbortController | null = null
 
   constructor() {
-    this.initPromise = this.checkSecurityConfig();
+    this.initPromise = this.checkSecurityConfig()
   }
 
   /**
@@ -23,76 +23,79 @@ export class BackgroundService {
    * @throws Error if security initialization failed
    */
   private async ensureReady(): Promise<void> {
-    await this.initPromise;
+    await this.initPromise
     if (!this.encryptor) {
-      throw new Error("Security system failed to initialize");
+      throw new Error("Security system failed to initialize")
     }
   }
 
   async checkSecurityConfig(): Promise<void> {
     try {
-      this.logger.info("Checking security config...");
+      this.logger.info("Checking security config...")
 
-      const keyConfig = await database.internalConfig.get("encryptionKey");
+      const keyConfig = await database.internalConfig.get("encryptionKey")
 
       if (!keyConfig) {
-        this.logger.warn("Generating new encryption key...");
-        this.encryptor = await Encryptor.new();
-        const cryptoKey = this.encryptor.getKey();
+        this.logger.warn("Generating new encryption key...")
+        this.encryptor = await Encryptor.new()
+        const cryptoKey = this.encryptor.getKey()
 
         if (!cryptoKey) {
-          throw new Error("Failed to generate encryption key");
+          throw new Error("Failed to generate encryption key")
         }
 
         await database.internalConfig.put({
           key: "encryptionKey",
           value: cryptoKey,
-        });
-        this.logger.info("Encryption key generated and stored.");
-      } else {
+        })
+        this.logger.info("Encryption key generated and stored.")
+      }
+      else {
         if (!(keyConfig.value instanceof CryptoKey)) {
-          throw new Error("Invalid encryption key format in database");
+          throw new Error("Invalid encryption key format in database")
         }
-        this.encryptor = await Encryptor.new(keyConfig.value);
-        this.logger.info("Encryption key loaded from database.");
+        this.encryptor = await Encryptor.new(keyConfig.value)
+        this.logger.info("Encryption key loaded from database.")
       }
 
-      const keysToMigrate = ["wwwClaim", "appId", "csrfToken"];
+      const keysToMigrate = ["wwwClaim", "appId", "csrfToken"]
       const [localData, existingConfigs] = await Promise.all([
         chrome.storage.local.get(keysToMigrate),
-        Promise.all(keysToMigrate.map((key) => database.internalConfig.get(key))),
-      ]);
+        Promise.all(keysToMigrate.map(key => database.internalConfig.get(key))),
+      ])
 
-      const migratePromises: Promise<void>[] = [];
-      const keysToRemove: string[] = [];
+      const migratePromises: Promise<void>[] = []
+      const keysToRemove: string[] = []
 
       for (let i = 0; i < keysToMigrate.length; i++) {
-        const key = keysToMigrate[i];
-        const val = localData[key];
-        const existing = existingConfigs[i];
+        const key = keysToMigrate[i]
+        const val = localData[key]
+        const existing = existingConfigs[i]
 
         if (!existing && val && typeof val === "string") {
-          this.logger.warn(`Migrating "${key}" to encrypted storage...`);
-          migratePromises.push(database.writeEncryptedConfig(key, val, this.encryptor));
-          keysToRemove.push(key);
-        } else if (existing && val) {
-          keysToRemove.push(key);
+          this.logger.warn(`Migrating "${key}" to encrypted storage...`)
+          migratePromises.push(database.writeEncryptedConfig(key, val, this.encryptor))
+          keysToRemove.push(key)
+        }
+        else if (existing && val) {
+          keysToRemove.push(key)
         }
       }
 
       await Promise.all([
         ...migratePromises,
         keysToRemove.length > 0 ? chrome.storage.local.remove(keysToRemove) : Promise.resolve(),
-      ]);
+      ])
 
       if (keysToRemove.length > 0) {
         this.logger.info(
           `Migration complete: ${keysToRemove.join(", ")} cleaned from chrome.storage`,
-        );
+        )
       }
-    } catch (error) {
-      this.logger.error("Security init failed:", error);
-      throw error;
+    }
+    catch (error) {
+      this.logger.error("Security init failed:", error)
+      throw error
     }
   }
 
@@ -102,8 +105,8 @@ export class BackgroundService {
   initializeAlarms(): void {
     chrome.alarms.create(ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS, {
       periodInMinutes: 30,
-    });
-    this.logger.info("Snapshot subscription alarm initialized (30min interval)");
+    })
+    this.logger.info("Snapshot subscription alarm initialized (30min interval)")
   }
 
   /**
@@ -111,46 +114,46 @@ export class BackgroundService {
    */
   async handleAlarm(alarm: chrome.alarms.Alarm): Promise<void> {
     if (alarm.name !== ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS) {
-      return;
+      return
     }
 
     if (this.isAlarmProcessing) {
-      this.logger.info("Cancelling previous alarm execution");
-      this.alarmAbortController?.abort();
+      this.logger.info("Cancelling previous alarm execution")
+      this.alarmAbortController?.abort()
     }
 
-    this.alarmAbortController = new AbortController();
-    this.isAlarmProcessing = true;
+    this.alarmAbortController = new AbortController()
+    this.isAlarmProcessing = true
 
     try {
-      await this.ensureReady();
+      await this.ensureReady()
 
-      if (this.alarmAbortController.signal.aborted) return;
+      if (this.alarmAbortController.signal.aborted) return
 
       // Read encrypted credentials
       const [appIdConfig, csrfConfig, wwwClaimConfig] = await Promise.all([
         database.readEncryptedConfig("appId", this.encryptor!),
         database.readEncryptedConfig("csrfToken", this.encryptor!),
         database.readEncryptedConfig("wwwClaim", this.encryptor!),
-      ]);
+      ])
 
       if (!appIdConfig || !csrfConfig || !wwwClaimConfig) {
-        this.logger.error("App data missing, cannot process snapshot subscriptions.");
-        return;
+        this.logger.error("App data missing, cannot process snapshot subscriptions.")
+        return
       }
 
-      const crons = await database.getAllCrons();
+      const crons = await database.getAllCrons()
 
       if (crons.length === 0) {
-        this.logger.info("No crons found, skipping...");
-        return;
+        this.logger.info("No crons found, skipping...")
+        return
       }
 
-      const now = Date.now();
+      const now = Date.now()
       for (const cron of crons) {
-        if (this.alarmAbortController.signal.aborted) break;
+        if (this.alarmAbortController.signal.aborted) break
 
-        this.logger.info(`Processing snapshot cron for user: ${cron.uid}`);
+        this.logger.info(`Processing snapshot cron for user: ${cron.uid}`)
 
         if (now - cron.lastRun >= cron.interval * Hour) {
           await this.processCronSnapshot(
@@ -160,18 +163,20 @@ export class BackgroundService {
             wwwClaimConfig,
             now,
             cron.interval,
-          );
+          )
 
           // eslint-disable-next-line no-magic-numbers
-          const JLowerBound = 5 * Second, JUpperBound = 15 * Second;
-          await new Promise((resolve) => setTimeout(resolve, getJitter(JLowerBound, JUpperBound)));
+          const JLowerBound = 5 * Second, JUpperBound = 15 * Second
+          await new Promise(resolve => setTimeout(resolve, getJitter(JLowerBound, JUpperBound)))
         }
       }
-    } catch (error) {
-      this.logger.error("Alarm processing failed:", error);
-    } finally {
-      this.isAlarmProcessing = false;
-      this.alarmAbortController = null;
+    }
+    catch (error) {
+      this.logger.error("Alarm processing failed:", error)
+    }
+    finally {
+      this.isAlarmProcessing = false
+      this.alarmAbortController = null
     }
   }
 
@@ -186,33 +191,33 @@ export class BackgroundService {
     timestamp: number,
     interval: number,
   ): Promise<void> {
-    let followers: UserNode[] = [];
-    this.logger.info("Fetching followers...");
-    const flwerRes = await fetchUsers(uid, "followers", appId, csrfToken, wwwClaim, this.logger);
+    let followers: UserNode[] = []
+    this.logger.info("Fetching followers...")
+    const flwerRes = await fetchUsers(uid, "followers", appId, csrfToken, wwwClaim, this.logger)
     if (flwerRes === false) {
-      this.logger.error(`Failed to fetch followers for user ${uid}`);
-      return;
+      this.logger.error(`Failed to fetch followers for user ${uid}`)
+      return
     }
-    followers = flwerRes;
+    followers = flwerRes
 
-    let following: UserNode[] = [];
-    this.logger.info("Fetching following...");
-    const flwingRes = await fetchUsers(uid, "following", appId, csrfToken, wwwClaim, this.logger);
+    let following: UserNode[] = []
+    this.logger.info("Fetching following...")
+    const flwingRes = await fetchUsers(uid, "following", appId, csrfToken, wwwClaim, this.logger)
     if (flwingRes === false) {
-      this.logger.error(`Failed to fetch following for user ${uid}`);
-      return;
+      this.logger.error(`Failed to fetch following for user ${uid}`)
+      return
     }
-    following = flwingRes;
+    following = flwingRes
 
-    await database.bulkUpsertUserMetadata([...followers, ...following]);
+    await database.bulkUpsertUserMetadata([...followers, ...following])
     await database.saveSnapshot(
       uid,
       timestamp,
-      followers.map((f) => f.id),
-      following.map((f) => f.id),
-    );
-    await database.saveCron(uid, interval, timestamp);
-    this.logger.info(`Cron snapshot completed for user ${uid}`);
+      followers.map(f => f.id),
+      following.map(f => f.id),
+    )
+    await database.saveCron(uid, interval, timestamp)
+    this.logger.info(`Cron snapshot completed for user ${uid}`)
   }
 
   registerMessageListener(
@@ -221,19 +226,19 @@ export class BackgroundService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendResponse: (response?: any) => void,
   ): boolean {
-    const secureActions = [ActionType.SEND_APP_DATA] as const;
+    const secureActions = [ActionType.SEND_APP_DATA] as const
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (secureActions.includes(message.type as any)) {
       this.ensureReady()
         .then(() => this.routeMessage(message, sendResponse))
         .catch((error) => {
-          this.logger.error("Failed to ensure security ready:", error);
-          sendResponse({ success: false, error: error.message });
-        });
-      return true;
+          this.logger.error("Failed to ensure security ready:", error)
+          sendResponse({ success: false, error: error.message })
+        })
+      return true
     }
 
-    return this.routeMessage(message, sendResponse);
+    return this.routeMessage(message, sendResponse)
   }
 
   private routeMessage(
@@ -241,62 +246,62 @@ export class BackgroundService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendResponse: (response?: any) => void,
   ): boolean {
-    let isAsync = false;
+    let isAsync = false
 
     switch (message.type) {
       case ActionType.NOTIFY_SNAPSHOT_COMPLETE:
-        this.handleSnapshotComplete(message.payload, sendResponse);
-        break;
+        this.handleSnapshotComplete(message.payload, sendResponse)
+        break
 
       case ActionType.SEND_APP_DATA:
-        isAsync = true;
+        isAsync = true
         this.handleAppData(message.payload)
           .then(() => sendResponse({ success: true }))
           .catch((error) => {
-            this.logger.error("Failed to save app data:", error);
-            sendResponse({ success: false, error: error.message });
-          });
-        break;
+            this.logger.error("Failed to save app data:", error)
+            sendResponse({ success: false, error: error.message })
+          })
+        break
 
       case ActionType.SAVE_USER_METADATA:
-        isAsync = true;
+        isAsync = true
         database.userMetadata
           .put(message.payload)
           .then(() => sendResponse({ success: true }))
           .catch((error) => {
-            this.logger.error("Failed to save user metadata:", error);
-            sendResponse({ success: false, error: error.message });
-          });
-        break;
+            this.logger.error("Failed to save user metadata:", error)
+            sendResponse({ success: false, error: error.message })
+          })
+        break
 
       case ActionType.BULK_UPSERT_USER_METADATA:
-        isAsync = true;
+        isAsync = true
         database
           .bulkUpsertUserMetadata(message.payload)
           .then(() => sendResponse({ success: true }))
           .catch((error) => {
-            this.logger.error("Failed to bulk upsert metadata:", error);
-            sendResponse({ success: false, error: error.message });
-          });
-        break;
+            this.logger.error("Failed to bulk upsert metadata:", error)
+            sendResponse({ success: false, error: error.message })
+          })
+        break
 
       case ActionType.SAVE_SNAPSHOT:
-        isAsync = true;
-        const { userId, timestamp, followerIds, followingIds } = message.payload;
+        isAsync = true
+        const { userId, timestamp, followerIds, followingIds } = message.payload
         database
           .saveSnapshot(userId, timestamp, followerIds, followingIds)
           .then(() => sendResponse({ success: true }))
           .catch((error) => {
-            this.logger.error("Failed to save snapshot:", error);
-            sendResponse({ success: false, error: error.message });
-          });
-        break;
+            this.logger.error("Failed to save snapshot:", error)
+            sendResponse({ success: false, error: error.message })
+          })
+        break
 
       default:
-        sendResponse({ success: false, error: "Unknown action type" });
+        sendResponse({ success: false, error: "Unknown action type" })
     }
 
-    return isAsync;
+    return isAsync
   }
 
   private handleSnapshotComplete(
@@ -307,35 +312,35 @@ export class BackgroundService {
     chrome.storage.session
       .get("locks")
       .then((res) => {
-        const locks = { ...(res.locks || {}) } as Record<string, number>;
+        const locks = { ...(res.locks || {}) } as Record<string, number>
         if (uid in locks) {
-          delete locks[uid];
-          return chrome.storage.session.set({ locks, lastsync: Date.now() });
+          delete locks[uid]
+          return chrome.storage.session.set({ locks, lastsync: Date.now() })
         }
-        return chrome.storage.session.set({ lastsync: Date.now() });
+        return chrome.storage.session.set({ lastsync: Date.now() })
       })
       .then(() => sendResponse({ success: true }))
       .catch((error) => {
-        this.logger.error("Failed to update locks:", error);
-        sendResponse({ success: false, error: error.message });
-      });
+        this.logger.error("Failed to update locks:", error)
+        sendResponse({ success: false, error: error.message })
+      })
   }
 
   private async handleAppData(payload: Record<string, string>): Promise<void> {
     if (!this.encryptor) {
-      throw new Error("Encryptor not initialized");
+      throw new Error("Encryptor not initialized")
     }
 
     const validEntries = Object.entries(payload).filter(([key, value]) => {
       if (typeof value !== "string") {
-        this.logger.warn(`Skipping non-string value for key "${key}"`);
-        return false;
+        this.logger.warn(`Skipping non-string value for key "${key}"`)
+        return false
       }
-      return true;
-    });
+      return true
+    })
 
     for (const [key, value] of validEntries) {
-      await database.writeEncryptedConfig(key, value, this.encryptor);
+      await database.writeEncryptedConfig(key, value, this.encryptor)
     }
   }
 }
