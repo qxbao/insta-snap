@@ -104,7 +104,7 @@ async function init() {
   observer.observe(document, { subtree: true, childList: true, characterData: true })
   chrome.runtime.onMessage.addListener(registerMessages)
   sendAppDataToBg()
-  injectSnapshotButton(logger, uiStore!);
+  injectSnapshotButton(logger, uiStore!)
 }
 
 init()
