@@ -1,5 +1,5 @@
 export class LocaleUtils {
-  static getMessage(messageName: string, sub?: string | (string | number)[]): string {
-    return chrome.i18n.getMessage(messageName, sub)
+  static getMessage(messageName: string, sub?: string | string[]): string {
+    return browser.i18n.getMessage(messageName, sub)
   }
 }

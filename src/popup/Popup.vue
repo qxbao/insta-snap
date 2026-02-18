@@ -28,7 +28,7 @@ appStore.loadTrackedUsers()
 onMounted(async () => {
   await appStore.loadLocks()
   try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     const activeTab = tabs[0]
 
     if (activeTab && activeTab.url) {
@@ -77,7 +77,7 @@ const sendSnapshotSignal = async () => {
 }
 
 const openDashboard = () => {
-  chrome.runtime.openOptionsPage()
+  browser.runtime.openOptionsPage()
 }
 
 const forceUnlock = async () => {

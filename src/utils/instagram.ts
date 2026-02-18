@@ -314,7 +314,7 @@ async function retrieveUserFollowersAndFollowing(
     return false
   }
 
-  chrome.runtime.sendMessage({
+  browser.runtime.sendMessage({
     type: ActionType.SEND_APP_DATA,
     payload: {
       appId,
@@ -364,7 +364,7 @@ async function retrieveUserFollowersAndFollowing(
   }
 
   try {
-    await chrome.runtime.sendMessage({
+    await browser.runtime.sendMessage({
       type: ActionType.BULK_UPSERT_USER_METADATA,
       payload: [...followers, ...following],
     } satisfies ExtensionMessage)
@@ -372,7 +372,7 @@ async function retrieveUserFollowersAndFollowing(
     const followerIds = followers.map(u => u.id)
     const followingIds = following.map(u => u.id)
 
-    await chrome.runtime.sendMessage({
+    await browser.runtime.sendMessage({
       type: ActionType.SAVE_SNAPSHOT,
       payload: {
         userId,
@@ -389,7 +389,7 @@ async function retrieveUserFollowersAndFollowing(
     return false
   }
 
-  chrome.runtime.sendMessage({
+  browser.runtime.sendMessage({
     type: ActionType.NOTIFY_SNAPSHOT_COMPLETE,
     payload: userId,
   } satisfies ExtensionMessage)
@@ -447,7 +447,7 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
 
       logger.info("Captured metadata via Observer:", userData)
 
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: ActionType.SAVE_USER_METADATA,
         payload: userData,
       } satisfies ExtensionMessage)
@@ -479,7 +479,7 @@ function sendAppDataToBg() {
     return
   }
 
-  chrome.runtime.sendMessage({
+  browser.runtime.sendMessage({
     type: ActionType.SEND_APP_DATA,
     payload: {
       appId,

@@ -6,6 +6,7 @@ import { fetchUsers } from "./instagram"
 import { getJitter } from "./alarms"
 import { UserNode } from "../types/instapi"
 import { Hour, Second } from "../constants/time"
+import Browser from "webextension-polyfill"
 
 export class BackgroundService {
   private logger = createLogger("BackgroundService")
@@ -60,7 +61,7 @@ export class BackgroundService {
 
       const keysToMigrate = ["wwwClaim", "appId", "csrfToken"]
       const [localData, existingConfigs] = await Promise.all([
-        chrome.storage.local.get(keysToMigrate),
+        browser.storage.local.get(keysToMigrate),
         Promise.all(keysToMigrate.map(key => database.internalConfig.get(key))),
       ])
 
@@ -84,12 +85,12 @@ export class BackgroundService {
 
       await Promise.all([
         ...migratePromises,
-        keysToRemove.length > 0 ? chrome.storage.local.remove(keysToRemove) : Promise.resolve(),
+        keysToRemove.length > 0 ? browser.storage.local.remove(keysToRemove) : Promise.resolve(),
       ])
 
       if (keysToRemove.length > 0) {
         this.logger.info(
-          `Migration complete: ${keysToRemove.join(", ")} cleaned from chrome.storage`,
+          `Migration complete: ${keysToRemove.join(", ")} cleaned from browser.storage`,
         )
       }
     }
@@ -103,7 +104,7 @@ export class BackgroundService {
    * Initialize Chrome alarms for periodic snapshot checks
    */
   initializeAlarms(): void {
-    chrome.alarms.create(ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS, {
+    browser.alarms.create(ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS, {
       periodInMinutes: 30,
     })
     this.logger.info("Snapshot subscription alarm initialized (30min interval)")
@@ -112,7 +113,7 @@ export class BackgroundService {
   /**
    * Handle alarm events for cron-based snapshots
    */
-  async handleAlarm(alarm: chrome.alarms.Alarm): Promise<void> {
+  async handleAlarm(alarm: Browser.Alarms.Alarm): Promise<void> {
     if (alarm.name !== ActionType.CHECK_SNAPSHOT_SUBSCRIPTIONS) {
       return
     }
@@ -221,108 +222,101 @@ export class BackgroundService {
   }
 
   registerMessageListener(
-    message: ExtensionMessage,
-    _sender: chrome.runtime.MessageSender,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendResponse: (response?: any) => void,
-  ): boolean {
+    message: unknown,
+    sender: Browser.Runtime.MessageSender,
+    sendResponse: Browser.Runtime.OnMessageListenerNoResponse,
+  ): true {
     const secureActions = [ActionType.SEND_APP_DATA] as const
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (secureActions.includes(message.type as any)) {
+    if (secureActions.includes((message as ExtensionMessage).type as any)) {
       this.ensureReady()
-        .then(() => this.routeMessage(message, sendResponse))
+        .then(() => this.routeMessage((message as ExtensionMessage), sender, sendResponse))
         .catch((error) => {
           this.logger.error("Failed to ensure security ready:", error)
-          sendResponse({ success: false, error: error.message })
+          sendResponse({ success: false, error: error.message }, sender)
         })
       return true
     }
 
-    return this.routeMessage(message, sendResponse)
+    return this.routeMessage((message as ExtensionMessage), sender, sendResponse)
   }
 
   private routeMessage(
     message: ExtensionMessage,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendResponse: (response?: any) => void,
-  ): boolean {
-    let isAsync = false
-
+    sender: Browser.Runtime.MessageSender,
+    sendResponse: Browser.Runtime.OnMessageListenerNoResponse,
+  ): true {
     switch (message.type) {
       case ActionType.NOTIFY_SNAPSHOT_COMPLETE:
-        this.handleSnapshotComplete(message.payload, sendResponse)
+        this.handleSnapshotComplete(message.payload, sender, sendResponse)
         break
 
       case ActionType.SEND_APP_DATA:
-        isAsync = true
         this.handleAppData(message.payload)
-          .then(() => sendResponse({ success: true }))
+          .then(() => sendResponse({ success: true }, sender))
           .catch((error) => {
             this.logger.error("Failed to save app data:", error)
-            sendResponse({ success: false, error: error.message })
+            sendResponse({ success: false, error: error.message }, sender)
           })
         break
 
       case ActionType.SAVE_USER_METADATA:
-        isAsync = true
         database.userMetadata
           .put(message.payload)
-          .then(() => sendResponse({ success: true }))
+          .then(() => sendResponse({ success: true }, sender))
           .catch((error) => {
             this.logger.error("Failed to save user metadata:", error)
-            sendResponse({ success: false, error: error.message })
+            sendResponse({ success: false, error: error.message }, sender)
           })
         break
 
       case ActionType.BULK_UPSERT_USER_METADATA:
-        isAsync = true
         database
           .bulkUpsertUserMetadata(message.payload)
-          .then(() => sendResponse({ success: true }))
+          .then(() => sendResponse({ success: true }, sender))
           .catch((error) => {
             this.logger.error("Failed to bulk upsert metadata:", error)
-            sendResponse({ success: false, error: error.message })
+            sendResponse({ success: false, error: error.message }, sender)
           })
         break
 
       case ActionType.SAVE_SNAPSHOT:
-        isAsync = true
         const { userId, timestamp, followerIds, followingIds } = message.payload
         database
           .saveSnapshot(userId, timestamp, followerIds, followingIds)
-          .then(() => sendResponse({ success: true }))
+          .then(() => sendResponse({ success: true }, sender))
           .catch((error) => {
             this.logger.error("Failed to save snapshot:", error)
-            sendResponse({ success: false, error: error.message })
+            sendResponse({ success: false, error: error.message }, sender)
           })
         break
 
       default:
-        sendResponse({ success: false, error: "Unknown action type" })
+        sendResponse({ success: false, error: "Unknown action type" }, sender)
     }
 
-    return isAsync
+    return true
   }
 
   private handleSnapshotComplete(
     uid: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendResponse: (response?: any) => void,
+    sender: Browser.Runtime.MessageSender,
+    sendResponse: Browser.Runtime.OnMessageListenerNoResponse,
   ): void {
-    chrome.storage.session
+    browser.storage.session
       .get("locks")
       .then((res) => {
         const locks = { ...(res.locks || {}) } as Record<string, number>
         if (uid in locks) {
           delete locks[uid]
-          return chrome.storage.session.set({ locks, lastsync: Date.now() })
+          return browser.storage.session.set({ locks, lastsync: Date.now() })
         }
-        return chrome.storage.session.set({ lastsync: Date.now() })
+        return browser.storage.session.set({ lastsync: Date.now() })
       })
-      .then(() => sendResponse({ success: true }))
+      .then(() => sendResponse({ success: true }, sender))
       .catch((error) => {
         this.logger.error("Failed to update locks:", error)
-        sendResponse({ success: false, error: error.message })
+        sendResponse({ success: false, error: error.message }, sender)
       })
   }
 

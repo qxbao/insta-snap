@@ -44,7 +44,7 @@ export const EnglishLocale = {
         title_available: "Data Migration Available",
         checking_message: "Checking if data migration is needed...",
         description:
-          "Old snapshot data detected in chrome.storage. Migrate to IndexedDB for better performance and reliability.",
+          "Old snapshot data detected in browser.storage. Migrate to IndexedDB for better performance and reliability.",
         start_button: "Start Migration",
         migrating_button: "Migrating...",
         success: "Migration completed successfully!",

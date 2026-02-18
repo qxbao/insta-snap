@@ -1,3 +1,5 @@
+import "../utils/polyfill"
+import Browser from "webextension-polyfill"
 import { ActionType, ExtensionMessage } from "../constants/actions"
 import { ExtensionMessageResponse, Status } from "../constants/status"
 import {
@@ -19,14 +21,14 @@ let userdataCache: null | {
 } = null
 
 function registerMessages(
-  message: ExtensionMessage,
-  _sender: chrome.runtime.MessageSender,
-  sendResponse: (response: ExtensionMessageResponse) => void,
-): boolean | void {
+  message: unknown,
+  _sender: Browser.Runtime.MessageSender,
+  sendResponse: (response: unknown) => void,
+): true {
   logger.debug("Received message:", message)
   const username = window.location.pathname.split("/").filter(Boolean)[0]
 
-  switch (message.type) {
+  switch ((message as ExtensionMessage).type) {
     case ActionType.TAKE_SNAPSHOT:
       if (locks[username]) {
         logger.info("Snapshot already in progress for user:", username)
@@ -34,7 +36,7 @@ function registerMessages(
           status: Status.InProgress,
           payload: null,
         } satisfies ExtensionMessageResponse)
-        return
+        return true
       }
       if (uiStore) {
         retrieveUserFollowersAndFollowing(username, logger, uiStore)
@@ -42,10 +44,10 @@ function registerMessages(
       else {
         logger.error("UI Store is not initialized.")
       }
-      break
+      return true
     case ActionType.GET_USER_INFO:
       (async function () {
-        if (userdataCache && userdataCache.username === message.payload) {
+        if (userdataCache && userdataCache.username === (message as ExtensionMessage).payload) {
           sendResponse({
             status: Status.Done,
             payload: userdataCache.userId,
@@ -66,13 +68,12 @@ function registerMessages(
           } satisfies ExtensionMessageResponse)
         }
       })()
-      return true
     default:
-      return false
+      return true
   }
 }
 
-chrome.storage.onChanged.addListener((changes, areaName) => {
+browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session" && changes.locks) {
     const newLocks
       = changes["locks"].newValue == undefined
@@ -102,7 +103,7 @@ async function init() {
   const username = window.location.pathname.split("/").filter(Boolean)[0]
   await saveUserInfo(username, logger)
   observer.observe(document, { subtree: true, childList: true, characterData: true })
-  chrome.runtime.onMessage.addListener(registerMessages)
+  browser.runtime.onMessage.addListener(registerMessages)
   sendAppDataToBg()
   injectSnapshotButton(logger, uiStore!)
 }

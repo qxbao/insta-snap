@@ -12,7 +12,7 @@ interface MigrationStats {
 }
 
 /**
- * Migrate all data from chrome.storage.local to IndexedDB
+ * Migrate all data from browser.storage.local to IndexedDB
  * This should be run once after upgrading to IndexedDB version
  */
 export async function migrateFromChromeStorage(): Promise<MigrationStats> {
@@ -23,7 +23,7 @@ export async function migrateFromChromeStorage(): Promise<MigrationStats> {
     errors: [],
   }
 
-  logger.info("Starting migration from chrome.storage to IndexedDB...")
+  logger.info("Starting migration from browser.storage to IndexedDB...")
 
   try {
     // 1. Migrate user metadata
@@ -46,17 +46,17 @@ export async function migrateFromChromeStorage(): Promise<MigrationStats> {
 }
 
 /**
- * Migrate users_metadata from chrome.storage to IndexedDB
+ * Migrate users_metadata from browser.storage to IndexedDB
  */
 async function migrateUserMetadata(stats: MigrationStats): Promise<void> {
   logger.info("Migrating user metadata...")
 
   try {
-    const result = await chrome.storage.local.get("users_metadata")
+    const result = await browser.storage.local.get("users_metadata")
     const userMap = result.users_metadata as GlobalUserMap | undefined
 
     if (!userMap) {
-      logger.info("No users_metadata found in chrome.storage")
+      logger.info("No users_metadata found in browser.storage")
       return
     }
 
@@ -79,13 +79,13 @@ async function migrateUserMetadata(stats: MigrationStats): Promise<void> {
 }
 
 /**
- * Migrate all snapshots from chrome.storage to IndexedDB
+ * Migrate all snapshots from browser.storage to IndexedDB
  */
 async function migrateSnapshots(stats: MigrationStats): Promise<void> {
   logger.info("Migrating snapshots...")
 
   try {
-    const allKeys = await chrome.storage.local.getKeys()
+    const allKeys = await browser.storage.local.getKeys()
     const metaKeys = allKeys.filter(key => key.startsWith("meta_"))
 
     logger.info(`Found ${metaKeys.length} users to migrate`)
@@ -116,7 +116,7 @@ async function migrateSnapshots(stats: MigrationStats): Promise<void> {
 async function migrateUserSnapshots(userId: string, stats: MigrationStats): Promise<void> {
   // Get user metadata
   const metaKey = `meta_${userId}`
-  const metaResult = await chrome.storage.local.get(metaKey)
+  const metaResult = await browser.storage.local.get(metaKey)
   const meta = metaResult[metaKey] as UserSnapshotMeta | undefined
 
   if (!meta) {
@@ -128,7 +128,7 @@ async function migrateUserSnapshots(userId: string, stats: MigrationStats): Prom
 
   // Get all snapshot records for this user
   const snapshotKeys = meta.logTimeline.map(timestamp => `data_${userId}_${timestamp}`)
-  const snapshotsResult = await chrome.storage.local.get(snapshotKeys)
+  const snapshotsResult = await browser.storage.local.get(snapshotKeys)
 
   // Process each snapshot
   for (const timestamp of meta.logTimeline) {
@@ -169,19 +169,19 @@ async function migrateUserSnapshots(userId: string, stats: MigrationStats): Prom
 }
 
 /**
- * Migrate cron jobs from chrome.storage to IndexedDB
+ * Migrate cron jobs from browser.storage to IndexedDB
  */
 async function migrateCrons(stats: MigrationStats): Promise<void> {
   logger.info("Migrating cron jobs...")
 
   try {
-    const result = await chrome.storage.local.get("crons")
+    const result = await browser.storage.local.get("crons")
     const crons = result.crons as
       | Record<string, { userId?: string, uid?: string, interval: number, lastRun: number }>
       | undefined
 
     if (!crons || Object.keys(crons).length === 0) {
-      logger.info("No crons found in chrome.storage")
+      logger.info("No crons found in browser.storage")
       return
     }
 
@@ -215,8 +215,8 @@ async function migrateCrons(stats: MigrationStats): Promise<void> {
  */
 export async function needsMigration(): Promise<boolean> {
   try {
-    // Check if there's any data in chrome.storage
-    const allKeys = await chrome.storage.local.getKeys()
+    // Check if there's any data in browser.storage
+    const allKeys = await browser.storage.local.getKeys()
     const hasOldData = allKeys.some(
       key =>
         key.startsWith("meta_")
@@ -233,7 +233,7 @@ export async function needsMigration(): Promise<boolean> {
     const userCount = await database.userMetadata.count()
     const snapshotCount = await database.snapshots.count()
 
-    // If chrome.storage has data but IndexedDB is empty, we need migration
+    // If browser.storage has data but IndexedDB is empty, we need migration
     return userCount === 0 && snapshotCount === 0
   }
   catch (error) {
@@ -243,14 +243,14 @@ export async function needsMigration(): Promise<boolean> {
 }
 
 /**
- * Clean up old data from chrome.storage after successful migration
- * WARNING: This will delete all snapshot data from chrome.storage
+ * Clean up old data from browser.storage after successful migration
+ * WARNING: This will delete all snapshot data from browser.storage
  */
 export async function cleanupOldStorage(): Promise<void> {
-  logger.info("Cleaning up old chrome.storage data...")
+  logger.info("Cleaning up old browser.storage data...")
 
   try {
-    const allKeys = await chrome.storage.local.getKeys()
+    const allKeys = await browser.storage.local.getKeys()
     const keysToRemove = allKeys.filter(
       key =>
         key.startsWith("meta_")
@@ -260,7 +260,7 @@ export async function cleanupOldStorage(): Promise<void> {
     )
 
     if (keysToRemove.length > 0) {
-      await chrome.storage.local.remove(keysToRemove)
+      await browser.storage.local.remove(keysToRemove)
       logger.info(`Removed ${keysToRemove.length} old storage keys`)
     }
     else {

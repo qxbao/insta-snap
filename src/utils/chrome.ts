@@ -12,14 +12,16 @@ interface RetryOptions {
 
 const sendMessageToActiveTab = async (
   msg: ExtensionMessage,
-  responseCallback?: (response: ExtensionMessageResponse) => void,
+  responseCallback?: (response: unknown) => void,
 ) => {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true })
   if (responseCallback) {
-    chrome.tabs.sendMessage(tabs[0].id!, msg, responseCallback)
+    browser.tabs.sendMessage(tabs[0].id!, msg).then(responseCallback).catch(error => {
+      logger.error("Failed to send message to active tab:", error)
+    })
   }
   else {
-    chrome.tabs.sendMessage(tabs[0].id!, msg)
+    browser.tabs.sendMessage(tabs[0].id!, msg)
   }
 }
 
@@ -37,7 +39,7 @@ const sendMessageWithRetry = async <T = unknown>(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const tabs = await chrome.tabs.query({
+      const tabs = await browser.tabs.query({
         active: true,
         currentWindow: true,
       })
@@ -48,15 +50,15 @@ const sendMessageWithRetry = async <T = unknown>(
 
       const response = await Promise.race([
         new Promise<ExtensionMessageResponse<T>>((resolve, reject) => {
-          chrome.tabs.sendMessage(tabs[0].id!, msg, (response: ExtensionMessageResponse<T>) => {
-            if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError)
+          browser.tabs.sendMessage(tabs[0].id!, msg).then((response: unknown) => {
+            if (browser.runtime.lastError) {
+              reject(browser.runtime.lastError)
             }
             else if (!response) {
               reject(new Error("No response received"))
             }
             else {
-              resolve(response)
+              resolve(response as ExtensionMessageResponse<T>)
             }
           })
         }),
