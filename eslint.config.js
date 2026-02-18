@@ -1,6 +1,6 @@
-import pluginVue from "eslint-plugin-vue";
-import { defineConfigWithVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
-import stylistic from "@stylistic/eslint-plugin";
+import pluginVue from "eslint-plugin-vue"
+import { defineConfigWithVueTs, vueTsConfigs } from "@vue/eslint-config-typescript"
+import stylistic from "@stylistic/eslint-plugin"
 
 export default defineConfigWithVueTs(
   {
@@ -9,7 +9,14 @@ export default defineConfigWithVueTs(
   },
   {
     name: "app/files-to-ignore",
-    ignores: ["**/dist/**", "**/node_modules/**", "**/public/**", "**/tests/**", "**/coverage/**", "eslint.config.js"],
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/public/**",
+      "**/tests/**",
+      "**/coverage/**",
+      "eslint.config.js",
+    ],
   },
   ...pluginVue.configs["flat/essential"],
   vueTsConfigs.recommended,
@@ -37,9 +44,12 @@ export default defineConfigWithVueTs(
           enforceConst: false,
         },
       ],
-      "@stylistic/no-trailing-spaces": ["warn", { "skipBlankLines": false }],
-      "@stylistic/quotes": ["warn", "double", { "avoidEscape": true }],
+      "@stylistic/brace-style": "off",
+      "@stylistic/arrow-parens": "off",
+      "@stylistic/operator-linebreak": "off",
+      "@stylistic/no-trailing-spaces": ["warn", { skipBlankLines: false }],
+      "@stylistic/quotes": ["warn", "double", { avoidEscape: true }],
       "@stylistic/indent": ["warn", 2],
     },
   },
-);
+)

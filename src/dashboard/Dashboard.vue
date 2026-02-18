@@ -29,7 +29,6 @@ const { t } = useI18n()
 const trackedUsers = computed(() => appStore.trackedUsers)
 const snapshotCrons = computed(() => appStore.snapshotCrons)
 const storageMetadata = computed(() => appStore.storageMetadata)
-
 const totalPages = computed(() => Math.ceil(trackedUsers.value.length / usersPerPage))
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * usersPerPage
