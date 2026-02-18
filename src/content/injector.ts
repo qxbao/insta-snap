@@ -1,10 +1,11 @@
 import { createApp } from "vue"
-import { createLogger } from "../utils/logger"
+import { createLogger, Logger } from "../utils/logger"
 import tailwindStyles from "../assets/style.css?inline"
 import ContentMasterLayer from "./ContentMasterLayer.vue"
 import { createPinia } from "pinia"
 import { useUIStore } from "../stores/ui.store"
 import { i18n } from "../i18n"
+import { retrieveUserFollowersAndFollowing } from "../utils/instagram"
 
 const logger = createLogger("Injector")
 
@@ -44,4 +45,18 @@ export function setupVueApp(): ReturnType<typeof useUIStore> | void {
   logger.info("Vue app injected into the page.")
 
   return uiStore
+}
+
+export function injectSnapshotButton(logger?: Logger, store?: ReturnType<typeof useUIStore>) {
+  const usernameEl = document.querySelector("main h2")
+  const username = usernameEl?.textContent?.trim() || ""
+  const usernameParentDiv = usernameEl?.parentElement?.parentElement?.parentElement
+  const button = document.createElement("button")
+  button.textContent = "Take Snapshot"
+  button.style.cssText
+    = "margin-left: 16px; padding: 8px 12px; background-color: #c6213f; color: white; border: none; border-radius: 10px; cursor: pointer;"
+  button.addEventListener("click", () => {
+    retrieveUserFollowersAndFollowing(username, logger, store)
+  })
+  usernameParentDiv?.appendChild(button)
 }

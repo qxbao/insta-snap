@@ -11,6 +11,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Modal: typeof import('./components/Modal.vue')['default']
+    Modal: typeof import('./shared-components/Modal.vue')['default']
   }
 }

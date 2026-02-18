@@ -7,7 +7,7 @@ import {
 } from "../utils/instagram"
 import { findUserId } from "../utils/instagram"
 import { createLogger } from "../utils/logger"
-import { setupVueApp } from "./injector"
+import { injectSnapshotButton, setupVueApp } from "./injector"
 
 const logger = createLogger("ContentScript")
 const locks = {} as Record<string, number>
@@ -104,6 +104,7 @@ async function init() {
   observer.observe(document, { subtree: true, childList: true, characterData: true })
   chrome.runtime.onMessage.addListener(registerMessages)
   sendAppDataToBg()
+  injectSnapshotButton(logger, uiStore!);
 }
 
 init()

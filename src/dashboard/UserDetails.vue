@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { HistoryEntry } from "../types/etc"
+import Modal from "../shared-components/Modal.vue"
 import { database } from "../utils/database"
 import SnapshotHistory from "./components/SnapshotHistory.vue"
 import UserActivityChart from "./components/UserActivityChart.vue"
@@ -50,7 +51,9 @@ const loadData = async () => {
     const snapshots = await database.snapshots.where("belongToId").equals(props.userId).toArray()
 
     snapshotCount.value = snapshots.length
-    checkpointCount.value = snapshots.filter(s => s.isCheckpoint).length
+    checkpointCount.value = snapshots.filter((s) => {
+      return s.isCheckpoint
+    }).length
 
     history.value = {
       followers: await database.getSnapshotHistory(props.userId, true),
