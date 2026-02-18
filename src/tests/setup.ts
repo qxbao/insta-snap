@@ -1,63 +1,67 @@
-import { vi } from "vitest";
-import { config } from "@vue/test-utils";
-import "fake-indexeddb/auto";
+import { vi } from "vitest"
+import { config } from "@vue/test-utils"
+import "fake-indexeddb/auto"
 
-// Mock Chrome API (types from @types/chrome)
-(globalThis as any).chrome = {
+const mockBrowser = {
   storage: {
     local: {
       get: vi.fn(),
       set: vi.fn(),
       remove: vi.fn(),
       clear: vi.fn(),
-      getKeys: vi.fn().mockResolvedValue([]),
+      getKeys: vi.fn(),
+      onChanged: { addListener: vi.fn() },
     },
     session: {
       get: vi.fn(),
       set: vi.fn(),
-      remove: vi.fn(),
-      getKeys: vi.fn().mockResolvedValue([]),
+      onChanged: { addListener: vi.fn() },
     },
-  },
-  alarms: {
-    create: vi.fn(),
-    clear: vi.fn(),
-    get: vi.fn(),
-    getAll: vi.fn(),
-    clearAll: vi.fn(),
-    onAlarm: {
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-    },
-  },
-  tabs: {
-    create: vi.fn(),
-    query: vi.fn(),
-    sendMessage: vi.fn(),
   },
   runtime: {
     sendMessage: vi.fn(),
-    onMessage: {
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-    },
-    getURL: vi.fn((path: string) => `chrome-extension://test-id/${path}`),
+    onMessage: { addListener: vi.fn() },
+    getURL: vi.fn((path) => `chrome-extension://mock-id/${path}`),
+    id: "mock-extension-id",
+    openOptionsPage: vi.fn(),
   },
-} as any;
+  tabs: {
+    query: vi.fn(),
+    sendMessage: vi.fn(),
+  },
+  alarms: {
+    create: vi.fn(),
+    onAlarm: { addListener: vi.fn() },
+  },
+  i18n: {
+    getMessage: vi.fn((key) => key),
+    getUILanguage: vi.fn(() => "en-US"),
+  },
+  declarativeNetRequest: {
+    updateDynamicRules: vi.fn(),
+  },
+}
+
+vi.mock("webextension-polyfill", () => {
+  return {
+    __esModule: true,
+    default: mockBrowser,
+  }
+})
+;(globalThis as any).browser = mockBrowser
+;(globalThis as any).chrome = mockBrowser
 
 config.global.stubs = {
   teleport: true,
-};
+}
 
-// Suppress Vue i18n registration warnings in tests
 config.global.config = {
   warnHandler: (msg: string) => {
-    // Suppress i18n component registration warnings
-    if (msg.includes('has already been registered')) {
-      return;
+    if (msg.includes("has already been registered")) {
+      return
     }
-    console.warn(msg);
+    console.warn(msg)
   },
-};
+}
 
-// Don't set global i18n plugin - each test file creates its own instance
+export { mockBrowser }

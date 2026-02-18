@@ -1,14 +1,14 @@
 # InstaSnap AI Coding Guide
 
 ## Project Overview
-InstaSnap is a Chrome extension for tracking Instagram follower/following lists using **differential storage** architecture. It takes periodic snapshots and efficiently stores only deltas between snapshots (every 20th is a full checkpoint).
+InstaSnap is a browser extension for tracking Instagram follower/following lists using **differential storage** architecture. It takes periodic snapshots and efficiently stores only deltas between snapshots (every 20th is a full checkpoint).
 
 **Tech Stack**: Vue 3 + TypeScript, Vite + @crxjs/vite-plugin, Pinia stores, Vitest, Tailwind CSS 4, IndexedDB (Dexie), pnpm
 
 ## Architecture & Key Patterns
 
-### Multi-Context Chrome Extension
-The extension has 4 execution contexts that communicate via `chrome.runtime.sendMessage`:
+### Multi-Context Browser Extension
+The extension has 4 execution contexts that communicate via `browser.runtime.sendMessage`:
 1. **Background Service Worker** ([src/background.ts](../src/background.ts)) - Orchestrates lifecycle events
 2. **Background Service** ([src/utils/bg-service.ts](../src/utils/bg-service.ts)) - Core business logic, encryption, alarms, message routing
 3. **Content Script** ([src/content/content.ts](../src/content/content.ts)) - Injected into Instagram pages, scrapes data via Instagram GraphQL
@@ -23,7 +23,7 @@ The extension has 4 execution contexts that communicate via `chrome.runtime.send
 - `BackgroundService` manages encryption lifecycle:
   - `checkSecurityConfig()` - Initialize/load encryption key on startup
   - `ensureReady()` - Guard for secure operations
-  - Auto-migration from legacy `chrome.storage.local` to encrypted IndexedDB
+  - Auto-migration from legacy `browser.storage.local` to encrypted IndexedDB
 
 **Encryption Flow**:
 ```typescript
@@ -51,13 +51,13 @@ const appId = await database.readEncryptedConfig("appId", encryptor);
 - `writeEncryptedConfig(key, value, encryptor)` / `readEncryptedConfig(key, encryptor)` - Secure storage (NEW)
 
 **Storage Migration Path**:
-1. Legacy: `chrome.storage.local` (plaintext credentials) ❌
+1. Legacy: `browser.storage.local` (plaintext credentials) ❌
 2. Current: IndexedDB `internalConfig` (encrypted) ✅
 3. Auto-migration runs on extension install/update
 
-chrome.storage is **only used for**:
-- `chrome.storage.session` for user locks (prevent duplicate snapshots)
-- ⚠️ **Do NOT use `chrome.storage.local` for new features** - use encrypted IndexedDB
+browser.storage is **only used for**:
+- `browser.storage.session` for user locks (prevent duplicate snapshots)
+- ⚠️ **Do NOT use `browser.storage.local` for new features** - use encrypted IndexedDB
 
 ### Instagram Data Collection
 [src/utils/instagram.ts](../src/utils/instagram.ts) uses Instagram's private GraphQL API:
@@ -71,12 +71,12 @@ Two Pinia stores ([src/stores/](../src/stores/)):
 - **app.store.ts**: User locks (prevent duplicate snapshots), cron schedules, tracked users list
 - **ui.store.ts**: UI progress indicators for snapshot operations
 
-User locks in `chrome.storage.session` expire after 10 minutes (`LOCK_TIMEOUT`)
+User locks in `browser.storage.session` expire after 10 minutes (`LOCK_TIMEOUT`)
 
 ### Background Service Architecture (NEW)
 [src/utils/bg-service.ts](../src/utils/bg-service.ts) is the **single source of truth** for:
 - **Encryption lifecycle**: Key generation, loading, validation
-- **Message routing**: All `chrome.runtime.onMessage` handlers
+- **Message routing**: All `browser.runtime.onMessage` handlers
 - **Alarm management**: Cron snapshot scheduling (30min intervals)
 - **Secure operations**: Guards via `ensureReady()` before handling sensitive data
 
@@ -111,7 +111,7 @@ pnpm lint:fix     # Auto-fix ESLint issues
 
 ### Testing Conventions
 - **happy-dom** environment (not jsdom)
-- Chrome API mocked in [src/tests/setup.ts](../src/tests/setup.ts)
+- Browser API mocked in [src/tests/setup.ts](../src/tests/setup.ts)
 - Test files: `*.test.ts` or `*.spec.ts` in [src/tests/](../src/tests/)
 - Use `vi.fn()` for mocks, not jest
 - Mock `Encryptor` and `database` for security tests
@@ -127,7 +127,7 @@ pnpm lint:fix     # Auto-fix ESLint issues
 ### Adding New Encrypted Config
 1. Write: `await database.writeEncryptedConfig("myKey", "value", encryptor)`
 2. Read: `const val = await database.readEncryptedConfig("myKey", encryptor)`
-3. Add to migration if replacing `chrome.storage.local` key
+3. Add to migration if replacing `browser.storage.local` key
 
 ### Adding New IndexedDB Tables/Fields
 1. Update schema in [src/types/database.d.ts](../src/types/database.d.ts)
@@ -157,12 +157,12 @@ pnpm lint:fix     # Auto-fix ESLint issues
 ## Project-Specific Rules
 
 1. **Never bypass storage lock**: Always use `appStore.tryLockUser()` before snapshots
-2. **Use encrypted IndexedDB for credentials**: `chrome.storage.local` is legacy only
+2. **Use encrypted IndexedDB for credentials**: `browser.storage.local` is legacy only
 3. **Security-first message handling**: Use `ensureReady()` guard before accessing `encryptor`
 4. **Path aliases**: Use `@/` for absolute imports (resolves to `src/`)
 5. **Unused vars**: Prefix with `_` (e.g., `_sender`) - enforced by ESLint
 6. **No `console.*` in production**: Use `logger.info/warn/error` from [src/utils/logger.ts](../src/utils/logger.ts)
-7. **Chrome API types**: Import from `@types/chrome`, not `chrome-types`
+7. **Browser API (WebExtensions)**: Use `browser.*` namespace (cross-browser compatible), types from `@types/webextension-polyfill`
 8. **Keep message channel open**: Return `true` from `registerMessageListener` for async operations
 9. **Type validation**: Always validate `CryptoKey` with `instanceof` before use
 10. **Abort controller**: Support graceful cancellation in long-running operations (alarms)
@@ -171,7 +171,7 @@ pnpm lint:fix     # Auto-fix ESLint issues
 
 - **Vite + CRX Plugin**: Hot reload works for popup/dashboard, not background worker (requires full reload)
 - **Alarms API**: Background triggers cron snapshots every 30 minutes via `CHECK_SNAPSHOT_SUBSCRIPTIONS`
-- **Storage Sync**: Background broadcasts lock changes to content script via `storage.onChanged`
+- **Storage Sync**: Background broadcasts lock changes to content script via `browser.storage.onChanged`
 - **Content Script → Page**: Reads Instagram state by parsing DOM (`findAppId`, `findUserId`)
 - **Encryption Layer**: All credential storage goes through `Encryptor` + IndexedDB `internalConfig`
 - **Message Security**: `BackgroundService` validates security readiness before routing sensitive messages
@@ -187,7 +187,7 @@ pnpm lint:fix     # Auto-fix ESLint issues
 
 ### Migration Safety
 - Auto-migration runs **once** on install/update
-- Legacy `chrome.storage.local` keys deleted after successful migration
+- Legacy `browser.storage.local` keys deleted after successful migration
 - Parallel reads (check both sources) during transition
 - Fail-safe: Keep old data if migration fails
 

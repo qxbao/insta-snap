@@ -17,9 +17,9 @@ describe("useAppStore", () => {
     // Reset mock storage
     mockSessionStorage = createMockStorage();
 
-    // Mock chrome storage APIs (only session for locks)
-    global.chrome.storage.session.get = mockSessionStorage.get as any;
-    global.chrome.storage.session.set = mockSessionStorage.set as any;
+    // Mock browser storage APIs (only session for locks)
+    (global as any).browser.storage.session.get = mockSessionStorage.get as any;
+    (global as any).browser.storage.session.set = mockSessionStorage.set as any;
     
     // Ensure database is open and clear all data
     if (!database.isOpen()) {
