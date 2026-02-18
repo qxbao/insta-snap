@@ -32,7 +32,8 @@ export const VietnameseLocale = {
   dashboard: {
     main: {
       confirm: {
-        delete_snapshot: "Bạn có chắc muốn xóa tất cả dữ liệu của người dùng này? Hành động này cũng sẽ xóa các tác vụ tự động của người dùng và không thể hoàn tác.",
+        delete_snapshot:
+          "Bạn có chắc muốn xóa tất cả dữ liệu của người dùng này? Hành động này cũng sẽ xóa các tác vụ tự động của người dùng và không thể hoàn tác.",
         delete_cron: "Bạn có chắc muốn xóa tác vụ tự động này? Hành động này không thể hoàn tác.",
       },
       status: {
@@ -71,7 +72,7 @@ export const VietnameseLocale = {
         interval_placeholder: "Nhập khoảng thời gian (đơn vị: giờ)",
         last_run: "Lần chạy cuối",
         add_schedule: "Thêm tác vụ",
-        no_cron_recommend: "Chưa có tác vụ tự động nào. Nhấn \"Thêm tác vụ\" để tạo mới.",
+        no_cron_recommend: 'Chưa có tác vụ tự động nào. Nhấn "Thêm tác vụ" để tạo mới.',
         interval_required: "Khoảng thời gian là bắt buộc",
         interval_min_er: "Khoảng thời gian phải ít nhất 1 giờ",
         interval_max_er: "Khoảng thời gian không được vượt quá 168 giờ (1 tuần)",
@@ -80,8 +81,7 @@ export const VietnameseLocale = {
         select_user: "Chọn người dùng",
         interval_rec: "Khuyến nghị: 12-24 giờ",
         interval_max: "Tối đa: 168 giờ",
-        interval_note:
-          "Snapshot sẽ được tự động chụp mỗi {time} nếu tiện ích hoạt động.",
+        interval_note: "Snapshot sẽ được tự động chụp mỗi {time} nếu tiện ích hoạt động.",
         cancel: "Đóng",
         save: "Lưu",
       },
@@ -122,8 +122,10 @@ export const VietnameseLocale = {
         no_changes: "Không có thay đổi trong snapshot này",
         no_data: "Dữ liệu không khả dụng (thu gọn và mở lại để tải lại)",
         delete_tooltip: "Xóa snapshot này ({count} bản ghi sẽ bị xóa)",
-        confirm_delete_single: "Bạn có chắc muốn xóa snapshot này? Hành động này không thể hoàn tác.",
-        confirm_delete_multiple: "Bạn có chắc muốn xóa snapshot này và {count} bản ghi phụ thuộc? Hành động này không thể hoàn tác.",
+        confirm_delete_single:
+          "Bạn có chắc muốn xóa snapshot này? Hành động này không thể hoàn tác.",
+        confirm_delete_multiple:
+          "Bạn có chắc muốn xóa snapshot này và {count} bản ghi phụ thuộc? Hành động này không thể hoàn tác.",
         delete_error: "Không thể xóa snapshot. Vui lòng thử lại.",
       },
       changes: {
@@ -155,7 +157,7 @@ export const VietnameseLocale = {
     error: {
       app_data_missing: "AppID bị thiếu, không thể xử lý các đăng ký snapshot.",
       processing_user: "Đang xử lý cron snapshot cho người dùng: {userId}",
-    }
+    },
   },
   errors: {
     undetected_profile: "Không phát hiện",

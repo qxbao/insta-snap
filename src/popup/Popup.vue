@@ -162,7 +162,10 @@ const lastSnapshotTime = computed(() => currentUserData.value?.lastSnapshot ?? n
             }}
           </button>
           <div class="mt-2" v-if="isProcessing">
-            <a class="text-xs text-theme underline font-semibold cursor-pointer" @click="forceUnlock">
+            <a
+              class="text-xs text-theme underline font-semibold cursor-pointer"
+              @click="forceUnlock"
+            >
               {{ t("popup.force_unlock") }}
             </a>
           </div>

@@ -1,4 +1,6 @@
 import { ActionType, ExtensionMessage } from "../constants/actions";
+import { ErrorBoundary, HTTPStatus } from "../constants/http";
+import { Minute, Second } from "../constants/time";
 import { useUIStore } from "../stores/ui.store";
 import { Edge, InstagramAPIHeader, InstagramRequestType, UserNode } from "../types/instapi";
 import { createLogger, Logger } from "./logger";
@@ -147,13 +149,13 @@ async function fetchWithRetry(
 
       clearTimeout(timeoutId);
 
-      if (response.status === 429) {
+      if (response.status === HTTPStatus.TooManyRequests) {
         const retryAfter = response.headers.get("Retry-After");
-        // Exponential backoff with jitter
-        const baseDelay = retryAfter ? parseInt(retryAfter) * 1000 : retryDelay;
+        const baseDelay = retryAfter ? parseInt(retryAfter) * Second : retryDelay;
+        // eslint-disable-next-line no-magic-numbers
         const exponentialDelay = baseDelay * Math.pow(2, attempt);
-        const jitter = Math.random() * 1000;
-        const delay = Math.min(exponentialDelay + jitter, 60000); // Max 60s
+        const jitter = Math.random() * Second;
+        const delay = Math.min(exponentialDelay + jitter, Minute); // Max 60s
 
         if (attempt < maxRetries - 1) {
           logger.info(`Rate limited, retrying after ${delay}ms`);
@@ -162,7 +164,7 @@ async function fetchWithRetry(
         }
       }
 
-      if (!response.ok && response.status >= 500) {
+      if (!response.ok && response.status >= ErrorBoundary) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -173,7 +175,7 @@ async function fetchWithRetry(
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error("Request timeout");
       }
-
+      // eslint-disable-next-line no-magic-numbers
       await new Promise((resolve) => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
     }
   }
@@ -271,12 +273,13 @@ async function retrieveUserFollowersAndFollowing(
   options?: { followersOnly?: boolean; followingOnly?: boolean },
 ) {
   const appId = findAppId();
+  const NotificationDuration = 5000;
   if (!appId) {
     logger?.error("Failed to retrieve Instagram App ID.");
     store?.showNotification(
       "Failed to retrieve Instagram App ID. Please make sure you are on a valid profile page.",
       "error",
-      5000,
+      NotificationDuration,
     );
     return false;
   }
@@ -288,7 +291,7 @@ async function retrieveUserFollowersAndFollowing(
     store?.showNotification(
       "Failed to retrieve Instagram CSRF Token. Please make sure you are on a valid profile page.",
       "error",
-      5000,
+      NotificationDuration,
     );
     return false;
   }
@@ -303,7 +306,7 @@ async function retrieveUserFollowersAndFollowing(
     store?.showNotification(
       "Failed to retrieve Instagram User ID. Please make sure you are on a valid profile page.",
       "error",
-      5000,
+      NotificationDuration,
     );
     return false;
   }
@@ -391,7 +394,7 @@ async function retrieveUserFollowersAndFollowing(
   store?.showNotification(
     `Snapshot saved for user @${username} (${followers.length} followers, ${following.length} following).`,
     "success",
-    3000,
+    NotificationDuration,
   );
 
   return true;
@@ -419,9 +422,9 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
     }
     const fullnameElem = usernameElem
       ? usernameElem
-          .closest("div")
-          ?.parentElement?.closest("div")
-          ?.nextElementSibling?.querySelector("span")
+        .closest("div")
+        ?.parentElement?.closest("div")
+        ?.nextElementSibling?.querySelector("span")
       : null;
     const fullname = fullnameElem?.textContent || "Failed to retrieve";
     const avatarURL = imgElem?.src;
@@ -460,6 +463,7 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
       profileObserver = null;
       logger.warn("Observer timeout - metadata collection stopped.");
     }
+  // eslint-disable-next-line no-magic-numbers
   }, 10000);
 }
 

@@ -49,7 +49,7 @@ export async function migrateFromChromeStorage(): Promise<MigrationStats> {
  */
 async function migrateUserMetadata(stats: MigrationStats): Promise<void> {
   logger.info("Migrating user metadata...");
-  
+
   try {
     const result = await chrome.storage.local.get("users_metadata");
     const userMap = result.users_metadata as GlobalUserMap | undefined;
@@ -90,7 +90,7 @@ async function migrateSnapshots(stats: MigrationStats): Promise<void> {
 
     for (const metaKey of metaKeys) {
       const userId = metaKey.replace("meta_", "");
-      
+
       try {
         await migrateUserSnapshots(userId, stats);
       } catch (error) {
@@ -123,9 +123,7 @@ async function migrateUserSnapshots(userId: string, stats: MigrationStats): Prom
   logger.info(`Migrating ${meta.logTimeline.length} snapshots for user ${userId}`);
 
   // Get all snapshot records for this user
-  const snapshotKeys = meta.logTimeline.map(
-    (timestamp) => `data_${userId}_${timestamp}`,
-  );
+  const snapshotKeys = meta.logTimeline.map((timestamp) => `data_${userId}_${timestamp}`);
   const snapshotsResult = await chrome.storage.local.get(snapshotKeys);
 
   // Process each snapshot
@@ -173,7 +171,9 @@ async function migrateCrons(stats: MigrationStats): Promise<void> {
 
   try {
     const result = await chrome.storage.local.get("crons");
-    const crons = result.crons as Record<string, { userId?: string; uid?: string; interval: number; lastRun: number }> | undefined;
+    const crons = result.crons as
+      | Record<string, { userId?: string; uid?: string; interval: number; lastRun: number }>
+      | undefined;
 
     if (!crons || Object.keys(crons).length === 0) {
       logger.info("No crons found in chrome.storage");
@@ -268,7 +268,7 @@ export async function cleanupOldStorage(): Promise<void> {
  */
 export async function runMigrationWithCleanup(): Promise<MigrationStats> {
   const needsMig = await needsMigration();
-  
+
   if (!needsMig) {
     logger.info("No migration needed");
     return {

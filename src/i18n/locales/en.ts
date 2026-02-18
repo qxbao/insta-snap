@@ -56,8 +56,7 @@ export const EnglishLocale = {
         errors: "Migration completed with errors:",
       },
       no_snapshots: "No snapshots yet",
-      no_snapshots_desc:
-        "Start tracking Instagram profiles to see snapshots here.",
+      no_snapshots_desc: "Start tracking Instagram profiles to see snapshots here.",
       view_details: "View details",
       heading: {
         tracked_profiles: "Tracked Profiles",
@@ -72,8 +71,7 @@ export const EnglishLocale = {
         interval_placeholder: "Enter interval in hours",
         last_run: "Last run",
         add_schedule: "Add schedule",
-        no_cron_recommend:
-          'No scheduled snapshots yet. Click "Add schedule" to create one.',
+        no_cron_recommend: 'No scheduled snapshots yet. Click "Add schedule" to create one.',
         interval_required: "Interval is required",
         interval_min_er: "Interval must be at least 1 hour",
         interval_max_er: "Interval cannot exceed 168 hours (1 week)",
@@ -124,8 +122,10 @@ export const EnglishLocale = {
         no_changes: "No changes in this snapshot",
         no_data: "Data not available (collapsed and reopened to reload)",
         delete_tooltip: "Delete this snapshot ({count} record(s) will be removed)",
-        confirm_delete_single: "Are you sure you want to delete this snapshot? This action cannot be undone.",
-        confirm_delete_multiple: "Are you sure you want to delete this snapshot and {count} dependent records? This action cannot be undone.",
+        confirm_delete_single:
+          "Are you sure you want to delete this snapshot? This action cannot be undone.",
+        confirm_delete_multiple:
+          "Are you sure you want to delete this snapshot and {count} dependent records? This action cannot be undone.",
         delete_error: "Failed to delete snapshot. Please try again.",
       },
       changes: {
@@ -155,8 +155,7 @@ export const EnglishLocale = {
   },
   background: {
     error: {
-      app_data_missing:
-        "App data missing, cannot process snapshot subscriptions.",
+      app_data_missing: "App data missing, cannot process snapshot subscriptions.",
       processing_user: "Processing snapshot cron for user: {userId}",
     },
   },

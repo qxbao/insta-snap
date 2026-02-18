@@ -10,7 +10,6 @@ const handleClose = () => {
     modalStore.closeModal();
   }
 };
-
 </script>
 
 <template>
@@ -19,7 +18,10 @@ const handleClose = () => {
     class="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50 p-4"
     @click.self="handleClose"
   >
-    <div class="card rounded-lg shadow-xl w-full p-6 relative" :class="modalStore.props.maxWidth || 'max-w-md'">
+    <div
+      class="card rounded-lg shadow-xl w-full p-6 relative"
+      :class="modalStore.props.maxWidth || 'max-w-md'"
+    >
       <button
         v-if="!modalStore.isLoading"
         @click="handleClose"
@@ -38,7 +40,7 @@ const handleClose = () => {
         v-bind="modalStore.props"
         @close="handleClose"
       />
-      
+
       <div v-else class="text-center py-8">
         <p class="text-red-500">No content to display</p>
       </div>

@@ -1,17 +1,19 @@
+import { Day, Hour, MaxHour, MaxMinute, Minute } from "../constants/time";
+
 export function useTimeFormat() {
   const formatRelativeTime = (timestamp: number | null): string => {
     if (!timestamp) return "Never";
-    
+
     const now = Date.now();
     const diff = now - timestamp;
 
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+    const minutes = Math.floor(diff / Minute);
+    const hours = Math.floor(diff / Hour);
+    const days = Math.floor(diff / Day);
 
     if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
+    if (minutes < MaxMinute) return `${minutes}m ago`;
+    if (hours < MaxHour) return `${hours}h ago`;
     return `${days}d ago`;
   };
 
@@ -21,9 +23,9 @@ export function useTimeFormat() {
   };
 
   const formatIntervalTime = (hours: number): string => {
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    const hour = hours % 24;
+    if (hours < MaxHour) return `${hours}h`;
+    const days = Math.floor(hours / MaxHour);
+    const hour = hours % MaxHour;
     if (hour === 0) return `${days}d`;
     return `${days}d ${hour}h`;
   };
@@ -31,6 +33,6 @@ export function useTimeFormat() {
   return {
     formatRelativeTime,
     formatDate,
-    formatIntervalTime
+    formatIntervalTime,
   };
 }

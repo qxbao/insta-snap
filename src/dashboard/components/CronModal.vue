@@ -4,6 +4,7 @@ import Fa6SolidXmark from "~icons/fa6-solid/xmark";
 import Fa6SolidChevronDown from "~icons/fa6-solid/chevron-down";
 import { useTimeFormat } from "../../utils/time";
 import { useI18n } from "vue-i18n";
+import { MaxCronInterval, MinCronInterval } from "../../constants/time";
 
 interface Props {
   show: boolean;
@@ -55,18 +56,13 @@ watch(localInterval, (newVal) => {
 });
 
 const intervalError = computed(() => {
-  if (!localInterval.value)
-    return t("dashboard.main.cronjob.interval_required");
-  if (localInterval.value < 1)
-    return t("dashboard.main.cronjob.interval_min_er");
-  if (localInterval.value > 168)
-    return t("dashboard.main.cronjob.interval_max_er");
+  if (!localInterval.value) return t("dashboard.main.cronjob.interval_required");
+  if (localInterval.value < MinCronInterval) return t("dashboard.main.cronjob.interval_min_er");
+  if (localInterval.value > MaxCronInterval) return t("dashboard.main.cronjob.interval_max_er");
   return null;
 });
 
-const isValid = computed(
-  () => !intervalError.value && localUserId.value !== null,
-);
+const isValid = computed(() => !intervalError.value && localUserId.value !== null);
 
 const handleSave = () => {
   if (!isValid.value) {
@@ -118,9 +114,7 @@ const selectUser = (userId: string) => {
               class="input-theme rounded-lg px-3 py-2 border w-full text-left flex items-center justify-between"
             >
               <span v-if="selectedUser">
-                {{ selectedUser.fullName || selectedUser.username }} (@{{
-                  selectedUser.username
-                }})
+                {{ selectedUser.fullName || selectedUser.username }} (@{{ selectedUser.username }})
               </span>
               <span v-else class="text-gray-400">{{
                 t("dashboard.main.cronjob.select_user")
@@ -141,8 +135,7 @@ const selectUser = (userId: string) => {
                 @click="selectUser(user.id)"
                 class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors duration-150"
                 :class="{
-                  'bg-emerald-50 dark:bg-emerald-900/20':
-                    user.id === localUserId,
+                  'bg-emerald-50 dark:bg-emerald-900/20': user.id === localUserId,
                 }"
               >
                 {{ user.fullName || user.username }} (@{{ user.username }})

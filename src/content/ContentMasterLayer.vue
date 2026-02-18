@@ -23,10 +23,7 @@ const { t } = useI18n();
         style="height: 100%"
         class="fixed -translate-x-1/2 -translate-y-1/2 pointer-events-auto top-1/2 left-1/2"
       >
-        <div
-          style="height: 100%"
-          class="flex flex-col items-center justify-center"
-        >
+        <div style="height: 100%" class="flex flex-col items-center justify-center">
           <div
             class="bg-linear-to-br from-purple-600/80 via-pink-500/80 to-orange-500/80 w-100 text-white flex flex-col items-center p-8 rounded-2xl shadow-lg backdrop-blur-lg"
           >
@@ -34,9 +31,7 @@ const { t } = useI18n();
               {{ t("content.snapshot.taking_snapshot") }}
             </h3>
             <div class="mb-3">
-              <Fa6SolidCameraRetro
-                class="w-12 h-12 animate-[shake_0.5s_ease-in-out_infinite]"
-              />
+              <Fa6SolidCameraRetro class="w-12 h-12 animate-[shake_0.5s_ease-in-out_infinite]" />
             </div>
             <p class="mb-2 text-sm leading-relaxed text-gray-200">
               {{ t("content.snapshot.dont_leave_page") }}
@@ -66,24 +61,15 @@ const { t } = useI18n();
         class="fixed top-6 left-1/2 pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2),inset_0_0_0_1px_rgba(255,255,255,0.2)] backdrop-blur-xl font-semibold text-[15px] text-white max-w-125 animate-[float_3s_ease-in-out_infinite]"
         style="transform: translateX(-50%)"
         :class="{
-          'bg-linear-to-r from-emerald-600/95 to-emerald-700/80':
-            ui.notifyType === 'success',
-          'bg-linear-to-r from-red-600/95 to-red-700/95':
-            ui.notifyType === 'error',
-          'bg-linear-to-r from-blue-500/95 to-blue-600/95':
-            ui.notifyType === 'info',
+          'bg-linear-to-r from-emerald-600/95 to-emerald-700/80': ui.notifyType === 'success',
+          'bg-linear-to-r from-red-600/95 to-red-700/95': ui.notifyType === 'error',
+          'bg-linear-to-r from-blue-500/95 to-blue-600/95': ui.notifyType === 'info',
           'bg-gray-700/95': !ui.notifyType,
         }"
       >
         <div class="w-6 h-6 shrink-0">
-          <Fa6SolidCheck
-            v-if="ui.notifyType === 'success'"
-            class="w-full h-full"
-          />
-          <Fa6SolidXmark
-            v-else-if="ui.notifyType === 'error'"
-            class="w-full h-full"
-          />
+          <Fa6SolidCheck v-if="ui.notifyType === 'success'" class="w-full h-full" />
+          <Fa6SolidXmark v-else-if="ui.notifyType === 'error'" class="w-full h-full" />
           <Fa6SolidCircleInfo v-else class="w-full h-full" />
         </div>
         <span class="leading-snug">{{ ui.notifyMessage }}</span>

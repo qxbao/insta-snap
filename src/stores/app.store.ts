@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { database } from "../utils/database";
 import { createLogger } from "../utils/logger";
+import { Minute } from "../constants/time";
 
 const logger = createLogger("AppStore");
 
@@ -25,7 +26,8 @@ interface AppState {
   storageMetadata: StorageEstimate | null;
 }
 
-const LOCK_TIMEOUT = 10 * 60 * 1000; // 10m
+// eslint-disable-next-line no-magic-numbers
+const LOCK_TIMEOUT = 10 * Minute;
 
 export const useAppStore = defineStore("app", {
   state: (): AppState => ({

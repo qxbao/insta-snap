@@ -1,7 +1,6 @@
 import pluginVue from "eslint-plugin-vue";
 import { defineConfigWithVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
-import skipFormatting from "@vue/eslint-config-prettier/skip-formatting";
-import recommendConfigs from "eslint-plugin-prettier/recommended";
+import stylistic from "@stylistic/eslint-plugin";
 
 export default defineConfigWithVueTs(
   {
@@ -10,11 +9,10 @@ export default defineConfigWithVueTs(
   },
   {
     name: "app/files-to-ignore",
-    ignores: ["**/dist/**", "**/node_modules/**", "**/public/**", "**/tests/**"],
+    ignores: ["**/dist/**", "**/node_modules/**", "**/public/**", "**/tests/**", "**/coverage/**", "eslint.config.js"],
   },
   ...pluginVue.configs["flat/essential"],
   vueTsConfigs.recommended,
-  recommendConfigs,
   {
     rules: {
       "vue/multi-word-component-names": "off",
@@ -24,5 +22,22 @@ export default defineConfigWithVueTs(
       "vue/no-unused-vars": "warn",
     },
   },
-  skipFormatting,
+  {
+    plugins: {
+      "@stylistic": stylistic,
+    },
+    rules: {
+      "no-magic-numbers": [
+        "warn",
+        {
+          ignore: [0, 1, -1],
+          ignoreArrayIndexes: true,
+          ignoreDefaultValues: true,
+          enforceConst: false,
+        },
+      ],
+      "@stylistic/quotes": ["warn", "double", { avoidEscape: true }],
+      "@stylistic/indent": ["warn", 2],
+    },
+  },
 );

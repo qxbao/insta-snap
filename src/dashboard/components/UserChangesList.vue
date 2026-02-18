@@ -14,8 +14,8 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useI18n();
-
-const visibleCount = ref(10);
+const minVisibleUsers = 10;
+const visibleCount = ref(minVisibleUsers);
 const USERS_PER_PAGE = 10;
 
 const loadMore = () => {
@@ -70,15 +70,10 @@ const { list, containerProps, wrapperProps } = useVirtualList(
             :alt="getUserInfo(userId).username"
             referrerpolicy="no-referrer"
             class="w-8 h-8 rounded-full object-cover"
-            @error="
-              (e) =>
-                ((e.target as HTMLImageElement).src = '/images/user_avatar.png')
-            "
+            @error="(e) => ((e.target as HTMLImageElement).src = '/images/user_avatar.png')"
           />
           <div class="min-w-0 flex-1">
-            <p
-              class="text-sm font-medium text-gray-900 dark:text-white truncate"
-            >
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
               {{ getUserInfo(userId).fullName || getUserInfo(userId).username }}
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">

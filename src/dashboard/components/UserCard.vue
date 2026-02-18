@@ -36,20 +36,13 @@ const emit = defineEmits<Emits>();
         :alt="user.username"
         referrerpolicy="no-referrer"
         class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500"
-        @error="
-          (e) =>
-            ((e.target as HTMLImageElement).src = '/images/user_avatar.png')
-        "
+        @error="(e) => ((e.target as HTMLImageElement).src = '/images/user_avatar.png')"
       />
       <div class="flex-1 min-w-0">
-        <h3
-          class="text-lg font-semibold text-gray-900 dark:text-white truncate"
-        >
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate">
           {{ user.fullName || user.username }}
         </h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
-          @{{ user.username }}
-        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 truncate">@{{ user.username }}</p>
       </div>
     </div>
 

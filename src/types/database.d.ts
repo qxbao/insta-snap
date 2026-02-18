@@ -27,7 +27,7 @@ interface SnapshotCron {
   lastRun: number;
 }
 
-type EncryptedData = { encrypted: ArrayBuffer; iv: Uint8Array<ArrayBufferLike> }
+type EncryptedData = { encrypted: ArrayBuffer; iv: Uint8Array<ArrayBufferLike> };
 
 interface InternalConfig {
   key: string;

@@ -1,6 +1,6 @@
 /**
  * @deprecated: This file is deprecated and served its purpose for migration only.
-*/
+ */
 
 type UserID = string;
 type Timestamp = number;

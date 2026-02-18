@@ -1,10 +1,10 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 
-export const useUIStore = defineStore('ui', {
+export const useUIStore = defineStore("ui", {
   state: () => ({
     isNotifyVisible: false,
-    notifyMessage: '',
-    notifyType: '',
+    notifyMessage: "",
+    notifyType: "",
     loading: false,
     progress: {
       target: "",
@@ -15,7 +15,11 @@ export const useUIStore = defineStore('ui', {
     hasMessage: (state) => state.notifyMessage.length > 0,
   },
   actions: {
-    showNotification(message: string, type: 'success' | 'error' | 'info' = 'info', duration = 3000) {
+    showNotification(
+      message: string,
+      type: "success" | "error" | "info" = "info",
+      duration = 3000,
+    ) {
       this.notifyMessage = message;
       this.notifyType = type;
       this.isNotifyVisible = true;
@@ -28,7 +32,7 @@ export const useUIStore = defineStore('ui', {
     },
     hideNotification() {
       this.isNotifyVisible = false;
-      this.notifyMessage = '';
+      this.notifyMessage = "";
     },
     setLoading(isLoading: boolean) {
       this.loading = isLoading;
@@ -42,5 +46,5 @@ export const useUIStore = defineStore('ui', {
       this.progress.loaded = progress;
       this.progress.target = target;
     },
-  }
-})
+  },
+});

@@ -86,5 +86,4 @@ export const ExtensionRules: chrome.declarativeNetRequest.Rule[] = [
       resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
     },
   },
-  
 ];

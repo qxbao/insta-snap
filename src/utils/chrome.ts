@@ -16,11 +16,7 @@ const sendMessageToActiveTab = async (
 ) => {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   if (responseCallback) {
-    chrome.tabs.sendMessage(
-      tabs[0].id!,
-      msg,
-      responseCallback,
-    )
+    chrome.tabs.sendMessage(tabs[0].id!, msg, responseCallback);
   } else {
     chrome.tabs.sendMessage(tabs[0].id!, msg);
   }
@@ -51,19 +47,15 @@ const sendMessageWithRetry = async <T = unknown>(
 
       const response = await Promise.race([
         new Promise<ExtensionMessageResponse<T>>((resolve, reject) => {
-          chrome.tabs.sendMessage(
-            tabs[0].id!,
-            msg,
-            (response: ExtensionMessageResponse<T>) => {
-              if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError);
-              } else if (!response) {
-                reject(new Error("No response received"));
-              } else {
-                resolve(response);
-              }
-            },
-          );
+          chrome.tabs.sendMessage(tabs[0].id!, msg, (response: ExtensionMessageResponse<T>) => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+            } else if (!response) {
+              reject(new Error("No response received"));
+            } else {
+              resolve(response);
+            }
+          });
         }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Request timeout")), timeout),
@@ -74,17 +66,14 @@ const sendMessageWithRetry = async <T = unknown>(
       return response;
     } catch (error) {
       const isLastAttempt = attempt === maxRetries - 1;
-      
+
       if (isLastAttempt) {
         logger.error(`Failed after ${maxRetries} attempts:`, error);
         throw error;
       }
-
+      // eslint-disable-next-line no-magic-numbers
       const delay = retryDelay * Math.pow(2, attempt);
-      logger.debug(
-        `Attempt ${attempt + 1} failed, retrying in ${delay}ms...`,
-        error,
-      );
+      logger.debug(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`, error);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

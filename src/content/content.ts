@@ -90,7 +90,7 @@ const observer = new MutationObserver(async () => {
     if (!igpattern.test(location.href)) {
       return;
     }
-    
+
     const username = window.location.pathname.split("/").filter(Boolean)[0];
     await saveUserInfo(username, logger);
   }

@@ -20,7 +20,7 @@ class Database extends Dexie {
       crons: "uid, lastRun",
       internalConfig: "key",
     });
-
+    // eslint-disable-next-line no-magic-numbers
     this.version(2)
       .stores({
         snapshots: "++id, belongToId, [belongToId+timestamp], [belongToId+isCheckpoint+timestamp]",
@@ -33,7 +33,7 @@ class Database extends Dexie {
             snap.isCheckpoint = snap.isCheckpoint ? 1 : 0;
           });
       });
-
+    // eslint-disable-next-line no-magic-numbers
     this.version(3).stores({
       internalConfig: "key",
     });

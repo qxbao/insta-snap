@@ -13,7 +13,7 @@ interface ModalState {
   actionData: null | any;
 }
 
-export const useModalStore = defineStore('modal', {
+export const useModalStore = defineStore("modal", {
   state: (): ModalState => ({
     isOpen: false,
     isLoading: false,
@@ -23,8 +23,14 @@ export const useModalStore = defineStore('modal', {
     actionData: null,
   }),
   actions: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    openModal(content: Component, props: Record<string, any> = {}, actionId: string | null = null, actionData: any = null) {
+    openModal(
+      content: Component,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      props: Record<string, any> = {},
+      actionId: string | null = null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      actionData: any = null,
+    ) {
       this.content = markRaw(content);
       this.props = props;
       this.isOpen = true;
@@ -46,5 +52,5 @@ export const useModalStore = defineStore('modal', {
     submitAction(data: any) {
       this.actionData = { ...(this.actionData ?? {}), ...data };
     },
-  }
+  },
 });
