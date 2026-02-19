@@ -6,6 +6,7 @@ import { EnglishLocale } from "../../i18n/locales/en"
 import Popup from "../../popup/Popup.vue"
 import { useAppStore } from "../../stores/app.store"
 import { createMockStorage } from "../utils/test-helpers"
+import { browser } from "../../utils/polyfill"
 
 vi.mock("../../utils/logger", () => ({
   createLogger: () => ({

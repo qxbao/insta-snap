@@ -1,6 +1,6 @@
 import Browser from "webextension-polyfill"
 
-const EXTENSION_ORIGIN = browser.runtime.getURL("").slice(0, -1)
+const EXTENSION_ORIGIN = Browser.runtime.getURL("").slice(0, -1)
 
 export const ExtensionRules: Browser.DeclarativeNetRequest.Rule[] = [
   {

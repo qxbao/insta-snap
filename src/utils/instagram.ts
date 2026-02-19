@@ -4,6 +4,7 @@ import { Minute, Second } from "../constants/time"
 import { useUIStore } from "../stores/ui.store"
 import { Edge, InstagramAPIHeader, InstagramRequestType, UserNode } from "../types/instapi"
 import { createLogger, Logger } from "./logger"
+import { browser } from "./polyfill"
 
 const IGGraphQLBase = "https://www.instagram.com/graphql/query"
 const MAX_USERS_PER_REQUEST = 50

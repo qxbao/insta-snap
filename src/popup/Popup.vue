@@ -10,6 +10,7 @@ import { useAppStore } from "../stores/app.store"
 import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/browser"
 import { createLogger } from "../utils/logger"
 import { useI18n } from "vue-i18n"
+import { browser } from "../utils/polyfill"
 
 const logger = createLogger("Popup")
 const igUsername = ref<string | null>(null)

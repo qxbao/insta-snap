@@ -1,4 +1,3 @@
-import "../utils/polyfill"
 import { createApp } from "vue"
 import Popup from "./Popup.vue"
 import "../assets/style.css"
@@ -6,6 +5,7 @@ import { createPinia } from "pinia"
 import { ActionType, ExtensionMessage } from "../constants/actions"
 import { useAppStore } from "../stores/app.store"
 import { i18n } from "../i18n"
+import { browser } from "../utils/polyfill"
 
 const app = createApp(Popup)
 const pinia = createPinia()
