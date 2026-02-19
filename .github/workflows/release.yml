@@ -61,5 +61,8 @@ jobs:
             
             Step 2:  
             - Import the downloaded ZIP file as an unpacked extension in your browser's extension management page.
+
+             ### 🛠️ Changelog:
+             - Manually update later...
           draft: false
           prerelease: false

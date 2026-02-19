@@ -10,6 +10,7 @@ import { findUserId } from "../utils/instagram"
 import { createLogger } from "../utils/logger"
 import { injectSnapshotButton, setupVueApp } from "./injector"
 import { browser } from "../utils/polyfill"
+import { IgnorePages } from "../constants/ignore-page"
 
 const logger = createLogger("ContentScript")
 const locks = {} as Record<string, number>
@@ -40,20 +41,18 @@ function registerMessages(
       }
       if (uiStore) {
         retrieveUserFollowersAndFollowing(username, logger, uiStore)
-      }
-      else {
+      } else {
         logger.error("UI Store is not initialized.")
       }
       return true
     case ActionType.GET_USER_INFO:
-      (async function () {
+      ;(async function () {
         if (userdataCache && userdataCache.username === (message as ExtensionMessage).payload) {
           sendResponse({
             status: Status.Done,
             payload: userdataCache.userId,
           } satisfies ExtensionMessageResponse)
-        }
-        else {
+        } else {
           const userId = await findUserId(username)
           if (!userId) {
             logger.error("Failed to find user ID for username:", username)
@@ -75,8 +74,8 @@ function registerMessages(
 
 browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session" && changes.locks) {
-    const newLocks
-      = changes["locks"].newValue == undefined
+    const newLocks =
+      changes["locks"].newValue == undefined
         ? {}
         : (changes["locks"].newValue as Record<string, number>)
     Object.assign(locks, newLocks)
@@ -84,28 +83,35 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   }
 })
 
-let lastUrl = location.href
+let lastURL = location.href
 
 const observer = new MutationObserver(async () => {
-  if (location.href !== lastUrl) {
-    lastUrl = location.href
+  // TODO: Ignore list challenge, story, reels, etc pages
+  const newURL = location.href
+  if (newURL !== lastURL) {
+    lastURL = newURL
     const igpattern = /^https?:\/\/(www\.)?instagram\.com\/([^\/]+)\/?$/
-    if (!igpattern.test(location.href)) {
+    if (!igpattern.test(newURL)) {
       return
     }
-
-    const username = window.location.pathname.split("/").filter(Boolean)[0]
+    const username = newURL.split("/").filter(Boolean)[1]
+    if (username && IgnorePages.includes(username)) {
+      return
+    }
     await saveUserInfo(username, logger)
+    injectSnapshotButton(logger, uiStore!)
   }
 })
 
 async function init() {
   const username = window.location.pathname.split("/").filter(Boolean)[0]
-  await saveUserInfo(username, logger)
+  if (username && !IgnorePages.includes(username)) {
+    await saveUserInfo(username, logger)
+    injectSnapshotButton(logger, uiStore!)
+  }
   observer.observe(document, { subtree: true, childList: true, characterData: true })
   browser.runtime.onMessage.addListener(registerMessages)
   sendAppDataToBg()
-  injectSnapshotButton(logger, uiStore!)
 }
 
 init()

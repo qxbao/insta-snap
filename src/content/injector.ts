@@ -54,7 +54,7 @@ export function injectSnapshotButton(logger?: Logger, store?: ReturnType<typeof 
   const button = document.createElement("button")
   button.textContent = "Take Snapshot"
   button.style.cssText
-    = "margin-left: 16px; padding: 8px 12px; background-color: #c6213f; color: white; border: none; border-radius: 10px; cursor: pointer;"
+    = "margin-left: 16px; padding: 5px 10px; background-color: #c6213f; color: white; border: none; border-radius: 10px; cursor: pointer;"
   button.addEventListener("click", () => {
     retrieveUserFollowersAndFollowing(username, logger, store)
   })
