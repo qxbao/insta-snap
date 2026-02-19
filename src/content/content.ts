@@ -86,7 +86,6 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 let lastURL = location.href
 
 const observer = new MutationObserver(async () => {
-  // TODO: Ignore list challenge, story, reels, etc pages
   const newURL = location.href
   if (newURL !== lastURL) {
     lastURL = newURL
@@ -94,7 +93,7 @@ const observer = new MutationObserver(async () => {
     if (!igpattern.test(newURL)) {
       return
     }
-    const username = newURL.split("/").filter(Boolean)[1]
+    const username = window.location.pathname.split("/").filter(Boolean)[0]
     if (username && IgnorePages.includes(username)) {
       return
     }

@@ -5,7 +5,7 @@ import ContentMasterLayer from "./ContentMasterLayer.vue"
 import { createPinia } from "pinia"
 import { useUIStore } from "../stores/ui.store"
 import { i18n } from "../i18n"
-import { retrieveUserFollowersAndFollowing } from "../utils/instagram"
+import { retrieveUserFollowersAndFollowing, saveUserInfo } from "../utils/instagram"
 
 const logger = createLogger("Injector")
 
@@ -55,8 +55,9 @@ export function injectSnapshotButton(logger?: Logger, store?: ReturnType<typeof 
   button.textContent = "Take Snapshot"
   button.style.cssText
     = "margin-left: 16px; padding: 5px 10px; background-color: #c6213f; color: white; border: none; border-radius: 10px; cursor: pointer;"
-  button.addEventListener("click", () => {
-    retrieveUserFollowersAndFollowing(username, logger, store)
+  button.addEventListener("click", async () => {
+    await saveUserInfo(username, logger)
+    await retrieveUserFollowersAndFollowing(username, logger, store)
   })
   usernameParentDiv?.appendChild(button)
 }

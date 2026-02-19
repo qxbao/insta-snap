@@ -16,13 +16,7 @@ export class Logger {
   }
 
   info(message: string, ...args: any[]) {
-    if (this.isDev) {
-      console.log(
-        `%c${this.format("info", message)}`,
-        "color: #3b82f6; font-weight: bold",
-        ...args,
-      )
-    }
+    console.log(`%c${this.format("info", message)}`, "color: #3b82f6; font-weight: bold", ...args)
   }
 
   error(message: string, ...args: any[]) {
