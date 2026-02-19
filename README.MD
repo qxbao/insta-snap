@@ -7,13 +7,12 @@
 
 ---
 
-<h1 align="center">
-InstaSnap
-</h1>
+# InstaSnap
 
-|Browser|Install from|Status|
-| :-------: | ---------------- | ------ |
-|Chrome|[Chrome Web Store](https://chromewebstore.google.com/detail/instasnap-instagram-profi/pmjngceoacbjggocebdnafoohdcljmld)| Available |
+| Browser | Install from                                                                                                            | Status            |
+| :-----: | ----------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Chrome  | [Chrome Web Store](https://chromewebstore.google.com/detail/instasnap-instagram-profi/pmjngceoacbjggocebdnafoohdcljmld) | 🟢 Available      |
+| Firefox | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/instasnap/)                                            | 🟡 Pending review |
 
 InstaSnap is a browser extension that allows users to keep track on their social media followers and following lists with just a click (or even none, with auto-snapshot feature).
 
@@ -30,7 +29,7 @@ This project is open-sourced. Any contributions are welcome!
 
 ## Installation
 
-Currently, InstaSnap supports Chromium-based browsers (Google Chrome, Microsoft Edge, Brave, etc.) only and available on Chrome Web Store. Alternatively, you can install it by downloading the latest release or building from source to catch the latest features and updates.
+Currently, InstaSnap supports both Gecko-based and Chromium-based browsers and is available on Chrome Web Store. Alternatively, you can install it by downloading the latest release or building from source to catch the latest features and updates.
 
 ### Github releases
 
@@ -65,12 +64,28 @@ Then, follow the steps below:
    ```
 
 4. Build the extension:
+   - For Chromium-based browsers:
 
    ```bash
     pnpm run build
    ```
 
+   - For Firefox:
+
+   ```bash
+    pnpm run build:firefox
+   ```
+
 5. Load the `dist` folder as an unpacked extension in your browser.
+- Chrome:
+   + Go to chrome://extensions
+   + Turn on "Developer mode" (if not already enabled)
+   + Load unpacked
+
+- Firefox:
+   + Go to about:debugging#/runtime/this-firefox
+   + Click "Load Temporary Add-on"
+   + Select the `manifest.json` file in the `dist` folder
 
 ## Release history
 
