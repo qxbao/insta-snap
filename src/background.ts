@@ -1,9 +1,9 @@
+import "./utils/polyfill"
 import { ActionType } from "./constants/actions"
 import { ExtensionRules } from "./constants/rules"
 import { createLogger } from "./utils/logger"
 import { runMigrationWithCleanup } from "./utils/migrate"
 import { BackgroundService } from "./utils/bg-service"
-import "./utils/polyfill"
 
 const logger = createLogger("Background")
 const service = new BackgroundService()

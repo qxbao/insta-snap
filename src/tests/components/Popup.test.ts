@@ -364,7 +364,7 @@ describe("Popup.vue", () => {
   })
 
   it("handles errors when fetching user info", async () => {
-    const { sendMessageWithRetry } = await import("../../utils/chrome")
+    const { sendMessageWithRetry } = await import("../../utils/browser")
     vi.mocked(sendMessageWithRetry).mockRejectedValue(new Error("Network error"))
 
     const wrapper = mount(Popup, {
@@ -408,7 +408,7 @@ describe("Popup.vue", () => {
     const store = useAppStore()
 
     // Ensure the mock returns the expected userId
-    const { sendMessageWithRetry } = await import("../../utils/chrome")
+    const { sendMessageWithRetry } = await import("../../utils/browser")
     vi.mocked(sendMessageWithRetry).mockResolvedValue({
       payload: userId,
     } as any)
@@ -442,7 +442,7 @@ describe("Popup.vue", () => {
     const unlockUserSpy = vi.spyOn(store, "unlockUser").mockResolvedValue()
 
     // Ensure the mock returns the expected userId
-    const { sendMessageWithRetry } = await import("../../utils/chrome")
+    const { sendMessageWithRetry } = await import("../../utils/browser")
     vi.mocked(sendMessageWithRetry).mockResolvedValue({
       payload: userId,
     } as any)
@@ -475,7 +475,7 @@ describe("Popup.vue", () => {
   })
 
   it("does not call unlockUser when userId is null", async () => {
-    const { sendMessageWithRetry } = await import("../../utils/chrome")
+    const { sendMessageWithRetry } = await import("../../utils/browser")
     vi.mocked(sendMessageWithRetry).mockRejectedValue(new Error("No user found"))
 
     const store = useAppStore()
@@ -509,7 +509,7 @@ describe("Popup.vue", () => {
     const store = useAppStore()
 
     // Ensure the mock returns the expected userId
-    const { sendMessageWithRetry } = await import("../../utils/chrome")
+    const { sendMessageWithRetry } = await import("../../utils/browser")
     vi.mocked(sendMessageWithRetry).mockResolvedValue({
       payload: userId,
     } as any)

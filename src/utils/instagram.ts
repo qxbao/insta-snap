@@ -56,8 +56,7 @@ async function findUserId(username: string): Promise<string | null> {
     const text = await response.text()
     const userId = text?.match(/"profile_id":"(\d+)"/)
     return userId ? userId[1] : ""
-  }
-  catch (error) {
+  } catch (error) {
     logger.error("Failed to find user ID:", error)
     return null
   }
@@ -104,8 +103,8 @@ function IGFetch(
   wwwClaim: string,
   init?: RequestInit,
 ): Promise<Response> {
-  const url
-    = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
+  const url =
+    typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
 
   return fetchWithRetry(
     url,
@@ -160,7 +159,7 @@ async function fetchWithRetry(
 
         if (attempt < maxRetries - 1) {
           logger.info(`Rate limited, retrying after ${delay}ms`)
-          await new Promise(resolve => setTimeout(resolve, delay))
+          await new Promise((resolve) => setTimeout(resolve, delay))
           continue
         }
       }
@@ -170,15 +169,14 @@ async function fetchWithRetry(
       }
 
       return response
-    }
-    catch (error) {
+    } catch (error) {
       if (attempt === maxRetries - 1) throw error
 
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error("Request timeout")
       }
       // eslint-disable-next-line no-magic-numbers
-      await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)))
+      await new Promise((resolve) => setTimeout(resolve, retryDelay * Math.pow(2, attempt)))
     }
   }
 
@@ -212,8 +210,7 @@ async function fetchUsers(
 
     try {
       response = await IGFetch(apiEndpoint, appId, csrfToken, wwwClaim)
-    }
-    catch (error) {
+    } catch (error) {
       logger?.error(`Failed to fetch ${rqtype}:`, error)
       store?.setLoading(false)
       return false
@@ -330,15 +327,7 @@ async function retrieveUserFollowersAndFollowing(
   let followers: UserNode[] = []
   if (fetchBoth || options?.followersOnly) {
     logger?.info("Fetching followers...")
-    const result = await fetchUsers(
-      userId,
-      "followers",
-      appId,
-      csrfToken,
-      wwwClaim,
-      logger,
-      store!,
-    )
+    const result = await fetchUsers(userId, "followers", appId, csrfToken, wwwClaim, logger, store!)
     if (result === false) {
       return false
     }
@@ -348,15 +337,7 @@ async function retrieveUserFollowersAndFollowing(
   let following: UserNode[] = []
   if (fetchBoth || options?.followingOnly) {
     logger?.info("Fetching following...")
-    const result = await fetchUsers(
-      userId,
-      "following",
-      appId,
-      csrfToken,
-      wwwClaim,
-      logger,
-      store!,
-    )
+    const result = await fetchUsers(userId, "following", appId, csrfToken, wwwClaim, logger, store!)
     if (result === false) {
       return false
     }
@@ -369,8 +350,8 @@ async function retrieveUserFollowersAndFollowing(
       payload: [...followers, ...following],
     } satisfies ExtensionMessage)
     const timestamp = Date.now()
-    const followerIds = followers.map(u => u.id)
-    const followingIds = following.map(u => u.id)
+    const followerIds = followers.map((u) => u.id)
+    const followingIds = following.map((u) => u.id)
 
     await browser.runtime.sendMessage({
       type: ActionType.SAVE_SNAPSHOT,
@@ -383,8 +364,7 @@ async function retrieveUserFollowersAndFollowing(
     } satisfies ExtensionMessage)
 
     logger?.info("Successfully saved snapshot")
-  }
-  catch (error) {
+  } catch (error) {
     logger?.error("Failed to save snapshot:", error)
     return false
   }
@@ -416,9 +396,9 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
   logger.info("Saving user info with UID =", userId)
 
   profileObserver = new MutationObserver((_, observer) => {
-    const imgElem: HTMLImageElement | null
-      = document.querySelector(`header img[alt*='${username}']`)
-        || document.querySelector("header img[crossorigin='anonymous'][draggable='false']")
+    const imgElem: HTMLImageElement | null =
+      document.querySelector("header img[crossorigin='anonymous'][draggable='false']") ||
+      document.querySelector("header img")
     const usernameElem = document.querySelector("header h2")
     if (usernameElem?.textContent?.trim() !== username) {
       logger.warn("Username element found but text does not match. Retrying...")
@@ -467,7 +447,7 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
       profileObserver = null
       logger.warn("Observer timeout - metadata collection stopped.")
     }
-  // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers
   }, 10000)
 }
 

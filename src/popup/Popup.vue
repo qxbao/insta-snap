@@ -7,7 +7,7 @@ import Copyright from "~icons/mdi/copyright"
 
 import { ActionType, ExtensionMessage } from "../constants/actions"
 import { useAppStore } from "../stores/app.store"
-import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/chrome"
+import { sendMessageToActiveTab, sendMessageWithRetry } from "../utils/browser"
 import { createLogger } from "../utils/logger"
 import { useI18n } from "vue-i18n"
 

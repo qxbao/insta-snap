@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:firefox": "vite build && node firefox-patch.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest",
