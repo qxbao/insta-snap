@@ -17,7 +17,7 @@ for (const key in manifest["web_accessible_resources"]) {
 manifest.browser_specific_settings = {
   gecko: {
     id: "instasnap@qxbao.dev",
-    strict_min_version: "109.0",
+    strict_min_version: "142.0",
     data_collection_permissions: {
       required: ["none"],
     },
