@@ -38,7 +38,7 @@ jobs:
 
       - name: Patch & Build Firefox Version
         run: |
-          node patch-firefox.js 
+          node firefox-patch.js 
           cd dist
           zip -r ../instasnap-firefox-${{ github.ref_name }}.zip .
 
