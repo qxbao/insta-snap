@@ -1,3 +1,4 @@
+import "../utils/polyfill"
 import { createApp } from "vue"
 import Dashboard from "./Dashboard.vue"
 import "../assets/style.css"
@@ -14,7 +15,7 @@ app.use(pinia)
 app.use(i18n)
 app.mount("#app")
 
-chrome.storage.onChanged.addListener(async (changes, areaName) => {
+browser.storage.onChanged.addListener(async (changes, areaName) => {
   if (areaName === "session") {
     for (const key in changes) {
       if (key == "lastsync") {

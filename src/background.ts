@@ -1,3 +1,4 @@
+import "./utils/polyfill"
 import { ActionType } from "./constants/actions"
 import { ExtensionRules } from "./constants/rules"
 import { createLogger } from "./utils/logger"
@@ -7,8 +8,8 @@ import { BackgroundService } from "./utils/bg-service"
 const logger = createLogger("Background")
 const service = new BackgroundService()
 
-chrome.runtime.onInstalled.addListener(async (details) => {
-  chrome.declarativeNetRequest.updateDynamicRules({
+browser.runtime.onInstalled.addListener(async (details) => {
+  browser.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: ExtensionRules.map(rule => rule.id),
     addRules: ExtensionRules,
   })
@@ -30,14 +31,14 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   service.initializeAlarms()
 })
 
-chrome.runtime.onStartup.addListener(async () => {
+browser.runtime.onStartup.addListener(async () => {
   await service.checkSecurityConfig()
 })
 
-chrome.storage.onChanged.addListener((changes, areaName) => {
+browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session" && changes["locks"]) {
     const newLocks = changes["locks"].newValue
-    chrome.runtime
+    browser.runtime
       .sendMessage({
         type: ActionType.SYNC_LOCKS,
         payload: newLocks ?? {},
@@ -46,9 +47,9 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 })
 
-chrome.runtime.onMessage.addListener(service.registerMessageListener.bind(service))
+browser.runtime.onMessage.addListener(service.registerMessageListener.bind(service))
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+browser.alarms.onAlarm.addListener((alarm) => {
   service.handleAlarm(alarm).catch((error) => {
     logger.error("Alarm handler failed:", error)
   })

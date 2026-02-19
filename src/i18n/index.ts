@@ -4,7 +4,7 @@ import { VietnameseLocale } from "./locales/vi"
 
 // TODO: Change locale opt
 const getInitialLocale = (): string => {
-  const browserLang = chrome.i18n.getUILanguage().split("-")[0]
+  const browserLang = browser.i18n.getUILanguage().split("-")[0]
 
   const supportedLangs = ["en", "vi"]
   return supportedLangs.includes(browserLang) ? browserLang : "en"

@@ -41,7 +41,7 @@ export const useAppStore = defineStore("app", {
   }),
   actions: {
     async loadLocks() {
-      const res = await chrome.storage.session.get("locks")
+      const res = await browser.storage.session.get("locks")
       this.activeLocks = (res.locks as Record<string, number>) || {}
       this.locksLoaded = true
     },
@@ -58,7 +58,7 @@ export const useAppStore = defineStore("app", {
     },
 
     async tryLockUser(userId: string): Promise<boolean> {
-      const res = await chrome.storage.session.get("locks")
+      const res = await browser.storage.session.get("locks")
       const locks = { ...(res.locks || {}) } as Record<string, number>
       const now = Date.now()
 
@@ -71,7 +71,7 @@ export const useAppStore = defineStore("app", {
       }
 
       locks[userId] = now
-      await chrome.storage.session.set({ locks })
+      await browser.storage.session.set({ locks })
 
       this.activeLocks = locks
       this.locksLoaded = true
@@ -79,12 +79,12 @@ export const useAppStore = defineStore("app", {
     },
 
     async unlockUser(userId: string): Promise<void> {
-      const res = await chrome.storage.session.get("locks")
+      const res = await browser.storage.session.get("locks")
       const locks = { ...(res.locks || {}) } as Record<string, number>
 
       if (userId in locks) {
         delete locks[userId]
-        await chrome.storage.session.set({ locks })
+        await browser.storage.session.set({ locks })
         this.activeLocks = locks
       }
     },

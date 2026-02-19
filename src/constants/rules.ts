@@ -1,40 +1,41 @@
-const EXTENSION_ORIGIN = chrome.runtime.getURL("").slice(0, -1)
+import Browser from "webextension-polyfill"
 
-export const ExtensionRules: chrome.declarativeNetRequest.Rule[] = [
+const EXTENSION_ORIGIN = browser.runtime.getURL("").slice(0, -1)
+
+export const ExtensionRules: Browser.DeclarativeNetRequest.Rule[] = [
   {
     id: 1,
     priority: 1,
     action: {
-      type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+      type: "modifyHeaders",
       responseHeaders: [
         {
           header: "access-control-allow-origin",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: EXTENSION_ORIGIN,
         },
         {
           header: "cross-origin-resource-policy",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "cross-origin",
         },
         {
           header: "access-control-allow-methods",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "GET, POST, OPTIONS",
         },
         {
           header: "access-control-allow-headers",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "Content-Type, Authorization",
         },
       ],
     },
     condition: {
-      initiatorDomains: [chrome.runtime.id],
       urlFilter: "||instagram.com",
       resourceTypes: [
-        chrome.declarativeNetRequest.ResourceType.IMAGE,
-        chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
+        "image",
+        "xmlhttprequest",
       ],
     },
   },
@@ -42,48 +43,46 @@ export const ExtensionRules: chrome.declarativeNetRequest.Rule[] = [
     id: 2,
     priority: 2,
     action: {
-      type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+      type: "modifyHeaders",
       responseHeaders: [
         {
           header: "cross-origin-resource-policy",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "cross-origin",
         },
         {
           header: "access-control-allow-origin",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "*",
         },
       ],
     },
     condition: {
-      initiatorDomains: [chrome.runtime.id],
       urlFilter: "||cdninstagram.com",
-      resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
+      resourceTypes: ["image"],
     },
   },
   {
     id: 3,
     priority: 2,
     action: {
-      type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+      type: "modifyHeaders",
       responseHeaders: [
         {
           header: "cross-origin-resource-policy",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "cross-origin",
         },
         {
           header: "access-control-allow-origin",
-          operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+          operation: "set",
           value: "*",
         },
       ],
     },
     condition: {
-      initiatorDomains: [chrome.runtime.id],
       urlFilter: "||fbcdn.net",
-      resourceTypes: [chrome.declarativeNetRequest.ResourceType.IMAGE],
+      resourceTypes: ["image"],
     },
   },
 ]

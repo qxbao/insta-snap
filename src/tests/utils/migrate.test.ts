@@ -1,18 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { database } from "../../utils/database";
+import { mockBrowser } from "../setup";
 
-// Mock chrome API
-const mockChromeStorage = {
-	local: {
-		get: vi.fn(),
-		getKeys: vi.fn(),
-		remove: vi.fn(),
-	},
-};
-
-(global as any).chrome = {
-	storage: mockChromeStorage,
-};
+(global as any).browser = mockBrowser
 
 describe("Migration", () => {
 	beforeEach(() => {
@@ -27,8 +17,7 @@ describe("Migration", () => {
 		it("should detect when migration is needed", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			// Mock chrome.storage has old data
-			mockChromeStorage.local.getKeys.mockResolvedValue([
+			mockBrowser.storage.local.getKeys.mockResolvedValue([
 				"meta_123",
 				"data_123_1234567890",
 				"users_metadata",
@@ -45,8 +34,8 @@ describe("Migration", () => {
 		it("should detect when migration is not needed - no old data", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			// Mock chrome.storage has no old data
-			mockChromeStorage.local.getKeys.mockResolvedValue(["appId", "csrfToken"]);
+			// Mock browser.storage has no old data
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["appId", "csrfToken"]);
 
 			const result = await needsMigration();
 			expect(result).toBe(false);
@@ -55,8 +44,8 @@ describe("Migration", () => {
 		it("should not migrate if IndexedDB already has data", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			// Mock chrome.storage has old data
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			// Mock browser.storage has old data
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			// Mock IndexedDB already has data
 			vi.spyOn(database.userMetadata, "count").mockResolvedValue(10);
@@ -69,7 +58,7 @@ describe("Migration", () => {
 		it("should return false on error", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockRejectedValue(
+			mockBrowser.storage.local.getKeys.mockRejectedValue(
 				new Error("Storage error"),
 			);
 
@@ -80,7 +69,7 @@ describe("Migration", () => {
 		it("should detect meta_ prefix in keys", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_456"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_456"]);
 			vi.spyOn(database.userMetadata, "count").mockResolvedValue(0);
 			vi.spyOn(database.snapshots, "count").mockResolvedValue(0);
 
@@ -91,7 +80,7 @@ describe("Migration", () => {
 		it("should detect data_ prefix in keys", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([
+			mockBrowser.storage.local.getKeys.mockResolvedValue([
 				"data_123_1234567890",
 			]);
 			vi.spyOn(database.userMetadata, "count").mockResolvedValue(0);
@@ -104,7 +93,7 @@ describe("Migration", () => {
 		it("should detect crons key", async () => {
 			const { needsMigration } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["crons"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["crons"]);
 			vi.spyOn(database.userMetadata, "count").mockResolvedValue(0);
 			vi.spyOn(database.snapshots, "count").mockResolvedValue(0);
 
@@ -117,7 +106,7 @@ describe("Migration", () => {
 		it("should migrate user metadata correctly", async () => {
 			const { migrateFromChromeStorage } = await import("../../utils/migrate");
 
-			// Mock user metadata in chrome.storage
+			// Mock user metadata in browser.storage
 			const mockUserMap = {
 				"123": {
 					username: "testuser",
@@ -127,7 +116,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({ users_metadata: mockUserMap });
 				}
@@ -137,7 +126,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["users_metadata"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["users_metadata"]);
 
 			const bulkPutSpy = vi
 				.spyOn(database.userMetadata, "bulkPut")
@@ -160,7 +149,7 @@ describe("Migration", () => {
 		it("should handle empty user metadata", async () => {
 			const { migrateFromChromeStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -170,7 +159,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const stats = await migrateFromChromeStorage();
 
@@ -183,7 +172,7 @@ describe("Migration", () => {
 		it("should handle user metadata error gracefully", async () => {
 			const { migrateFromChromeStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.reject(new Error("Storage error"));
 				}
@@ -193,7 +182,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const stats = await migrateFromChromeStorage();
 
@@ -220,7 +209,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({ users_metadata: mockUserMap });
 				}
@@ -230,7 +219,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["users_metadata"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["users_metadata"]);
 
 			const bulkPutSpy = vi
 				.spyOn(database.userMetadata, "bulkPut")
@@ -280,7 +269,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -299,7 +288,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			const addSpy = vi
 				.spyOn(database.snapshots, "add")
@@ -321,7 +310,7 @@ describe("Migration", () => {
 		it("should skip missing meta", async () => {
 			const { migrateFromChromeStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -334,7 +323,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			const stats = await migrateFromChromeStorage();
 
@@ -348,7 +337,7 @@ describe("Migration", () => {
 				logTimeline: [1234567890],
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -364,7 +353,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			const stats = await migrateFromChromeStorage();
 
@@ -384,7 +373,7 @@ describe("Migration", () => {
 				following: { add: [], rem: [] },
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -402,7 +391,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			const addSpy = vi
 				.spyOn(database.snapshots, "add")
@@ -428,7 +417,7 @@ describe("Migration", () => {
 				following: { add: [], rem: [] },
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -446,7 +435,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			const addSpy = vi
 				.spyOn(database.snapshots, "add")
@@ -471,7 +460,7 @@ describe("Migration", () => {
 				following: { add: [], rem: [] },
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -489,7 +478,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["meta_123"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["meta_123"]);
 
 			const addSpy = vi
 				.spyOn(database.snapshots, "add")
@@ -517,7 +506,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -527,7 +516,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const putSpy = vi
 				.spyOn(database.crons, "put")
@@ -554,7 +543,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -564,7 +553,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const putSpy = vi
 				.spyOn(database.crons, "put")
@@ -591,7 +580,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -601,7 +590,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const putSpy = vi
 				.spyOn(database.crons, "put")
@@ -620,7 +609,7 @@ describe("Migration", () => {
 		it("should handle empty crons", async () => {
 			const { migrateFromChromeStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -630,7 +619,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const stats = await migrateFromChromeStorage();
 
@@ -647,7 +636,7 @@ describe("Migration", () => {
 				},
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -657,7 +646,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			vi.spyOn(database.crons, "put").mockRejectedValue(
 				new Error("Database error"),
@@ -678,7 +667,7 @@ describe("Migration", () => {
 				"456": { interval: 60, lastRun: 1234567891 },
 			};
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({});
 				}
@@ -688,7 +677,7 @@ describe("Migration", () => {
 				return Promise.resolve({});
 			});
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const putSpy = vi
 				.spyOn(database.crons, "put")
@@ -705,7 +694,7 @@ describe("Migration", () => {
 		it("should remove old storage keys", async () => {
 			const { cleanupOldStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([
+			mockBrowser.storage.local.getKeys.mockResolvedValue([
 				"meta_123",
 				"data_123_1234567890",
 				"users_metadata",
@@ -716,7 +705,7 @@ describe("Migration", () => {
 
 			await cleanupOldStorage();
 
-			expect(mockChromeStorage.local.remove).toHaveBeenCalledWith([
+			expect(mockBrowser.storage.local.remove).toHaveBeenCalledWith([
 				"meta_123",
 				"data_123_1234567890",
 				"users_metadata",
@@ -727,20 +716,20 @@ describe("Migration", () => {
 		it("should handle no keys to remove", async () => {
 			const { cleanupOldStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([
+			mockBrowser.storage.local.getKeys.mockResolvedValue([
 				"appId",
 				"csrfToken",
 			]);
 
 			await cleanupOldStorage();
 
-			expect(mockChromeStorage.local.remove).not.toHaveBeenCalled();
+			expect(mockBrowser.storage.local.remove).not.toHaveBeenCalled();
 		});
 
 		it("should throw error on cleanup failure", async () => {
 			const { cleanupOldStorage } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockRejectedValue(
+			mockBrowser.storage.local.getKeys.mockRejectedValue(
 				new Error("Storage error"),
 			);
 
@@ -752,11 +741,11 @@ describe("Migration", () => {
 		it("should run full migration and cleanup on success", async () => {
 			const { runMigrationWithCleanup } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["users_metadata"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["users_metadata"]);
 			vi.spyOn(database.userMetadata, "count").mockResolvedValue(0);
 			vi.spyOn(database.snapshots, "count").mockResolvedValue(0);
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.resolve({
 						users_metadata: {
@@ -783,17 +772,17 @@ describe("Migration", () => {
 
 			expect(stats.usersMetadata).toBe(1);
 			expect(stats.errors).toEqual([]);
-			expect(mockChromeStorage.local.remove).toHaveBeenCalled();
+			expect(mockBrowser.storage.local.remove).toHaveBeenCalled();
 		});
 
 		it("should not cleanup on migration errors", async () => {
 			const { runMigrationWithCleanup } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue(["users_metadata"]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue(["users_metadata"]);
 			vi.spyOn(database.userMetadata, "count").mockResolvedValue(0);
 			vi.spyOn(database.snapshots, "count").mockResolvedValue(0);
 
-			mockChromeStorage.local.get.mockImplementation((keys) => {
+			mockBrowser.storage.local.get.mockImplementation((keys) => {
 				if (keys === "users_metadata") {
 					return Promise.reject(new Error("Migration error"));
 				}
@@ -806,13 +795,13 @@ describe("Migration", () => {
 			const stats = await runMigrationWithCleanup();
 
 			expect(stats.errors.length).toBeGreaterThan(0);
-			expect(mockChromeStorage.local.remove).not.toHaveBeenCalled();
+			expect(mockBrowser.storage.local.remove).not.toHaveBeenCalled();
 		});
 
 		it("should return empty stats when no migration needed", async () => {
 			const { runMigrationWithCleanup } = await import("../../utils/migrate");
 
-			mockChromeStorage.local.getKeys.mockResolvedValue([]);
+			mockBrowser.storage.local.getKeys.mockResolvedValue([]);
 
 			const stats = await runMigrationWithCleanup();
 
