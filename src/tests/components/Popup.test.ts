@@ -16,7 +16,7 @@ vi.mock("../../utils/logger", () => ({
   }),
 }))
 
-vi.mock("../../utils/chrome", () => ({
+vi.mock("../../utils/browser", () => ({
   sendMessageToActiveTab: vi.fn(),
   sendMessageWithRetry: vi.fn().mockResolvedValue({
     payload: "test-user-id",

@@ -21,27 +21,45 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build project
+      - name: Build Chrome Version
         run: pnpm build
 
-      - name: Zip extension
+      - name: Zip Chrome Extension
         run: |
           cd dist
-          zip -r ../instasnap-${{ github.ref_name }}.zip .
+          zip -r ../instasnap-chrome-${{ github.ref_name }}.zip .
+          cd ..
+
+      - name: Patch & Build Firefox Version
+        run: |
+          node patch-firefox.js 
+          cd dist
+          zip -r ../instasnap-firefox-${{ github.ref_name }}.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: instasnap-${{ github.ref_name }}.zip
+          files: |
+            instasnap-chrome-${{ github.ref_name }}.zip
+            instasnap-firefox-${{ github.ref_name }}.zip
           name: Release ${{ github.ref_name }}
           body: |
-            Auto release for version ${{ github.ref_name }}.
-            Please download the zip file below and extract it to install in Chrome.
+            ## 🚀 InstaSnap ${{ github.ref_name }}
+            
+            Auto-release for version ${{ github.ref_name }}.
+            
+            ### 📦 Installation:
+            Step 1:
+            - **Chrome / Edge / Brave / Arc**: Download `instasnap-chrome-${{ github.ref_name }}.zip`
+            - **Firefox**: Download `instasnap-firefox-${{ github.ref_name }}.zip`
+            
+            Step 2:  
+            - Import the downloaded ZIP file as an unpacked extension in your browser's extension management page.
           draft: false
           prerelease: false
