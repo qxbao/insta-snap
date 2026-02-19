@@ -1,6 +1,7 @@
 import { createLogger } from "./logger"
 import { database } from "./database"
 import { GlobalUserMap, UserSnapshotMeta, SnapshotRecord } from "../types/z_deprecated_storage"
+import { browser } from "./polyfill"
 
 const logger = createLogger("Migration")
 

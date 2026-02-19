@@ -1,6 +1,7 @@
 import { createI18n } from "vue-i18n"
 import { EnglishLocale } from "./locales/en"
 import { VietnameseLocale } from "./locales/vi"
+import { browser } from "../utils/polyfill"
 
 // TODO: Change locale opt
 const getInitialLocale = (): string => {

@@ -2,6 +2,7 @@ import { defineStore } from "pinia"
 import { database } from "../utils/database"
 import { createLogger } from "../utils/logger"
 import { Minute } from "../constants/time"
+import { browser } from "../utils/polyfill"
 
 const logger = createLogger("AppStore")
 

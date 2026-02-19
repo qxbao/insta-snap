@@ -7,6 +7,7 @@ import { getJitter } from "./alarms"
 import { UserNode } from "../types/instapi"
 import { Hour, Second } from "../constants/time"
 import Browser from "webextension-polyfill"
+import { browser } from "./polyfill"
 
 export class BackgroundService {
   private logger = createLogger("BackgroundService")

@@ -1,4 +1,3 @@
-import "../utils/polyfill"
 import Browser from "webextension-polyfill"
 import { ActionType, ExtensionMessage } from "../constants/actions"
 import { ExtensionMessageResponse, Status } from "../constants/status"
@@ -10,6 +9,7 @@ import {
 import { findUserId } from "../utils/instagram"
 import { createLogger } from "../utils/logger"
 import { injectSnapshotButton, setupVueApp } from "./injector"
+import { browser } from "../utils/polyfill"
 
 const logger = createLogger("ContentScript")
 const locks = {} as Record<string, number>

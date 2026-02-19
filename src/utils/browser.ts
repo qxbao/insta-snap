@@ -1,6 +1,7 @@
 import { ExtensionMessage } from "../constants/actions"
 import { ExtensionMessageResponse } from "../constants/status"
 import { createLogger } from "./logger"
+import { browser } from "./polyfill"
 
 const logger = createLogger("ChromeUtils")
 
