@@ -1,4 +1,4 @@
-export type HistoryEntry = {
+type HistoryEntry = {
   timestamp: number
   isCheckpoint: boolean
   addedCount: number
