@@ -8,7 +8,7 @@ import { createLogger } from "../../utils/logger"
 import { useTimeFormat } from "../../utils/time"
 import UserChangesList from "./UserChangesList.vue"
 import { LRUCache } from "../../utils/lru-cache"
-import { useAnalysis } from "../../utils/useAnalysis"
+import { useAnalysis } from "../../composables/useAnalysis"
 import { database } from "../../utils/database"
 
 interface HistoryEntry {

@@ -1,6 +1,6 @@
 import { ref } from "vue"
-import { database } from "./database"
-import { createLogger } from "./logger"
+import { database } from "../utils/database"
+import { createLogger } from "../utils/logger"
 import { useModalStore } from "../stores/modal.store"
 import AnalysisContent from "../dashboard/components/AnalysisContent.vue"
 
@@ -84,13 +84,11 @@ export function useAnalysis() {
         null,
         null,
       )
-    }
-    catch (err) {
+    } catch (err) {
       logger.error("Failed to analyze snapshot:", err)
       modalStore.closeModal()
       throw err
-    }
-    finally {
+    } finally {
       modalStore.setLoading(false)
     }
   }

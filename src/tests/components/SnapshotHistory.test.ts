@@ -17,7 +17,7 @@ vi.mock("../../utils/logger", () => ({
 	}),
 }));
 
-vi.mock("../../utils/useAnalysis", () => ({
+vi.mock("../../composables/useAnalysis", () => ({
 	useAnalysis: () => ({
 		analyzeSnapshot: vi.fn(),
 	}),

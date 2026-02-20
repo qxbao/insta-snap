@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
-import { HistoryEntry } from "../types/etc"
 import Modal from "../shared-components/Modal.vue"
 import { database } from "../utils/database"
 import SnapshotHistory from "./components/SnapshotHistory.vue"
