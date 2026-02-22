@@ -12,7 +12,7 @@
 | Browser | Install from                                                                                                            | Status            |
 | :-----: | ----------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | Chrome  | [Chrome Web Store](https://chromewebstore.google.com/detail/instasnap-instagram-profi/pmjngceoacbjggocebdnafoohdcljmld) | 🟢 Available      |
-| Firefox | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/instasnap/)                                            | 🟡 Pending review |
+| Firefox | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/instasnap/)                                            | 🟢 Available      |
 
 InstaSnap is a browser extension that allows users to keep track on their social media followers and following lists with just a click (or even none, with auto-snapshot feature).
 
@@ -29,7 +29,7 @@ This project is open-sourced. Any contributions are welcome!
 
 ## Installation
 
-Currently, InstaSnap supports both Gecko-based and Chromium-based browsers and is available on Chrome Web Store. Alternatively, you can install it by downloading the latest release or building from source to catch the latest features and updates.
+Currently, InstaSnap supports both Gecko-based and Chromium-based browsers and is available on Chrome Web Store and Firefox Add-ons. Alternatively, you can install it by downloading the latest release or building from source to catch the latest features and updates.
 
 ### Github releases
 
