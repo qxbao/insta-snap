@@ -37,10 +37,16 @@ const appId = await database.readEncryptedConfig("appId", encryptor);
 ### Storage Architecture (CRITICAL)
 **IndexedDB with Dexie.js** in [src/utils/database.ts](../src/utils/database.ts):
 - Every **20 snapshots** creates a **checkpoint** (full follower/following lists)
-- Intermediate snapshots store only **deltas** (`add`/`rem` arrays)
+- Intermediate snapshots store only **deltas** (`add`/`rem` arrays) - **~95% storage reduction**
 - Four main tables: `userMetadata`, `snapshots`, `crons`, `internalConfig` (NEW)
 - Compound indexes for efficient queries: `[belongToId+timestamp]`, `[belongToId+isCheckpoint+timestamp]`
 - **Always** use `database.saveSnapshot()` - it handles checkpoint vs delta logic automatically
+
+**Database Tables Schema**:
+1. **userMetadata**: Basic user info (id, username, fullName, avatarURL, updatedAt) - updated on every snapshot
+2. **snapshots**: Differential storage with `belongToId`, `isCheckpoint` (1=full, 0=delta), `timestamp`, `followers/following` (add/rem arrays)
+3. **crons**: Scheduled snapshots with `uid`, `interval` (1-168 hours), `lastRun` timestamp
+4. **internalConfig**: Encrypted credentials stored as `{encrypted: ArrayBuffer, iv: Uint8Array}` (EncryptedData struct)
 
 **Key Database Methods**:
 - `saveSnapshot(uid, timestamp, followerIds, followingIds)` - Auto checkpointing
@@ -49,6 +55,7 @@ const appId = await database.readEncryptedConfig("appId", encryptor);
 - `getAllTrackedUsersWithMetadata()` - Dashboard data
 - `saveCron(uid, interval, lastRun)` / `getCron(uid)` / `deleteCron(uid)` - Cron management
 - `writeEncryptedConfig(key, value, encryptor)` / `readEncryptedConfig(key, encryptor)` - Secure storage (NEW)
+- `bulkUpsertUserMetadata(users[])` - Efficient batch updates for user metadata
 
 **Storage Migration Path**:
 1. Legacy: `browser.storage.local` (plaintext credentials) ❌
@@ -66,12 +73,33 @@ browser.storage is **only used for**:
 - Requires `appId`, `csrfToken`, `wwwClaim` extracted from page HTML
 - CORS handled by declarativeNetRequest rules ([src/constants/rules.ts](../src/constants/rules.ts))
 
+**Rate Limiting & Retry Logic**:
+- Instagram API: **50 users per request** (MAX_USERS_PER_REQUEST constant)
+- **IGFetch defaults**: maxRetries: 3, retryDelay: 2000ms, timeout: 15000ms
+- Exponential backoff with jitter between cron snapshots (5-15s delay)
+- Respects `Retry-After` header for 429 (rate limit) responses
+- Max retry delay capped at **1 minute** for rate limit responses
+- Cron snapshots process users sequentially to avoid rate limiting
+
 ### State Management
-Two Pinia stores ([src/stores/](../src/stores/)):
-- **app.store.ts**: User locks (prevent duplicate snapshots), cron schedules, tracked users list
+Three Pinia stores ([src/stores/](../src/stores/)):
+- **app.store.ts**: User locks (prevent duplicate snapshots), cron schedules, tracked users list, storage metadata
+  - `tryLockUser(uid)` - Acquire 10-min lock (returns boolean)
+  - `unlockUser(uid)` - Release lock
+  - `loadLocks()` - Load from browser.storage.session
 - **ui.store.ts**: UI progress indicators for snapshot operations
+  - `showNotification(message, type, duration)` - Display toast notifications
+  - `setLoading(isLoading)` - Toggle loading state
+  - `setLoadingProgress(progress, target)` - Update progress bar
+- **modal.store.ts**: Dialog management (cron scheduling, confirmations)
 
 User locks in `browser.storage.session` expire after 10 minutes (`LOCK_TIMEOUT`)
+
+### Memory Management & Caching
+- **LRU Cache**: [src/utils/lru-cache.ts](../src/utils/lru-cache.ts) - General purpose cache utility
+- **Snapshot Cache**: MAX_CACHED_SNAPSHOTS = 50 in SnapshotHistory component
+- **Lazy Loading**: Dashboard loads user data on demand to minimize memory usage
+- **Efficient Queries**: Dexie compound indexes prevent full table scans
 
 ### Background Service Architecture (NEW)
 [src/utils/bg-service.ts](../src/utils/bg-service.ts) is the **single source of truth** for:
@@ -98,6 +126,31 @@ if (secureActions.includes(message.type)) {
 }
 ```
 
+### Message Passing Pattern
+All extension contexts communicate via `browser.runtime.sendMessage`:
+
+```typescript
+// Sender (Popup/Content Script)
+const response = await browser.runtime.sendMessage({
+  type: ActionType.TAKE_SNAPSHOT,
+  payload: { uid: "123456789" }
+});
+
+// Receiver (Background Service)
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === ActionType.TAKE_SNAPSHOT) {
+    // Handle async operation
+    this.handleSnapshot(message.payload).then(sendResponse);
+    return true; // MUST return true to keep message channel open for async
+  }
+});
+```
+
+**Critical Rules**:
+- Return `true` from listener for async operations
+- Always include action type in message
+- Add secure actions to `secureActions` array if they use encryption
+
 ## Development Workflows
 
 ### Running & Building
@@ -115,6 +168,24 @@ pnpm lint:fix     # Auto-fix ESLint issues
 - Test files: `*.test.ts` or `*.spec.ts` in [src/tests/](../src/tests/)
 - Use `vi.fn()` for mocks, not jest
 - Mock `Encryptor` and `database` for security tests
+- **Coverage Requirements**: 60% for statements, branches, functions, and lines
+
+**Mocking Strategy**:
+```typescript
+// Browser API
+vi.mock("./utils/polyfill", () => ({
+  browser: { runtime: {...}, storage: {...} }
+}));
+
+// IndexedDB
+import "fake-indexeddb/auto";
+
+// Encryptor
+const mockEncryptor = {
+  encrypt: vi.fn().mockResolvedValue({ encrypted: new ArrayBuffer(32), iv: new Uint8Array(12) }),
+  decrypt: vi.fn().mockResolvedValue("decrypted-value"),
+};
+```
 
 ### Vue Component Patterns
 - **Script setup** with TypeScript (`<script setup lang="ts">`)
@@ -166,6 +237,7 @@ pnpm lint:fix     # Auto-fix ESLint issues
 8. **Keep message channel open**: Return `true` from `registerMessageListener` for async operations
 9. **Type validation**: Always validate `CryptoKey` with `instanceof` before use
 10. **Abort controller**: Support graceful cancellation in long-running operations (alarms)
+11. **Never log decrypted credentials**: High security risk - never output `appId`, `csrfToken`, `wwwClaim` values
 
 ## Integration Points
 
@@ -196,3 +268,38 @@ pnpm lint:fix     # Auto-fix ESLint issues
 - **Not protected**: Data in transit (relies on Instagram HTTPS)
 - **Not protected**: Extension code (user can inspect/modify)
 - **Mitigated**: XSS via CSP + declarativeNetRequest rules
+
+## Deployment & Browser Compatibility
+
+### Chrome Web Store
+1. Build production: `pnpm build`
+2. Zip `dist/` folder
+3. Upload to Chrome Developer Dashboard
+
+### Firefox Add-ons
+1. Build for Firefox: `pnpm build:firefox` (runs firefox-patch.js post-process)
+2. Firefox-specific changes:
+   - Convert `service_worker` → `scripts` (Manifest V2 background)
+   - Adjust permission formats
+   - Add Firefox-specific manifest fields
+3. Zip `dist/` folder and upload to Firefox Add-ons Developer Hub
+
+### Manual Installation (Development)
+- **Chrome**: `chrome://extensions` → Load unpacked → Select `dist/`
+- **Firefox**: `about:debugging` → Load Temporary Add-on → Select `dist/manifest.json`
+
+## Known Limitations & Constraints
+
+### Performance Limitations
+- **Large accounts (100k+ followers)**: Slow fetching due to pagination (50 users/request) and API rate limits
+- **No cross-device sync**: All data stored locally per browser profile
+- **Background worker reload**: HMR works for popup/dashboard, but background worker requires full extension reload during development
+
+### API Constraints
+- **Undocumented endpoints**: Relies on Instagram's private GraphQL API which may change without notice
+- **Rate limiting**: No control over Instagram's rate limits; relies on retry logic with exponential backoff
+- **Session dependency**: Requires valid Instagram session (cookies) to fetch data
+
+### Storage Constraints
+- **IndexedDB only**: No cloud backup/sync built-in
+- **Checkpoint overhead**: Every 20th snapshot is full (larger storage), but necessary for data integrity
