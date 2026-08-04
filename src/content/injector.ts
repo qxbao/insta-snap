@@ -56,7 +56,7 @@ export function injectSnapshotButton(logger?: Logger, store?: ReturnType<typeof 
     logger?.info("Snapshot button already exists, skipping injection")
     return
   }
-  const usernameEl = document.querySelector("main h2")
+  const usernameEl = document.querySelector("main h2") || document.querySelector("main h1")
   const username = usernameEl?.textContent?.trim() || ""
   const usernameParentDiv = usernameEl?.parentElement?.parentElement?.parentElement
   const container = document.createElement("div")
