@@ -400,9 +400,9 @@ async function saveUserInfo(username: string, logger: Logger = new Logger("Insta
     const imgElem: HTMLImageElement | null =
       document.querySelector("header img[crossorigin='anonymous'][draggable='false']") ||
       document.querySelector("header img")
-    const usernameElem = document.querySelector("header h2")
+    const usernameElem = document.querySelector("header h2") || document.querySelector("header h1")
     if (usernameElem?.textContent?.trim() !== username) {
-      logger.warn("Username element found but text does not match. Retrying...")
+      logger.warn(`Username element found but text does not match (${usernameElem?.textContent?.trim()}). Retrying...`)
       return
     }
     const fullnameElem = usernameElem
