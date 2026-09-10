@@ -1,47 +1,58 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import { buildFollowersEndpoint, buildFollowingEndpoint } from "../../utils/instagram";
 
-// Since findAppId and findUserId work with DOM/fetch, we'll test their logic patterns
 describe("Instagram Utilities", () => {
-	describe("Query Hash Constants", () => {
-		it("should have correct followers query hash", () => {
-			// Test that the constants are defined
-			const FOLLOWERS_QUERY_HASH = "c76146de99bb02f6415203be841dd25a";
-			expect(FOLLOWERS_QUERY_HASH).toMatch(/^[a-f0-9]{32}$/);
-		});
-
-		it("should have correct following query hash", () => {
-			const FOLLOWING_QUERY_HASH = "d04b0a864b4b54837c0d870b0e77e076";
-			expect(FOLLOWING_QUERY_HASH).toMatch(/^[a-f0-9]{32}$/);
-		});
-	});
-
 	describe("API Endpoint Building", () => {
-		it("should build proper GraphQL endpoint structure", () => {
+		it("should build proper REST v1 followers endpoint structure", () => {
 			const uid = "123456";
-			const queryHash = "abc123";
-			const variables = {
-				id: uid,
-				first: 50,
-			};
+			const endpoint = buildFollowersEndpoint(uid);
 
-			const endpoint = `https://www.instagram.com/graphql/query/?query_hash=${queryHash}&variables=${encodeURIComponent(JSON.stringify(variables))}`;
-
-			expect(endpoint).toContain("graphql/query");
-			expect(endpoint).toContain(queryHash);
-			expect(endpoint).toContain(encodeURIComponent(uid));
+			expect(endpoint).toContain("/api/v1/friendships/123456/followers/");
+			expect(endpoint).toContain("count=100");
+			expect(endpoint).toContain("search_surface=follow_list_page");
 		});
 
-		it("should properly encode variables in URL", () => {
-			const variables = {
-				id: "test<>123",
-				first: 50,
-			};
+		it("should append max_id when provided for followers endpoint", () => {
+			const uid = "123456";
+			const maxId = "QVFBX123=";
+			const endpoint = buildFollowersEndpoint(uid, maxId);
 
-			const encoded = encodeURIComponent(JSON.stringify(variables));
+			expect(endpoint).toContain(`max_id=${encodeURIComponent(maxId)}`);
+		});
 
-			expect(encoded).not.toContain("<");
-			expect(encoded).not.toContain(">");
-			expect(encoded).toContain("%");
+		it("should build proper REST v1 following endpoint structure", () => {
+			const uid = "123456";
+			const endpoint = buildFollowingEndpoint(uid);
+
+			expect(endpoint).toContain("/api/v1/friendships/123456/following/");
+			expect(endpoint).toContain("count=100");
+			expect(endpoint).toContain("search_surface=follow_list_page");
+		});
+
+		it("should append max_id when provided for following endpoint", () => {
+			const uid = "123456";
+			const maxId = "PAGE_2_TOKEN";
+			const endpoint = buildFollowingEndpoint(uid, maxId);
+
+			expect(endpoint).toContain("max_id=PAGE_2_TOKEN");
+		});
+
+		it("should append rank_token when provided for followers and following endpoints", () => {
+			const uid = "123456";
+			const rankToken = "123456_uuid123";
+			const endpointFollowers = buildFollowersEndpoint(uid, null, rankToken);
+			const endpointFollowing = buildFollowingEndpoint(uid, null, rankToken);
+
+			expect(endpointFollowers).toContain(`rank_token=${encodeURIComponent(rankToken)}`);
+			expect(endpointFollowing).toContain(`rank_token=${encodeURIComponent(rankToken)}`);
+		});
+
+		it("should append query parameter when provided", () => {
+			const uid = "123456";
+			const query = "b";
+			const endpoint = buildFollowersEndpoint(uid, null, undefined, query);
+
+			expect(endpoint).toContain("query=b");
 		});
 	});
 
@@ -99,53 +110,19 @@ describe("Instagram Utilities", () => {
 	});
 
 	describe("Response Parsing", () => {
-		it("should parse followers response structure", () => {
+		it("should parse REST v1 followers response structure", () => {
 			const mockResponse = {
-				data: {
-					user: {
-						edge_followed_by: {
-							count: 150,
-							page_info: {
-								has_next_page: false,
-								end_cursor: null,
-							},
-							edges: [
-								{ node: { id: "user1", username: "follower1" } },
-								{ node: { id: "user2", username: "follower2" } },
-							],
-						},
-					},
-				},
+				users: [
+					{ pk: "user1", username: "follower1", full_name: "Follower One", profile_pic_url: "http://pic1" },
+					{ pk_id: "user2", username: "follower2", full_name: "Follower Two", profile_pic_url: "http://pic2" },
+				],
+				next_max_id: "CURSOR_ABC",
+				status: "ok",
 			};
 
-			expect(mockResponse.data.user.edge_followed_by.edges).toHaveLength(2);
-			expect(mockResponse.data.user.edge_followed_by.edges[0].node.id).toBe(
-				"user1"
-			);
-		});
-
-		it("should parse following response structure", () => {
-			const mockResponse = {
-				data: {
-					user: {
-						edge_follow: {
-							count: 100,
-							page_info: {
-								has_next_page: true,
-								end_cursor: "cursor123",
-							},
-							edges: [
-								{ node: { id: "user3", username: "following1" } },
-							],
-						},
-					},
-				},
-			};
-
-			expect(mockResponse.data.user.edge_follow.edges).toHaveLength(1);
-			expect(mockResponse.data.user.edge_follow.page_info.has_next_page).toBe(
-				true
-			);
+			expect(mockResponse.users).toHaveLength(2);
+			expect(mockResponse.users[0].pk).toBe("user1");
+			expect(mockResponse.next_max_id).toBe("CURSOR_ABC");
 		});
 	});
 });

@@ -9,31 +9,25 @@ export type InstagramAPIHeader = {
   "sec-fetch-site": string // same-origin
 }
 
-export type InstagramRequestType<T extends "followers" | "following"> = T extends "followers"
-  ? InstagramFollowersResponse
-  : InstagramFollowingsResponse
+export type InstagramRequestType = InstagramV1FollowResponse
 
-export interface InstagramFollowersResponse {
-  data: FollowerData
+export interface InstagramV1User {
+  pk: string | number
+  pk_id?: string
+  username: string
+  full_name: string
+  profile_pic_url: string
+  is_private?: boolean
+  is_verified?: boolean
+  has_anonymous_profile_picture?: boolean
+}
+
+export interface InstagramV1FollowResponse {
+  users?: InstagramV1User[]
+  next_max_id?: string | null
+  big_list?: boolean
+  page_size?: number
   status: string
-}
-
-export interface InstagramFollowingsResponse {
-  data: FollowingData
-  status: string
-}
-
-export interface FollowingData {
-  user: UserGetFollowings
-}
-
-export interface FollowerData {
-  user: UserGetFollowers
-}
-
-export interface UserGetFollowings {
-  edge_follow: EdgeFollow
-  edge_mutual_followed_by: EdgeMutualFollowedBy
 }
 
 export interface UserGetFollowers {
@@ -92,4 +86,18 @@ export interface Node2 {
   is_verified: boolean
   followed_by_viewer: boolean
   requested_by_viewer: boolean
+}
+
+export interface InstagramWebProfileInfoResponse {
+  data?: {
+    user?: {
+      edge_followed_by?: {
+        count: number
+      }
+      edge_follow?: {
+        count: number
+      }
+    }
+  }
+  status?: string
 }
