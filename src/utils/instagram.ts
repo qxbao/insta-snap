@@ -292,10 +292,20 @@ async function fetchUsers(
   appId: string,
   csrfToken: string,
   wwwClaim: string,
-  targetCount?: number | null,
-  logger?: Logger,
+  targetCountOrLogger?: number | null | Logger,
+  loggerArg?: Logger,
   store?: ReturnType<typeof useUIStore>,
 ): Promise<UserNode[] | false> {
+  let targetCount: number | null = null
+  let logger: Logger | undefined = loggerArg
+
+  if (targetCountOrLogger instanceof Logger) {
+    logger = targetCountOrLogger
+    targetCount = null
+  } else if (typeof targetCountOrLogger === "number" || targetCountOrLogger === null) {
+    targetCount = targetCountOrLogger
+  }
+
   const buildEndpoint = rqtype === "followers" ? buildFollowersEndpoint : buildFollowingEndpoint
 
   logger?.info(
